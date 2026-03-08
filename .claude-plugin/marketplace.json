@@ -1,0 +1,34 @@
+{
+  "name": "RossLabs",
+  "description": "Developer productivity plugins for Claude Code",
+  "author": {
+    "name": "Tyrone Ross",
+    "url": "https://github.com/tyroneross"
+  },
+  "plugins": {
+    "bookmark": {
+      "source": "npm",
+      "package": "@tyroneross/bookmark",
+      "version": "^0.3.2",
+      "description": "Session context continuity — auto-save and restore context across compactions and terminal closures"
+    },
+    "claude-code-debugger": {
+      "source": "npm",
+      "package": "@tyroneross/claude-code-debugger",
+      "version": "^1.7.0",
+      "description": "Debugging memory — learn from past bugs with verdict-based retrieval, pattern extraction, and parallel domain assessment"
+    },
+    "ibr": {
+      "source": "npm",
+      "package": "@tyroneross/interface-built-right",
+      "version": "^0.4.9",
+      "description": "UI validation — verify implementations match intent with live page scanning, visual regression, and native simulator checks"
+    },
+    "navgator": {
+      "source": "npm",
+      "package": "@tyroneross/navgator",
+      "version": "^0.2.2",
+      "description": "Architecture tracking — map dependencies, analyze impact, and visualize your stack before making changes"
+    }
+  }
+}
