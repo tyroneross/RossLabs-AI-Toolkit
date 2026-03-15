@@ -1,34 +1,67 @@
 {
-  "name": "RossLabs",
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "RossLabs-claude-plugins",
   "description": "Developer productivity plugins for Claude Code",
-  "author": {
+  "owner": {
     "name": "Tyrone Ross",
-    "url": "https://github.com/tyroneross"
+    "email": "tyrone@rosslabs.ai"
   },
-  "plugins": {
-    "bookmark": {
-      "source": "npm",
-      "package": "@tyroneross/bookmark",
-      "version": "^0.3.2",
-      "description": "Session context continuity — auto-save and restore context across compactions and terminal closures"
+  "plugins": [
+    {
+      "name": "bookmark",
+      "description": "Session context continuity — auto-save and restore context across compactions and terminal closures",
+      "version": "0.3.2",
+      "author": { "name": "Tyrone Ross" },
+      "source": {
+        "source": "npm",
+        "package": "@tyroneross/bookmark",
+        "version": "^0.3.2"
+      },
+      "repository": "https://github.com/tyroneross/bookmark",
+      "category": "developer-tools",
+      "keywords": ["context", "snapshots", "session-continuity"]
     },
-    "claude-code-debugger": {
-      "source": "npm",
-      "package": "@tyroneross/claude-code-debugger",
-      "version": "^1.7.0",
-      "description": "Debugging memory — learn from past bugs with verdict-based retrieval, pattern extraction, and parallel domain assessment"
+    {
+      "name": "claude-code-debugger",
+      "description": "Debugging memory — learn from past bugs with verdict-based retrieval and pattern extraction",
+      "version": "1.7.0",
+      "author": { "name": "Tyrone Ross" },
+      "source": {
+        "source": "npm",
+        "package": "@tyroneross/claude-code-debugger",
+        "version": "^1.7.0"
+      },
+      "repository": "https://github.com/tyroneross/claude-code-debugger",
+      "category": "developer-tools",
+      "keywords": ["debugging", "memory", "incident-tracking"]
     },
-    "ibr": {
-      "source": "npm",
-      "package": "@tyroneross/interface-built-right",
-      "version": "^0.4.9",
-      "description": "UI validation — verify implementations match intent with live page scanning, visual regression, and native simulator checks"
+    {
+      "name": "ibr",
+      "description": "UI validation — verify implementations match intent with live page scanning and visual regression",
+      "version": "0.4.9",
+      "author": { "name": "Tyrone Ross" },
+      "source": {
+        "source": "npm",
+        "package": "@tyroneross/interface-built-right",
+        "version": "^0.4.9"
+      },
+      "repository": "https://github.com/tyroneross/interface-built-right",
+      "category": "developer-tools",
+      "keywords": ["ui", "validation", "visual-regression"]
     },
-    "navgator": {
-      "source": "npm",
-      "package": "@tyroneross/navgator",
-      "version": "^0.2.2",
-      "description": "Architecture tracking — map dependencies, analyze impact, and visualize your stack before making changes"
+    {
+      "name": "navgator",
+      "description": "Architecture tracking — map dependencies, analyze impact, and visualize your stack",
+      "version": "0.2.2",
+      "author": { "name": "Tyrone Ross" },
+      "source": {
+        "source": "npm",
+        "package": "@tyroneross/navgator",
+        "version": "^0.2.2"
+      },
+      "repository": "https://github.com/tyroneross/NavGator",
+      "category": "developer-tools",
+      "keywords": ["architecture", "dependencies", "impact-analysis"]
     }
-  }
+  ]
 }
