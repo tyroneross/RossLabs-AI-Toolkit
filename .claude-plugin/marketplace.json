@@ -62,6 +62,20 @@
       "repository": "https://github.com/tyroneross/NavGator",
       "category": "developer-tools",
       "keywords": ["architecture", "dependencies", "impact-analysis"]
+    },
+    {
+      "name": "showcase",
+      "description": "Dev asset capture — screenshots and video clips during development for blog/website content",
+      "version": "0.1.0",
+      "author": { "name": "Tyrone Ross" },
+      "source": {
+        "source": "npm",
+        "package": "@tyroneross/showcase",
+        "version": "^0.1.0"
+      },
+      "repository": "https://github.com/tyroneross/showcase",
+      "category": "developer-tools",
+      "keywords": ["screenshots", "video", "capture", "blog", "dev-assets"]
     }
   ]
 }
