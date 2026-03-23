@@ -53,14 +53,23 @@ npm install -g @tyroneross/navgator
 
 ## Architecture
 
-Each plugin follows the same structure:
+Each plugin follows a three-layer architecture where MCP and CLI are both thin interface layers over shared core logic:
 
-- **MCP server** — How Claude calls tools (structured JSON I/O)
+```
+Interface Layer    MCP Server (AI)  │  CLI (human)
+                        ↓           │       ↓
+Core Logic         Shared modules (scanner, storage, capture, etc.)
+                        ↓
+Storage Backend    File I/O (.claude/ or .ibr/)
+```
+
+- **MCP server** — How Claude calls tools (structured JSON-RPC, typed responses including images)
+- **CLI** — How humans call the same logic (Commander.js, superset of MCP tools)
 - **Skills** — When/why Claude should call them (auto-trigger via description matching)
 - **Hooks** — Lifecycle triggers (session start, file edits, compaction)
 - **Commands** — User manual overrides (`/command` shortcuts)
 
-Skills reference MCP tools by name, not CLI commands. This means Claude calls tools programmatically via the MCP protocol rather than shelling out via Bash — faster, quieter, structured output.
+MCP is the protocol layer — transport (stdio vs HTTP), storage (files vs database), and hosting (local vs cloud) are independent choices. See [ARCHITECTURE.md](ARCHITECTURE.md) for the full assessment.
 
 ## License
 
