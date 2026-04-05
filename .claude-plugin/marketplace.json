@@ -11,7 +11,9 @@
       "name": "bookmark",
       "description": "Session context continuity — auto-save and restore context across compactions and terminal closures",
       "version": "0.3.2",
-      "author": { "name": "Tyrone Ross" },
+      "author": {
+        "name": "Tyrone Ross"
+      },
       "source": {
         "source": "npm",
         "package": "@tyroneross/bookmark",
@@ -19,27 +21,39 @@
       },
       "repository": "https://github.com/tyroneross/bookmark",
       "category": "developer-tools",
-      "keywords": ["context", "snapshots", "session-continuity"]
+      "keywords": [
+        "context",
+        "snapshots",
+        "session-continuity"
+      ]
     },
     {
       "name": "claude-code-debugger",
       "description": "Debugging memory — learn from past bugs with verdict-based retrieval and pattern extraction",
-      "version": "1.7.0",
-      "author": { "name": "Tyrone Ross" },
+      "version": "1.8.0",
+      "author": {
+        "name": "Tyrone Ross"
+      },
       "source": {
         "source": "npm",
         "package": "@tyroneross/claude-code-debugger",
-        "version": "^1.7.0"
+        "version": "^1.8.0"
       },
       "repository": "https://github.com/tyroneross/claude-code-debugger",
       "category": "developer-tools",
-      "keywords": ["debugging", "memory", "incident-tracking"]
+      "keywords": [
+        "debugging",
+        "memory",
+        "incident-tracking"
+      ]
     },
     {
       "name": "ibr",
       "description": "UI validation — verify implementations match intent with live page scanning and visual regression",
       "version": "0.7.0",
-      "author": { "name": "Tyrone Ross" },
+      "author": {
+        "name": "Tyrone Ross"
+      },
       "source": {
         "source": "npm",
         "package": "@tyroneross/interface-built-right",
@@ -47,13 +61,19 @@
       },
       "repository": "https://github.com/tyroneross/interface-built-right",
       "category": "developer-tools",
-      "keywords": ["ui", "validation", "visual-regression"]
+      "keywords": [
+        "ui",
+        "validation",
+        "visual-regression"
+      ]
     },
     {
       "name": "navgator",
       "description": "Architecture tracking — map dependencies, analyze impact, and visualize your stack",
       "version": "0.6.1",
-      "author": { "name": "Tyrone Ross" },
+      "author": {
+        "name": "Tyrone Ross"
+      },
       "source": {
         "source": "npm",
         "package": "@tyroneross/navgator",
@@ -61,13 +81,19 @@
       },
       "repository": "https://github.com/tyroneross/NavGator",
       "category": "developer-tools",
-      "keywords": ["architecture", "dependencies", "impact-analysis"]
+      "keywords": [
+        "architecture",
+        "dependencies",
+        "impact-analysis"
+      ]
     },
     {
       "name": "showcase",
       "description": "Dev asset capture — screenshots and video clips during development for blog/website content",
       "version": "0.1.0",
-      "author": { "name": "Tyrone Ross" },
+      "author": {
+        "name": "Tyrone Ross"
+      },
       "source": {
         "source": "npm",
         "package": "@tyroneross/showcase",
@@ -75,7 +101,40 @@
       },
       "repository": "https://github.com/tyroneross/showcase",
       "category": "developer-tools",
-      "keywords": ["screenshots", "video", "capture", "blog", "dev-assets"]
+      "keywords": [
+        "screenshots",
+        "video",
+        "capture",
+        "blog",
+        "dev-assets"
+      ]
+    },
+    {
+      "name": "agent-builder",
+      "description": "Design and evaluate agentic harnesses — methodology playbooks plus an empirical catalog of architectures, frameworks, memory substrates, and production lab patterns",
+      "version": "0.1.0",
+      "author": {
+        "name": "Tyrone Ross"
+      },
+      "source": {
+        "source": "github",
+        "repo": "tyroneross/RossLabs-claude-plugins",
+        "path": "RossLabs-Skills/agent-builder"
+      },
+      "repository": "https://github.com/tyroneross/RossLabs-claude-plugins",
+      "category": "developer-tools",
+      "keywords": [
+        "agent",
+        "harness",
+        "architecture",
+        "design",
+        "evaluation",
+        "multi-agent",
+        "langgraph",
+        "crewai",
+        "memory",
+        "observability"
+      ]
     }
   ]
 }

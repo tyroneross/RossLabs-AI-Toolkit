@@ -92,3 +92,34 @@ Plugin-sync currently only checks `name` + `version` in `plugin.json`. It should
 ---
 
 <!-- When adding a new lesson, copy the section above and fill in the details. Keep them short — a lesson worth remembering should fit on one screen. Lessons are meant to be read fast during code review. -->
+
+## 2026-04-05 · Run plugin-sync lint before shipping new plugin.json changes
+
+**Category:** `workflow`  
+**Plugins affected:** spectra, showcase, navgator, scraper-app  
+**Authoritative source:** ~/.claude/plugins/cache/claude-plugins-official/plugin-dev/unknown/skills/plugin-structure/references/manifest-reference.md
+
+### Pattern
+
+Four separate plugin.json files accumulated invalid path fields (three with ../ parent-escapes, one with bare paths missing ./) over weeks without detection. Root cause: all four affected plugins are @local scope and none were in enabledPlugins, so Claude Code's loader never tried to resolve their manifests. The bug would have manifested loudly on first /plugin install, but sat dormant until a manual audit found it.
+
+### Correct
+
+Before any commit that touches .claude-plugin/plugin.json, run: plugin-sync lint. Exit code 1 blocks the commit. Add this as a pre-commit check alongside the post-commit auto-sync hook (or combine them).
+
+### Incorrect
+
+Editing plugin.json without validation and relying on 'I'll notice the broken plugin when I install it' — works only if you install immediately, fails if the plugin sits as an orphan source for weeks.
+
+### How to detect
+
+plugin-sync lint (walks every tracked plugin.json, validates hooks/skills/commands/agents/mcpServers fields against manifest reference rules)
+
+### Verification
+
+plugin-sync lint exits 0 with no output when all path fields are valid and resolve to existing targets
+
+### Notes
+
+plugin-sync 0.2.0 added this lint subcommand in response to the 2026-04-05 audit. The underlying pattern (invalid paths in plugin.json) is captured in the separate hooks-path entry above.
+
