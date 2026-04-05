@@ -6,6 +6,7 @@ Developer productivity plugins for Claude Code.
 
 | Plugin | Description |
 |--------|-------------|
+| **[Agent Builder](./RossLabs-Skills/agent-builder)** | Design and evaluate agentic harnesses — methodology playbooks + empirical catalog of architectures, frameworks, memory substrates, and lab patterns |
 | **[Bookmark](https://github.com/tyroneross/bookmark)** | Session context continuity — auto-save and restore context across compactions and terminal closures |
 | **[Claude Code Debugger](https://github.com/tyroneross/claude-code-debugger)** | Debugging memory — learn from past bugs with verdict-based retrieval and pattern extraction |
 | **[IBR](https://github.com/tyroneross/interface-built-right)** | UI validation — verify implementations match intent with live page scanning and visual regression |
@@ -20,6 +21,7 @@ Developer productivity plugins for Claude Code.
 claude plugin marketplace add tyroneross/RossLabs-claude-plugins
 
 # Install individual plugins
+claude plugin install agent-builder@RossLabs-claude-plugins
 claude plugin install bookmark@RossLabs-claude-plugins
 claude plugin install claude-code-debugger@RossLabs-claude-plugins
 claude plugin install ibr@RossLabs-claude-plugins

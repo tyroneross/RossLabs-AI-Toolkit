@@ -1,0 +1,27 @@
+{
+  "name": "agent-builder",
+  "version": "0.1.0",
+  "description": "Design, evaluate, and improve agentic harnesses — methodology playbooks plus an empirical catalog of architectures, frameworks, memory substrates, and production lab patterns.",
+  "author": { "name": "Tyrone Ross" },
+  "homepage": "https://github.com/tyroneross/RossLabs-claude-plugins/tree/main/RossLabs-Skills/agent-builder",
+  "repository": "https://github.com/tyroneross/RossLabs-claude-plugins",
+  "license": "MIT",
+  "keywords": [
+    "agent",
+    "harness",
+    "architecture",
+    "design",
+    "evaluation",
+    "multi-agent",
+    "tools",
+    "permissions",
+    "memory",
+    "observability",
+    "langgraph",
+    "crewai",
+    "pydantic-ai",
+    "smolagents",
+    "dspy",
+    "autogen"
+  ]
+}
