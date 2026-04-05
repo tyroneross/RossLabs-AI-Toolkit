@@ -24,65 +24,70 @@ Each entry has:
 
 ---
 
-## 2026-04-05 · `plugin.json` `hooks` field must not use `../` paths
+## 2026-04-05 · `plugin.json` path fields must start with `./`
 
 **Category:** `plugin-manifest`
-**Plugins affected:** spectra (fixed 2026-04-05 in `ed20293`)
-**Linked incident:** `INC_PLUGIN_MANIFEST_20260405_0200_hooks_relpath` (to be logged in claude-code-debugger when MCP is live)
+**Plugins affected:** spectra (fixed in `ed20293`), showcase (unfixed), NavGator (unfixed), scraper-app (unfixed)
+**Linked incident:** `INC_PLUGIN_MANIFEST_20260405_0200_manifest_paths` (to be logged in claude-code-debugger when MCP is live)
+**Authoritative source:** `~/.claude/plugins/cache/claude-plugins-official/plugin-dev/unknown/skills/plugin-structure/references/manifest-reference.md`
 
 ### Pattern
 
-The `hooks` field in `.claude-plugin/plugin.json` is resolved **relative to the plugin root** — the directory that contains `.claude-plugin/`, not the `.claude-plugin/` subdirectory itself. Using `../hooks/hooks.json` points outside the plugin root entirely and will silently fail to load hooks when the plugin is installed.
+Every path field in `.claude-plugin/plugin.json` — `hooks`, `skills`, `commands`, `agents`, `mcpServers` — **must** start with `./`. Two variants of this bug exist:
 
-Spectra had `"hooks": "../hooks/hooks.json"` for an unknown amount of time. It wasn't caught because spectra was never installed — the hooks registration would have failed on first `/plugin install` with no user-visible error other than "no hooks appeared in `/reload-plugins` output."
+1. **`../` variant**: points outside the plugin root entirely. Will silently fail to load. Bit us in spectra, showcase, NavGator.
+2. **Bare variant** (no `./` prefix): explicitly rejected by the official `plugin-dev:plugin-structure` docs. Bit us in scraper-app.
 
-### Correct
+Neither bare nor `../` paths generate a loud error — the hooks/skills/commands/agents simply don't register, and the user sees "hook count didn't change" in `/reload-plugins` output (if they think to check). The failure is silent and maximally confusing.
+
+### Correct (per plugin-dev:plugin-structure manifest-reference.md)
 
 ```json
 {
-  "hooks": "./hooks/hooks.json"
+  "hooks": "./hooks/hooks.json",
+  "skills": "./skills",
+  "commands": "./commands",
+  "agents": "./agents",
+  "mcpServers": "./.mcp.json"
 }
 ```
 
-or the equally valid bare form:
+### Incorrect — both variants
 
 ```json
-{
-  "hooks": "hooks/hooks.json"
-}
-```
+// ❌ ../ points outside plugin root
+{ "hooks": "../hooks/hooks.json" }
 
-### Incorrect (bit us)
-
-```json
-{
-  "hooks": "../hooks/hooks.json"
-}
+// ❌ bare path, no ./ prefix
+{ "hooks": "hooks/hooks.json" }
 ```
 
 ### How to detect
 
-Grep across all your plugin.json files for suspicious parent-dir references:
+Grep all `plugin.json` files in your plugin source dirs for either variant:
 
 ```bash
-grep -rn '"hooks"\s*:\s*"\.\./' ~/Desktop/git-folder/*/.claude-plugin/plugin.json
-```
-
-Or more broadly, any field referencing a path above the plugin root:
-
-```bash
+# Variant 1: ../ parent-dir escapes
 grep -rn '"\(hooks\|skills\|commands\|mcpServers\|agents\)"\s*:\s*"\.\./' ~/Desktop/git-folder/*/.claude-plugin/plugin.json
+
+# Variant 2: bare paths without ./
+grep -rEn '"(hooks|skills|commands|mcpServers|agents)"\s*:\s*"(?!\./)[a-zA-Z_][^"]*"' ~/Desktop/git-folder/*/.claude-plugin/plugin.json
 ```
 
-### Verification after fix
+### How the bugs hid for so long
 
-1. Install the plugin locally: `/plugin install --local <path>`
-2. Run `/reload-plugins` and check the output's hook count increases
-3. If the count doesn't increase, the hook path is still wrong
+All 4 affected plugins are `@local` scope. None of them are in `enabledPlugins` in `~/.claude/settings.json` — so Claude Code never actually tries to load them. The broken manifests sit dormant. The moment any of them is enabled via `/plugin install --local`, hooks/skills/etc would fail to register and the user would be confused by the mismatch between "plugin installed" and "commands not appearing."
 
-### Why this was missed
+### Verification after a fix
 
-Plugin-sync's scanner only validates that `plugin.json` has `name` and `version` fields — it doesn't validate that referenced files actually exist at the declared paths. Possible enhancement: add a `plugin-sync lint` subcommand that resolves every path field in every `plugin.json` and flags missing files. (Filed as follow-up, not blocking.)
+1. Enable the plugin: `/plugin install --local <path>`
+2. Run `/reload-plugins`
+3. Check the reload output's hook/skill/command counts increased by the expected amount
+4. If counts didn't change, the path is still wrong
+
+### Prevention — `plugin-sync lint` follow-up
+
+Plugin-sync currently only checks `name` + `version` in `plugin.json`. It should additionally resolve every path field and verify the target file exists under the plugin root. Filed as a follow-up for the next plugin-sync version — would catch this class of bug automatically on every `plugin-sync status` run.
 
 ---
 
