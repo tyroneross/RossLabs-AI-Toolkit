@@ -1,0 +1,21 @@
+{
+  "name": "@rosslabs/plugin-sync",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local plugin version tracker — scan source dirs, detect drift across marketplace/registry/cache, keep everything in sync",
+  "scripts": {
+    "sync": "tsx scripts/plugin-sync.ts",
+    "status": "tsx scripts/plugin-sync.ts status",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

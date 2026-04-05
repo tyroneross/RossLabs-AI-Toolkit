@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json.schemastore.org/plugin-sync-config.json",
+  "_comment": "Copy this file to ~/.config/claude-plugins/config.json and edit to match your setup. Never commit the real config — it's scoped to your machine.",
+
+  "searchRoots": [
+    "~/Desktop/git-folder"
+  ],
+
+  "marketplaceManifests": [
+    "~/Desktop/git-folder/RossLabs-claude-plugins/.claude-plugin/marketplace.json"
+  ],
+
+  "marketplaceReadmes": [
+    "~/Desktop/git-folder/RossLabs-claude-plugins/README.md"
+  ],
+
+  "claudeCodeRegistry": "~/.claude/plugins/installed_plugins.json",
+
+  "stateFile": "~/.config/claude-plugins/state.json",
+
+  "exclude": ["node_modules", ".git", "dist", ".next", "coverage", ".worktrees"]
+}

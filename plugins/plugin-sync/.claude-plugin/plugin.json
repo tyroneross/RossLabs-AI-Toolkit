@@ -1,0 +1,12 @@
+{
+  "name": "plugin-sync",
+  "version": "0.1.0",
+  "description": "Local plugin version tracker — scan source dirs, detect drift across marketplace/registry, keep everything in sync. Personal tool, not published.",
+  "author": {
+    "name": "Tyrone Ross"
+  },
+  "repository": "https://github.com/tyroneross/RossLabs-claude-plugins",
+  "license": "MIT",
+  "keywords": ["plugin-management", "versioning", "local-tool"],
+  "skills": "./skills"
+}
