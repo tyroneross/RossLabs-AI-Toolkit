@@ -1,8 +1,11 @@
 ---
 name: agent-builder
-description: Design, evaluate, and improve agentic harnesses for developer tools, assistants, workflow runtimes, copilots, and AI-powered products. Use when work involves tool-use architecture, permissions, approval gates, workflow state, durability, context and memory systems, evaluation strategy, observability, operator visibility, framework selection, or phased implementation plans for an AI system. Trigger when symptoms imply harness gaps too — stale context, surprising tool calls, sessions that die on crash, missing approval controls, costs spiraling without clear visibility, tool counts crossing ~50, or context windows routinely hitting 92%+ capacity.
+description: Design, evaluate, and improve agentic harnesses for developer tools, assistants, workflow runtimes, copilots, and AI-powered products — including agents built on local or open-source models (Ollama, llama.cpp, vLLM, Llama, Qwen, DeepSeek, Mistral). Use when work involves tool-use architecture, permissions, approval gates, workflow state, durability, context and memory systems, evaluation strategy, observability, operator visibility, framework selection (LangGraph, CrewAI, Pydantic AI, smolagents, DSPy, AutoGen, DeepAgents), memory substrate choice, or phased implementation plans for an AI system. Trigger when symptoms imply harness gaps too — stale context, surprising tool calls, sessions that die on crash, missing approval controls, costs spiraling without clear visibility, tool counts crossing ~50, context windows routinely hitting 92%+ capacity, local-model agents hallucinating tool calls, or on-device agents failing silently after model swaps.
 author: Tyrone Ross
-version: 0.1.0
+version: 0.2.0
+tags: [agentic-harness, agents, architecture, evaluation, memory, observability, frameworks, multi-agent, local-models, open-source, workflow, permissions]
+category: developer-tools
+difficulty: advanced
 ---
 
 # Agent Builder
@@ -41,6 +44,7 @@ Activate when any of the following hold:
 4. Prefer explicit system boundaries, permission policy, and workflow state over prompt cleverness.
 5. Translate ideas into implementation phases, success criteria, and failure tests.
 6. **When justifying multi-agent, cite empirical cost**: single agent ≈ 4× chat tokens, multi-agent ≈ 15× chat tokens, 70%+ of multi-agent failures are systemic (MAST), and only 11% of orgs run production agentic systems (Deloitte 2025). See `references/catalog/01-architecture-taxonomy.md` for sources.
+7. **When the target is a local or open-source model**, apply the stricter local-model posture: start single-agent *always*, cull tools aggressively (Vercel 80% reduction pattern), compaction is non-negotiable (4K–32K context windows), evals are load-bearing not optional. See `references/catalog/06-local-and-open-source-models.md`.
 
 ## Step 0 — Gather Context
 
@@ -117,10 +121,15 @@ Read only the files the request actually needs. This file is the index — do no
 - `catalog/03-frameworks.md` — LangGraph, CrewAI, Pydantic AI, smolagents, DSPy, AutoGen, Bedrock AgentCore. Decision tree for framework selection.
 - `catalog/04-memory-substrates.md` — filesystem-as-memory, vector DB, in-context, COALA framework, Claude Code memory tiers, Voyager skill library, DSPy optimization formats, self-improvement patterns (MCTS, OPRO, PromptBreeder, Gödel Agent).
 - `catalog/05-lab-patterns.md` — production architecture patterns from Anthropic, OpenAI, Perplexity, LangChain DeepAgents, Manus, Google ADK, Microsoft AutoGen/Copilot, Meta Llama Stack, DeepSeek, Cohere, Devin, xAI Grok, Cursor, Windsurf.
+- `catalog/06-local-and-open-source-models.md` — constraints and patterns for agents on local/open-source models (Ollama, llama.cpp, vLLM, Llama, Qwen, DeepSeek, Mistral, Phi, Gemma). Tool-call reliability tiers, framework fit for local deployment, failure modes, decision tree by hardware, three non-obvious insights for local agents.
 
 ### Templates (output shapes)
 - `references/templates/design-deliverable.md` — use when producing a design output.
 - `references/templates/evaluation-deliverable.md` — use when producing an evaluation output.
+
+### Examples (calibration)
+- `examples/design-solo-pr-review-agent.md` — worked design deliverable for a solo-maintainer PR review agent. Reference this to calibrate output format and level of detail.
+- `examples/evaluation-research-orchestrator.md` — worked evaluation deliverable for a Type III research orchestrator with 9 specialists. Reference this to calibrate findings ordering, severity rationale, and upgrade-path structure.
 
 ## Operating Rules
 
@@ -168,3 +177,4 @@ Read only the files the request actually needs. This file is the index — do no
 - Did you include evaluation, not just construction?
 - Did you give the user an operational path forward instead of abstract theory?
 - If you recommended multi-agent, a framework, or a memory substrate, did you cite the catalog file you pulled it from?
+- If the target is a local/open-source model, did you apply the stricter posture from `catalog/06-local-and-open-source-models.md` (single-agent always, cull tools, compaction mandatory, evals non-optional)?

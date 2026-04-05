@@ -1,0 +1,11 @@
+interface:
+  display_name: "Agent Builder"
+  short_description: "Design, evaluate, and improve agentic harnesses (incl. local/OSS models)"
+  default_prompt: "Use $agent-builder to design, audit, or upgrade an agentic harness for my product."
+policy:
+  allow_implicit_invocation: true
+routing:
+  variants:
+    anthropic: variants/anthropic/SKILL.md
+    codex: variants/codex/SKILL.md
+    default: SKILL.md
