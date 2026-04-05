@@ -5,6 +5,7 @@ import { scanSourcePlugins, readMarketplaceManifests, readRegistry } from './sca
 import { computeDrift, type DriftReport } from './drift.ts';
 import { applyFixes, updateReadmes, writeStateFile } from './apply.ts';
 import { installHooks, uninstallHooks } from './hooks.ts';
+import { lintPlugins, type LintIssue } from './lint.ts';
 import { color, collapseHome } from './util.ts';
 
 const program = new Command();
@@ -12,7 +13,7 @@ const program = new Command();
 program
   .name('plugin-sync')
   .description('Track and sync local Claude Code plugins across source / marketplace / registry')
-  .version('0.1.0')
+  .version('0.2.0')
   .option('-c, --config <path>', 'path to config.json', DEFAULT_CONFIG_PATH);
 
 // ---- status ----
@@ -90,6 +91,30 @@ program
     }
     console.log(color(`✓ Updated ${updated.length} README file(s):`, 'green'));
     for (const u of updated) console.log(`  ${u}`);
+  });
+
+// ---- lint ----
+program
+  .command('lint')
+  .description('Validate plugin.json path fields (hooks/skills/commands/agents/mcpServers) against the manifest reference rules')
+  .option('--json', 'emit machine-readable JSON instead of a grouped report')
+  .action((opts) => {
+    const config = tryLoadConfig();
+    const sources = scanSourcePlugins(config.searchRoots, config.exclude);
+    const issues = lintPlugins(sources);
+
+    if (opts.json) {
+      console.log(JSON.stringify({ issues }, null, 2));
+      process.exit(issues.length > 0 ? 1 : 0);
+    }
+
+    if (issues.length === 0) {
+      console.log(color(`✓ No lint issues found across ${sources.length} plugin(s).`, 'green'));
+      process.exit(0);
+    }
+
+    printLintIssues(issues, sources.length);
+    process.exit(1);
   });
 
 // ---- install-hooks ----
@@ -214,6 +239,48 @@ function printStatus(drift: DriftReport): void {
 
 function pad(s: string, w: number): string {
   return s + ' '.repeat(Math.max(0, w - s.length));
+}
+
+function printLintIssues(issues: LintIssue[], totalPlugins: number): void {
+  const byPlugin = new Map<string, LintIssue[]>();
+  for (const issue of issues) {
+    const list = byPlugin.get(issue.plugin) ?? [];
+    list.push(issue);
+    byPlugin.set(issue.plugin, list);
+  }
+
+  console.log(
+    color(
+      `Found ${issues.length} issue(s) across ${byPlugin.size} of ${totalPlugins} plugin(s):`,
+      'bold'
+    )
+  );
+  console.log();
+
+  for (const [pluginName, pluginIssues] of byPlugin) {
+    console.log(color(`${pluginName}`, 'cyan'));
+    console.log(color(`  ${collapseHome(pluginIssues[0]!.pluginJsonPath)}`, 'dim'));
+    for (const issue of pluginIssues) {
+      const tag =
+        issue.problem === 'parent-escape'
+          ? color('[parent-escape]', 'red')
+          : issue.problem === 'bare-path'
+          ? color('[bare-path]', 'yellow')
+          : issue.problem === 'missing-target'
+          ? color('[missing-target]', 'red')
+          : color('[not-a-string]', 'red');
+      console.log(`  ${tag} ${color(issue.field, 'bold')} = ${JSON.stringify(issue.rawValue)}`);
+      console.log(color(`      ${issue.message}`, 'dim'));
+    }
+    console.log();
+  }
+
+  console.log(
+    color(
+      'Rule reference: plugin-dev:plugin-structure manifest-reference.md — path fields must start with `./`.',
+      'dim'
+    )
+  );
 }
 
 program.parse();

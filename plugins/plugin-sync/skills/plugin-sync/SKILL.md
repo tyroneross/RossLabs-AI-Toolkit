@@ -1,6 +1,6 @@
 ---
 name: plugin-sync
-description: Use when the user asks to "sync plugins", "check plugin versions", "which plugins are drifting", "refresh marketplace versions", "update the plugin readme", "install plugin-sync hooks", "plugin-sync status", or similar. Tool tracks local Claude Code plugins across source repos, marketplace manifests, and Claude Code's installed_plugins.json registry; detects drift and optionally fixes it. Personal tool scoped to its author's machine — bail silently if ~/.config/claude-plugins/config.json is missing.
+description: Use when the user asks to "sync plugins", "check plugin versions", "which plugins are drifting", "refresh marketplace versions", "update the plugin readme", "install plugin-sync hooks", "lint my plugin manifests", "validate plugin.json paths", "plugin-sync status", or similar. Tool tracks local Claude Code plugins across source repos, marketplace manifests, and Claude Code's installed_plugins.json registry; detects drift and optionally fixes it; also lints plugin.json path fields against the manifest reference rules. Personal tool scoped to its author's machine — bail silently if ~/.config/claude-plugins/config.json is missing.
 ---
 
 # plugin-sync
@@ -38,6 +38,8 @@ The tool is installed at `~/.local/bin/plugin-sync` (wrapper around `tsx` runnin
 | `plugin-sync fix --quiet` | Same, but silent when nothing changed (used by git hooks) |
 | `plugin-sync state` | Write `~/.config/claude-plugins/state.json` snapshot (dashboard input) |
 | `plugin-sync readme` | Rewrite the `<!-- plugin-sync:start --> / <!-- plugin-sync:end -->` section of each configured README |
+| `plugin-sync lint` | Validate plugin.json path fields (hooks/skills/commands/agents/mcpServers) — catches `../`, bare paths, missing targets |
+| `plugin-sync lint --json` | Same, machine-readable output |
 | `plugin-sync install-hooks` | Install `.git/hooks/post-commit` in every source plugin repo (auto-runs `fix` on version bumps) |
 | `plugin-sync uninstall-hooks` | Remove plugin-sync-installed hooks |
 

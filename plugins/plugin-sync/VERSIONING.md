@@ -2,12 +2,18 @@
 
 ## Current
 
-- **Version:** 0.1.0
+- **Version:** 0.2.0
 - **Source of truth:** Local dev (`~/Desktop/git-folder/RossLabs-claude-plugins/plugins/plugin-sync`)
 - **Also available at:** nowhere (deliberately not published — personal tool)
 - **Claude Code registry entry:** `plugin-sync@local` (after manual install)
 
-## Key changes in 0.1.0
+## Key changes in 0.2.0
+
+- **New `lint` subcommand** — validates plugin.json path fields (hooks/skills/commands/agents/mcpServers) against the plugin-dev:plugin-structure manifest-reference rules. Catches three failure modes: `../` parent-escapes, bare paths missing the `./` prefix, and paths whose target doesn't exist. See LESSONS-LEARNED.md 2026-04-05 for the class of bug this catches.
+- Grouped output by plugin with color-coded issue tags; `--json` flag for machine-readable output
+- Exit code 1 when issues found, 0 when clean — usable in pre-commit hooks
+
+## Changes in 0.1.0
 
 - Initial release: TypeScript CLI with `status`, `fix`, `state`, `readme`, `install-hooks`, `uninstall-hooks` subcommands
 - Zod config schema at `~/.config/claude-plugins/config.json`
@@ -37,4 +43,5 @@ This plugin is not in the marketplace and has no npm/cache mirrors — the drift
 
 ## Version history
 
+- **0.2.0** (2026-04-05): Added `lint` subcommand for plugin.json path field validation
 - **0.1.0** (2026-04-05): Initial release

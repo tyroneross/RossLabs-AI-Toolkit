@@ -40,6 +40,7 @@ plugin-sync status
 | `plugin-sync fix --quiet` | Same, silent when nothing changed. Used by git hooks. |
 | `plugin-sync state` | Write dashboard snapshot to `~/.config/claude-plugins/state.json`. |
 | `plugin-sync readme` | Update the `<!-- plugin-sync:start --> / <!-- plugin-sync:end -->` section of each configured README. |
+| `plugin-sync lint` | Validate plugin.json path fields against the manifest reference rules. Catches `../` escapes, bare paths missing `./`, and paths whose target doesn't exist. |
 | `plugin-sync install-hooks` | Install `.git/hooks/post-commit` in every source plugin repo. |
 | `plugin-sync uninstall-hooks` | Remove plugin-sync-installed hooks. |
 

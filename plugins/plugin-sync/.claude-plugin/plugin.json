@@ -1,6 +1,6 @@
 {
   "name": "plugin-sync",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Local plugin version tracker — scan source dirs, detect drift across marketplace/registry, keep everything in sync. Personal tool, not published.",
   "author": {
     "name": "Tyrone Ross"

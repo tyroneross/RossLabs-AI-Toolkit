@@ -1,4 +1,4 @@
-<!-- Plugin: plugin-sync · Version: 0.1.0 · Source of truth: local (~/Desktop/git-folder/RossLabs-claude-plugins/plugins/plugin-sync) -->
+<!-- Plugin: plugin-sync · Version: 0.2.0 · Source of truth: local (~/Desktop/git-folder/RossLabs-claude-plugins/plugins/plugin-sync) -->
 <!-- Before any commit, version bump, or major change, read ./VERSIONING.md. Update it on version bumps. -->
 
 # plugin-sync
@@ -15,7 +15,7 @@ Local plugin version tracker. Scans plugin source dirs, cross-references marketp
 
 ## Subcommands
 
-`status` · `fix` · `state` · `readme` · `install-hooks` · `uninstall-hooks`
+`status` · `fix` · `state` · `readme` · `lint` · `install-hooks` · `uninstall-hooks`
 
 See `./skills/plugin-sync/SKILL.md` for full semantics.
 
