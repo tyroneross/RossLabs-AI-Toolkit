@@ -38,12 +38,12 @@
     {
       "name": "ibr",
       "description": "UI validation — verify implementations match intent with live page scanning and visual regression",
-      "version": "0.4.9",
+      "version": "0.7.0",
       "author": { "name": "Tyrone Ross" },
       "source": {
         "source": "npm",
         "package": "@tyroneross/interface-built-right",
-        "version": "^0.4.9"
+        "version": "^0.7.0"
       },
       "repository": "https://github.com/tyroneross/interface-built-right",
       "category": "developer-tools",
@@ -52,12 +52,12 @@
     {
       "name": "navgator",
       "description": "Architecture tracking — map dependencies, analyze impact, and visualize your stack",
-      "version": "0.2.2",
+      "version": "0.6.1",
       "author": { "name": "Tyrone Ross" },
       "source": {
         "source": "npm",
         "package": "@tyroneross/navgator",
-        "version": "^0.2.2"
+        "version": "^0.6.1"
       },
       "repository": "https://github.com/tyroneross/NavGator",
       "category": "developer-tools",
