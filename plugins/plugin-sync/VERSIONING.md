@@ -3,7 +3,7 @@
 ## Current
 
 - **Version:** 0.2.0
-- **Source of truth:** Local dev (`~/Desktop/git-folder/RossLabs-claude-plugins/plugins/plugin-sync`)
+- **Source of truth:** Local dev (`~/Desktop/git-folder/RossLabs-AI-Toolkit/plugins/plugin-sync`)
 - **Also available at:** nowhere (deliberately not published — personal tool)
 - **Claude Code registry entry:** `plugin-sync@local` (after manual install)
 
@@ -25,7 +25,7 @@
 
 | Source | Location | Notes |
 |---|---|---|
-| **Authoritative** | `~/Desktop/git-folder/RossLabs-claude-plugins/plugins/plugin-sync/.claude-plugin/plugin.json` | Local dev — canonical |
+| **Authoritative** | `~/Desktop/git-folder/RossLabs-AI-Toolkit/plugins/plugin-sync/.claude-plugin/plugin.json` | Local dev — canonical |
 | Marketplace | NOT listed (intentional) | This plugin is hidden from downstream marketplace users |
 | npm | Not published | Personal tool |
 

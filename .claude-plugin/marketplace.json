@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "RossLabs-claude-plugins",
-  "description": "Developer productivity plugins for Claude Code",
+  "name": "RossLabs-AI-Toolkit",
+  "description": "Developer productivity plugins and skills for AI coding agents",
   "owner": {
     "name": "Tyrone Ross",
     "email": "tyrone@rosslabs.ai"
@@ -15,9 +15,8 @@
         "name": "Tyrone Ross"
       },
       "source": {
-        "source": "npm",
-        "package": "@tyroneross/bookmark",
-        "version": "^0.3.2"
+        "source": "github",
+        "repo": "tyroneross/bookmark"
       },
       "repository": "https://github.com/tyroneross/bookmark",
       "category": "developer-tools",
@@ -35,9 +34,8 @@
         "name": "Tyrone Ross"
       },
       "source": {
-        "source": "npm",
-        "package": "@tyroneross/claude-code-debugger",
-        "version": "^1.8.0"
+        "source": "github",
+        "repo": "tyroneross/claude-code-debugger"
       },
       "repository": "https://github.com/tyroneross/claude-code-debugger",
       "category": "developer-tools",
@@ -55,9 +53,8 @@
         "name": "Tyrone Ross"
       },
       "source": {
-        "source": "npm",
-        "package": "@tyroneross/interface-built-right",
-        "version": "^0.7.0"
+        "source": "github",
+        "repo": "tyroneross/interface-built-right"
       },
       "repository": "https://github.com/tyroneross/interface-built-right",
       "category": "developer-tools",
@@ -75,9 +72,8 @@
         "name": "Tyrone Ross"
       },
       "source": {
-        "source": "npm",
-        "package": "@tyroneross/navgator",
-        "version": "^0.6.1"
+        "source": "github",
+        "repo": "tyroneross/NavGator"
       },
       "repository": "https://github.com/tyroneross/NavGator",
       "category": "developer-tools",
@@ -95,9 +91,8 @@
         "name": "Tyrone Ross"
       },
       "source": {
-        "source": "npm",
-        "package": "@tyroneross/showcase",
-        "version": "^0.1.0"
+        "source": "github",
+        "repo": "tyroneross/showcase"
       },
       "repository": "https://github.com/tyroneross/showcase",
       "category": "developer-tools",
@@ -118,10 +113,10 @@
       },
       "source": {
         "source": "github",
-        "repo": "tyroneross/RossLabs-claude-plugins",
-        "path": "RossLabs-Skills/agent-builder"
+        "repo": "tyroneross/RossLabs-AI-Toolkit",
+        "path": "skills/agent-builder"
       },
-      "repository": "https://github.com/tyroneross/RossLabs-claude-plugins",
+      "repository": "https://github.com/tyroneross/RossLabs-AI-Toolkit",
       "category": "developer-tools",
       "keywords": [
         "agent",

@@ -78,13 +78,13 @@ To activate a variant as the default, replace the root `SKILL.md` with the varia
 
 **As a Claude Code plugin via the RossLabs marketplace:**
 ```bash
-/plugin marketplace add tyroneross/RossLabs-claude-plugins
-/plugin install agent-builder@RossLabs-claude-plugins
+/plugin marketplace add tyroneross/RossLabs-AI-Toolkit
+/plugin install agent-builder@RossLabs-AI-Toolkit
 ```
 
 **As a standalone user skill** (any plugin host or bare Claude Code):
 ```bash
-cp -R RossLabs-Skills/agent-builder ~/.claude/skills/agent-builder
+cp -R skills/agent-builder ~/.claude/skills/agent-builder
 ```
 
 **Inside another plugin:** drop `agent-builder/` into that plugin's `skills/` directory and it becomes available wherever the host plugin is installed.

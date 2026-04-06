@@ -1,4 +1,4 @@
-<!-- Plugin: plugin-sync · Version: 0.2.0 · Source of truth: local (~/Desktop/git-folder/RossLabs-claude-plugins/plugins/plugin-sync) -->
+<!-- Plugin: plugin-sync · Version: 0.2.0 · Source of truth: local (~/Desktop/git-folder/RossLabs-AI-Toolkit/plugins/plugin-sync) -->
 <!-- Before any commit, version bump, or major change, read ./VERSIONING.md. Update it on version bumps. -->
 
 # plugin-sync

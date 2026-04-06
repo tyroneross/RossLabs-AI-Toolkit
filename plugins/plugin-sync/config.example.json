@@ -7,11 +7,11 @@
   ],
 
   "marketplaceManifests": [
-    "~/Desktop/git-folder/RossLabs-claude-plugins/.claude-plugin/marketplace.json"
+    "~/Desktop/git-folder/RossLabs-AI-Toolkit/.claude-plugin/marketplace.json"
   ],
 
   "marketplaceReadmes": [
-    "~/Desktop/git-folder/RossLabs-claude-plugins/README.md"
+    "~/Desktop/git-folder/RossLabs-AI-Toolkit/README.md"
   ],
 
   "claudeCodeRegistry": "~/.claude/plugins/installed_plugins.json",

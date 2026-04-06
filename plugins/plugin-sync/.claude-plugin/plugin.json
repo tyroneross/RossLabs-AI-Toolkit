@@ -5,7 +5,7 @@
   "author": {
     "name": "Tyrone Ross"
   },
-  "repository": "https://github.com/tyroneross/RossLabs-claude-plugins",
+  "repository": "https://github.com/tyroneross/RossLabs-AI-Toolkit",
   "license": "MIT",
   "keywords": ["plugin-management", "versioning", "local-tool"],
   "skills": "./skills"

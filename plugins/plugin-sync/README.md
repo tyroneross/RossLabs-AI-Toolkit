@@ -8,7 +8,7 @@ Local plugin version tracker for Claude Code plugins. Scans plugin source dirs, 
 
 ```bash
 # 1. Install dependencies (one-time, inside the plugin dir)
-cd ~/Desktop/git-folder/RossLabs-claude-plugins/plugins/plugin-sync
+cd ~/Desktop/git-folder/RossLabs-AI-Toolkit/plugins/plugin-sync
 npm install
 
 # 2. Copy the example config to the XDG location and edit it
@@ -20,7 +20,7 @@ $EDITOR ~/.config/claude-plugins/config.json
 cat > ~/.local/bin/plugin-sync <<'EOF'
 #!/usr/bin/env bash
 set -e
-PLUGIN_SYNC_DIR="${PLUGIN_SYNC_DIR:-$HOME/Desktop/git-folder/RossLabs-claude-plugins/plugins/plugin-sync}"
+PLUGIN_SYNC_DIR="${PLUGIN_SYNC_DIR:-$HOME/Desktop/git-folder/RossLabs-AI-Toolkit/plugins/plugin-sync}"
 cd "$PLUGIN_SYNC_DIR"
 exec npx --no-install tsx scripts/plugin-sync.ts "$@"
 EOF
@@ -52,10 +52,10 @@ plugin-sync status
 {
   "searchRoots": ["~/Desktop/git-folder"],
   "marketplaceManifests": [
-    "~/Desktop/git-folder/RossLabs-claude-plugins/.claude-plugin/marketplace.json"
+    "~/Desktop/git-folder/RossLabs-AI-Toolkit/.claude-plugin/marketplace.json"
   ],
   "marketplaceReadmes": [
-    "~/Desktop/git-folder/RossLabs-claude-plugins/README.md"
+    "~/Desktop/git-folder/RossLabs-AI-Toolkit/README.md"
   ],
   "claudeCodeRegistry": "~/.claude/plugins/installed_plugins.json",
   "stateFile": "~/.config/claude-plugins/state.json",

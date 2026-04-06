@@ -1,16 +1,40 @@
-# RossLabs — Claude Code Plugins
+# RossLabs AI Toolkit
 
-Developer productivity plugins for Claude Code.
+Developer productivity plugins and skills for AI coding agents.
+
+## Structure
+
+```
+plugins/     Self-contained installable packages (GitHub repos)
+skills/      Canonical standalone skills (source of truth)
+agents/      Agent configurations
+archive/     Retired/deprecated items
+```
+
+**Plugins** are complete packages — MCP server, hooks, commands, skills bundled together. Install one and it works.
+
+**Skills** are the canonical versions of reusable capabilities. Plugins may bundle their own copies that sync over time.
 
 ## Plugins
 
-| Plugin | Description |
-|--------|-------------|
-| **[Agent Builder](./RossLabs-Skills/agent-builder)** | Design and evaluate agentic harnesses — methodology playbooks + empirical catalog of architectures, frameworks, memory substrates, and lab patterns |
-| **[Bookmark](https://github.com/tyroneross/bookmark)** | Session context continuity — auto-save and restore context across compactions and terminal closures |
-| **[Claude Code Debugger](https://github.com/tyroneross/claude-code-debugger)** | Debugging memory — learn from past bugs with verdict-based retrieval and pattern extraction |
-| **[IBR](https://github.com/tyroneross/interface-built-right)** | UI validation — verify implementations match intent with live page scanning and visual regression |
-| **[NavGator](https://github.com/tyroneross/NavGator)** | Architecture tracking — map dependencies, analyze impact, and visualize your stack |
+| Plugin | Description | Install |
+|--------|-------------|---------|
+| [Bookmark](https://github.com/tyroneross/bookmark) | Session context continuity — auto-save and restore across compactions | `claude plugin install tyroneross/bookmark` |
+| [Claude Code Debugger](https://github.com/tyroneross/claude-code-debugger) | Debugging memory — verdict-based retrieval and pattern extraction | `claude plugin install tyroneross/claude-code-debugger` |
+| [IBR](https://github.com/tyroneross/interface-built-right) | UI validation — live page scanning and visual regression | `claude plugin install tyroneross/interface-built-right` |
+| [NavGator](https://github.com/tyroneross/NavGator) | Architecture tracking — dependency mapping and impact analysis | `claude plugin install tyroneross/NavGator` |
+| [Showcase](https://github.com/tyroneross/showcase) | Dev asset capture — screenshots and video for blog/website content | `claude plugin install tyroneross/showcase` |
+
+## Skills
+
+| Skill | Description | Source Plugin |
+|-------|-------------|--------------|
+| [Agent Builder](./skills/agent-builder) | Design and evaluate agentic harnesses | Standalone |
+| [Context Continuity](./skills/context-continuity) | Session snapshot and restore logic | Bookmark |
+| [Debugging Memory](./skills/debugging-memory) | Verdict-based bug retrieval | Claude Code Debugger |
+| [Design Validation](./skills/design-validation) | UI scan and visual regression | IBR |
+| [Architecture Scan](./skills/architecture-scan) | Dependency graph and impact analysis | NavGator |
+| [Showcase Awareness](./skills/showcase-awareness) | Passive capture suggestions | Showcase |
 
 ## Install
 
@@ -18,69 +42,43 @@ Developer productivity plugins for Claude Code.
 
 ```bash
 # Add the marketplace
-claude plugin marketplace add tyroneross/RossLabs-claude-plugins
+claude plugin marketplace add tyroneross/RossLabs-AI-Toolkit
 
 # Install individual plugins
-claude plugin install agent-builder@RossLabs-claude-plugins
-claude plugin install bookmark@RossLabs-claude-plugins
-claude plugin install claude-code-debugger@RossLabs-claude-plugins
-claude plugin install ibr@RossLabs-claude-plugins
-claude plugin install navgator@RossLabs-claude-plugins
-```
-
-Or from within Claude Code:
-```
-/plugin marketplace add tyroneross/RossLabs-claude-plugins
-/plugin install bookmark@RossLabs-claude-plugins
+claude plugin install bookmark@RossLabs-AI-Toolkit
+claude plugin install claude-code-debugger@RossLabs-AI-Toolkit
+claude plugin install ibr@RossLabs-AI-Toolkit
+claude plugin install navgator@RossLabs-AI-Toolkit
+claude plugin install showcase@RossLabs-AI-Toolkit
 ```
 
 ### Directly from GitHub
 
-Each plugin repo is also a standalone installable:
+Each plugin is a standalone installable repo:
+
 ```bash
 claude plugin install tyroneross/bookmark
 claude plugin install tyroneross/claude-code-debugger
 claude plugin install tyroneross/interface-built-right
 claude plugin install tyroneross/NavGator
+claude plugin install tyroneross/showcase
 ```
 
-### From npm
+## Cross-Platform Agent Support
 
-```bash
-npm install -g @tyroneross/bookmark
-npm install -g @tyroneross/claude-code-debugger
-npm install -g @tyroneross/interface-built-right
-npm install -g @tyroneross/navgator
-```
+Each plugin includes an `AGENTS.md` at its root — universal guidance for any AI coding agent (Claude Code, Codex, Cursor, Copilot, Gemini CLI). This covers project structure, development commands, architecture, and change guidance.
 
 ## Architecture
 
 Each plugin follows the same structure:
 
-- **MCP server** — How Claude calls tools (structured JSON I/O)
-- **Skills** — When/why Claude should call them (auto-trigger via description matching)
+- **MCP server** — How the agent calls tools (structured JSON I/O)
+- **Skills** — When/why the agent should call them (auto-trigger via description matching)
 - **Hooks** — Lifecycle triggers (session start, file edits, compaction)
 - **Commands** — User manual overrides (`/command` shortcuts)
 
-Skills reference MCP tools by name, not CLI commands. This means Claude calls tools programmatically via the MCP protocol rather than shelling out via Bash — faster, quieter, structured output.
+Skills reference MCP tools by name, not CLI commands. The agent calls tools programmatically via MCP rather than shelling out via Bash.
 
 ## License
 
 MIT
-
-<!-- plugin-sync:start -->
-## Current Plugin Versions
-
-| Plugin | Version | Source | Status |
-|---|---|---|---|
-| `bookmark` | `0.3.2` | `~/Desktop/git-folder/bookmark` | ✅ in sync |
-| `claude-code-debugger` | `1.7.0` | `~/Desktop/git-folder/claude-code-debugger` | ✅ in sync |
-| `gator` | `0.6.1` | `~/Desktop/git-folder/NavGator` | ✅ in sync |
-| `ibr` | `0.7.0` | `~/Desktop/git-folder/interface-built-right` | ⚠️ source=0.7.0; registry "ibr@local" ghost path |
-| `plugin-sync` | `0.1.0` | `~/Desktop/git-folder/RossLabs-claude-plugins/plugins/plugin-sync` | ⚪ not in any marketplace or registry |
-| `scraper-app` | `0.5.0` | `~/Desktop/git-folder/scraper-app` | ⚪ not in any marketplace or registry |
-| `showcase` | `0.1.0` | `~/Desktop/git-folder/showcase` | ✅ in sync |
-| `spectra` | `0.1.0` | `~/Desktop/git-folder/spectra` | ⚪ not in any marketplace or registry |
-
-_Last synced: 2026-04-05T10:14:37.222Z · Generated by `plugin-sync readme`, do not edit by hand._
-<!-- plugin-sync:end -->
