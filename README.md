@@ -24,12 +24,13 @@ archive/     Retired/deprecated items
 | [IBR](https://github.com/tyroneross/interface-built-right) | UI validation — live page scanning and visual regression | `claude plugin install tyroneross/interface-built-right` |
 | [NavGator](https://github.com/tyroneross/NavGator) | Architecture tracking — dependency mapping and impact analysis | `claude plugin install tyroneross/NavGator` |
 | [Showcase](https://github.com/tyroneross/showcase) | Dev asset capture — screenshots and video for blog/website content | `claude plugin install tyroneross/showcase` |
+| [Build Loop](https://github.com/tyroneross/build-loop) | Orchestrated 8-phase dev loop with agents, evals, and fact-checking | `claude plugin install tyroneross/build-loop` |
 
 ## Skills
 
 | Skill | Description | Source Plugin |
 |-------|-------------|--------------|
-| [Agent Builder](./skills/agent-builder) | Design and evaluate agentic harnesses | Standalone |
+| [Agent Builder](https://github.com/tyroneross/agent-builder) | Design and evaluate agentic harnesses | [Standalone repo](https://github.com/tyroneross/agent-builder) |
 | [Context Continuity](./skills/context-continuity) | Session snapshot and restore logic | Bookmark |
 | [Debugging Memory](./skills/debugging-memory) | Verdict-based bug retrieval | Claude Code Debugger |
 | [Design Validation](./skills/design-validation) | UI scan and visual regression | IBR |
@@ -50,6 +51,8 @@ claude plugin install claude-code-debugger@RossLabs-AI-Toolkit
 claude plugin install ibr@RossLabs-AI-Toolkit
 claude plugin install navgator@RossLabs-AI-Toolkit
 claude plugin install showcase@RossLabs-AI-Toolkit
+claude plugin install build-loop@RossLabs-AI-Toolkit
+claude plugin install agent-builder@RossLabs-AI-Toolkit
 ```
 
 ### Directly from GitHub
@@ -62,6 +65,8 @@ claude plugin install tyroneross/claude-code-debugger
 claude plugin install tyroneross/interface-built-right
 claude plugin install tyroneross/NavGator
 claude plugin install tyroneross/showcase
+claude plugin install tyroneross/build-loop
+claude plugin install tyroneross/agent-builder
 ```
 
 ## Cross-Platform Agent Support

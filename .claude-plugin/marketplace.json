@@ -105,6 +105,26 @@
       ]
     },
     {
+      "name": "build-loop",
+      "description": "Orchestrated 8-phase development loop with agents, evals, and fact-checking",
+      "version": "0.1.0",
+      "author": {
+        "name": "Tyrone Ross"
+      },
+      "source": {
+        "source": "github",
+        "repo": "tyroneross/build-loop"
+      },
+      "repository": "https://github.com/tyroneross/build-loop",
+      "category": "developer-tools",
+      "keywords": [
+        "build-loop",
+        "orchestration",
+        "agents",
+        "evaluation"
+      ]
+    },
+    {
       "name": "agent-builder",
       "description": "Design and evaluate agentic harnesses — methodology playbooks plus an empirical catalog of architectures, frameworks, memory substrates, and production lab patterns",
       "version": "0.1.0",
@@ -113,10 +133,9 @@
       },
       "source": {
         "source": "github",
-        "repo": "tyroneross/RossLabs-AI-Toolkit",
-        "path": "skills/agent-builder"
+        "repo": "tyroneross/agent-builder"
       },
-      "repository": "https://github.com/tyroneross/RossLabs-AI-Toolkit",
+      "repository": "https://github.com/tyroneross/agent-builder",
       "category": "developer-tools",
       "keywords": [
         "agent",
