@@ -2,3 +2,14 @@ node_modules/
 .claude/
 .DS_Store
 .bookmark/
+
+# Local dev symlinks to sibling plugin repos (not part of the marketplace)
+plugins/agent-builder
+plugins/bookmark
+plugins/build-loop
+plugins/claude-code-debugger
+plugins/ibr
+plugins/navgator
+plugins/prompt-builder
+plugins/pyramid-principle
+plugins/showcase
