@@ -1,0 +1,753 @@
+---
+name: hook-development
+description: This skill should be used when the user asks to "create a hook", "add a PreToolUse/PostToolUse/Stop hook", "validate tool use", "implement prompt-based hooks", "use ${CLAUDE_PLUGIN_ROOT}", "set up event-driven automation", "block dangerous commands", or mentions hook events (PreToolUse, PostToolUse, Stop, SubagentStop, SessionStart, SessionEnd, UserPromptSubmit, PreCompact, Notification). Provides comprehensive guidance for creating and implementing Claude Code plugin hooks with focus on advanced prompt-based hooks API.
+version: 0.1.0
+---
+
+# Hook Development for Claude Code Plugins
+
+## Overview
+
+Hooks are event-driven automation scripts that execute in response to Claude Code events. Use hooks to validate operations, enforce policies, add context, and integrate external tools into workflows.
+
+**Key capabilities:**
+- Validate tool calls before execution (PreToolUse)
+- React to tool results (PostToolUse)
+- Enforce completion standards (Stop, SubagentStop)
+- Load project context (SessionStart)
+- Automate workflows across the development lifecycle
+
+## Hook Types
+
+### Command Hooks (Default — Use This)
+
+Execute bash commands for deterministic checks. **This is the default hook type.** Silent exit by default (exit 0 with no stdout = no user-facing output), so they don't spam the session when the condition doesn't apply.
+
+```json
+{
+  "type": "command",
+  "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate.sh",
+  "timeout": 60
+}
+```
+
+**Use for (nearly everything):**
+- Conditional / gating logic (the common case — "if X, then suggest Y")
+- Fast deterministic validations
+- File system operations
+- External tool integrations
+- Performance-critical checks
+
+**Silent-exit pattern** — the script bails out with `exit 0` (no stdout) unless the condition truly applies. Only produce output when the user genuinely needs to see something:
+
+```bash
+#!/usr/bin/env bash
+# Fast bail-out for projects that don't use this tool
+[ -f "${CLAUDE_PROJECT_DIR}/.mytool/state.json" ] || exit 0
+
+# Parse tool_input from stdin; silent if the shape doesn't match
+cmd=$(python3 -c 'import sys,json; print(json.loads(sys.stdin.read()).get("tool_input",{}).get("command",""))' 2>/dev/null)
+
+# Only produce output when the condition genuinely applies
+case "$cmd" in
+  *"npm install"*) echo "Suggestion: refresh dependency index" ;;
+  *) exit 0 ;;
+esac
+```
+
+### Prompt-Based Hooks (Reserve for User-Facing LLM Reasoning)
+
+Use prompt hooks **only when the output is genuinely meant to be visible to the user** — e.g. a review summary, a code critique, an analysis. Prompt hooks synthesize an LLM response every time the matcher fires; they **cannot silently do nothing** when a condition isn't met, because the model will always generate a visible `<system-reminder>` explaining why it didn't act.
+
+```json
+{
+  "type": "prompt",
+  "prompt": "Summarize what changed in this edit and flag any security concerns.",
+  "timeout": 30
+}
+```
+
+**Supported events:** Stop, SubagentStop, UserPromptSubmit, PreToolUse
+
+**Use ONLY when:**
+- You want LLM output to appear in the session every time the hook fires (e.g. mandatory review step)
+- The hook's purpose is to produce reasoning, not to gate or conditionally nudge
+
+**DO NOT use prompt hooks for conditional / gating logic.** A prompt like *"If X happened, run Y. Otherwise do nothing."* produces noise on every matcher hit — the model can't actually do nothing, so it narrates why the condition wasn't met. Rewrite as a command hook with the silent-exit pattern above.
+
+## Hook Configuration Formats
+
+### Plugin hooks.json Format
+
+**For plugin hooks** in `hooks/hooks.json`, use wrapper format:
+
+```json
+{
+  "description": "Brief explanation of hooks (optional)",
+  "hooks": {
+    "PreToolUse": [...],
+    "Stop": [...],
+    "SessionStart": [...]
+  }
+}
+```
+
+**Key points:**
+- `description` field is optional
+- `hooks` field is required wrapper containing actual hook events
+- This is the **plugin-specific format**
+
+**Example:**
+```json
+{
+  "description": "Validation hooks for code quality",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/validate.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Settings Format (Direct)
+
+**For user settings** in `.claude/settings.json`, use direct format:
+
+```json
+{
+  "PreToolUse": [...],
+  "Stop": [...],
+  "SessionStart": [...]
+}
+```
+
+**Key points:**
+- No wrapper - events directly at top level
+- No description field
+- This is the **settings format**
+
+**Important:** The examples below show the hook event structure that goes inside either format. For plugin hooks.json, wrap these in `{"hooks": {...}}`.
+
+## Hook Events
+
+### PreToolUse
+
+Execute before any tool runs. Use to approve, deny, or modify tool calls.
+
+**Example (prompt-based):**
+```json
+{
+  "PreToolUse": [
+    {
+      "matcher": "Write|Edit",
+      "hooks": [
+        {
+          "type": "prompt",
+          "prompt": "Validate file write safety. Check: system paths, credentials, path traversal, sensitive content. Return 'approve' or 'deny'."
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Output for PreToolUse:**
+```json
+{
+  "hookSpecificOutput": {
+    "permissionDecision": "allow|deny|ask",
+    "updatedInput": {"field": "modified_value"}
+  },
+  "systemMessage": "Explanation for Claude"
+}
+```
+
+### PostToolUse
+
+Execute after tool completes. Use to react to results, provide feedback, or log.
+
+**Example:**
+```json
+{
+  "PostToolUse": [
+    {
+      "matcher": "Edit",
+      "hooks": [
+        {
+          "type": "prompt",
+          "prompt": "Analyze edit result for potential issues: syntax errors, security vulnerabilities, breaking changes. Provide feedback."
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Output behavior:**
+- Exit 0: stdout shown in transcript
+- Exit 2: stderr fed back to Claude
+- systemMessage included in context
+
+### Stop
+
+Execute when main agent considers stopping. Use to validate completeness.
+
+**Example:**
+```json
+{
+  "Stop": [
+    {
+      "matcher": "*",
+      "hooks": [
+        {
+          "type": "prompt",
+          "prompt": "Verify task completion: tests run, build succeeded, questions answered. Return 'approve' to stop or 'block' with reason to continue."
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Decision output:**
+```json
+{
+  "decision": "approve|block",
+  "reason": "Explanation",
+  "systemMessage": "Additional context"
+}
+```
+
+### SubagentStop
+
+Execute when subagent considers stopping. Use to ensure subagent completed its task.
+
+Similar to Stop hook, but for subagents.
+
+### UserPromptSubmit
+
+Execute when user submits a prompt. Use to add context, validate, or block prompts.
+
+**Example:**
+```json
+{
+  "UserPromptSubmit": [
+    {
+      "matcher": "*",
+      "hooks": [
+        {
+          "type": "prompt",
+          "prompt": "Check if prompt requires security guidance. If discussing auth, permissions, or API security, return relevant warnings."
+        }
+      ]
+    }
+  ]
+}
+```
+
+### SessionStart
+
+Execute when Claude Code session begins. Use to load context and set environment.
+
+**Example:**
+```json
+{
+  "SessionStart": [
+    {
+      "matcher": "*",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/load-context.sh"
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Special capability:** Persist environment variables using `$CLAUDE_ENV_FILE`:
+```bash
+echo "export PROJECT_TYPE=nodejs" >> "$CLAUDE_ENV_FILE"
+```
+
+See `examples/load-context.sh` for complete example.
+
+### SessionEnd
+
+Execute when session ends. Use for cleanup, logging, and state preservation.
+
+### PreCompact
+
+Execute before context compaction. Use to add critical information to preserve.
+
+### Notification
+
+Execute when Claude sends notifications. Use to react to user notifications.
+
+## Hook Output Format
+
+### Standard Output (All Hooks)
+
+```json
+{
+  "continue": true,
+  "suppressOutput": false,
+  "systemMessage": "Message for Claude"
+}
+```
+
+- `continue`: If false, halt processing (default true)
+- `suppressOutput`: Hide output from transcript (default false)
+- `systemMessage`: Message shown to Claude
+
+### Exit Codes
+
+- `0` - Success (stdout shown in transcript)
+- `2` - Blocking error (stderr fed back to Claude)
+- Other - Non-blocking error
+
+## Hook Input Format
+
+All hooks receive JSON via stdin with common fields:
+
+```json
+{
+  "session_id": "abc123",
+  "transcript_path": "/path/to/transcript.txt",
+  "cwd": "/current/working/dir",
+  "permission_mode": "ask|allow",
+  "hook_event_name": "PreToolUse"
+}
+```
+
+**Event-specific fields:**
+
+- **PreToolUse/PostToolUse:** `tool_name`, `tool_input`, `tool_result`
+- **UserPromptSubmit:** `user_prompt`
+- **Stop/SubagentStop:** `reason`
+
+Access fields in prompts using `$TOOL_INPUT`, `$TOOL_RESULT`, `$USER_PROMPT`, etc.
+
+## Environment Variables
+
+Available in all command hooks:
+
+- `$CLAUDE_PROJECT_DIR` - Project root path
+- `$CLAUDE_PLUGIN_ROOT` - Plugin directory (use for portable paths)
+- `$CLAUDE_ENV_FILE` - SessionStart only: persist env vars here
+- `$CLAUDE_CODE_REMOTE` - Set if running in remote context
+
+**Always use ${CLAUDE_PLUGIN_ROOT} in hook commands for portability:**
+
+```json
+{
+  "type": "command",
+  "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate.sh"
+}
+```
+
+## Plugin Hook Configuration
+
+In plugins, define hooks in `hooks/hooks.json`:
+
+```json
+{
+  "PreToolUse": [
+    {
+      "matcher": "Write|Edit",
+      "hooks": [
+        {
+          "type": "prompt",
+          "prompt": "Validate file write safety"
+        }
+      ]
+    }
+  ],
+  "Stop": [
+    {
+      "matcher": "*",
+      "hooks": [
+        {
+          "type": "prompt",
+          "prompt": "Verify task completion"
+        }
+      ]
+    }
+  ],
+  "SessionStart": [
+    {
+      "matcher": "*",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/load-context.sh",
+          "timeout": 10
+        }
+      ]
+    }
+  ]
+}
+```
+
+Plugin hooks merge with user's hooks and run in parallel.
+
+## Matchers
+
+### Tool Name Matching
+
+**Exact match:**
+```json
+"matcher": "Write"
+```
+
+**Multiple tools:**
+```json
+"matcher": "Read|Write|Edit"
+```
+
+**Wildcard (all tools):**
+```json
+"matcher": "*"
+```
+
+**Regex patterns:**
+```json
+"matcher": "mcp__.*__delete.*"  // All MCP delete tools
+```
+
+**Note:** Matchers are case-sensitive.
+
+### Common Patterns
+
+```json
+// All MCP tools
+"matcher": "mcp__.*"
+
+// Specific plugin's MCP tools
+"matcher": "mcp__plugin_asana_.*"
+
+// All file operations
+"matcher": "Read|Write|Edit"
+
+// Bash commands only
+"matcher": "Bash"
+```
+
+## Security Best Practices
+
+### Input Validation
+
+Always validate inputs in command hooks:
+
+```bash
+#!/bin/bash
+set -euo pipefail
+
+input=$(cat)
+tool_name=$(echo "$input" | jq -r '.tool_name')
+
+# Validate tool name format
+if [[ ! "$tool_name" =~ ^[a-zA-Z0-9_]+$ ]]; then
+  echo '{"decision": "deny", "reason": "Invalid tool name"}' >&2
+  exit 2
+fi
+```
+
+### Path Safety
+
+Check for path traversal and sensitive files:
+
+```bash
+file_path=$(echo "$input" | jq -r '.tool_input.file_path')
+
+# Deny path traversal
+if [[ "$file_path" == *".."* ]]; then
+  echo '{"decision": "deny", "reason": "Path traversal detected"}' >&2
+  exit 2
+fi
+
+# Deny sensitive files
+if [[ "$file_path" == *".env"* ]]; then
+  echo '{"decision": "deny", "reason": "Sensitive file"}' >&2
+  exit 2
+fi
+```
+
+See `examples/validate-write.sh` and `examples/validate-bash.sh` for complete examples.
+
+### Quote All Variables
+
+```bash
+# GOOD: Quoted
+echo "$file_path"
+cd "$CLAUDE_PROJECT_DIR"
+
+# BAD: Unquoted (injection risk)
+echo $file_path
+cd $CLAUDE_PROJECT_DIR
+```
+
+### Set Appropriate Timeouts
+
+```json
+{
+  "type": "command",
+  "command": "bash script.sh",
+  "timeout": 10
+}
+```
+
+**Defaults:** Command hooks (60s), Prompt hooks (30s)
+
+## Performance Considerations
+
+### Parallel Execution
+
+All matching hooks run **in parallel**:
+
+```json
+{
+  "PreToolUse": [
+    {
+      "matcher": "Write",
+      "hooks": [
+        {"type": "command", "command": "check1.sh"},  // Parallel
+        {"type": "command", "command": "check2.sh"},  // Parallel
+        {"type": "prompt", "prompt": "Validate..."}   // Parallel
+      ]
+    }
+  ]
+}
+```
+
+**Design implications:**
+- Hooks don't see each other's output
+- Non-deterministic ordering
+- Design for independence
+
+### Optimization
+
+1. Use command hooks for quick deterministic checks
+2. Use prompt hooks for complex reasoning
+3. Cache validation results in temp files
+4. Minimize I/O in hot paths
+
+## Temporarily Active Hooks
+
+Create hooks that activate conditionally by checking for a flag file or configuration:
+
+**Pattern: Flag file activation**
+```bash
+#!/bin/bash
+# Only active when flag file exists
+FLAG_FILE="$CLAUDE_PROJECT_DIR/.enable-strict-validation"
+
+if [ ! -f "$FLAG_FILE" ]; then
+  # Flag not present, skip validation
+  exit 0
+fi
+
+# Flag present, run validation
+input=$(cat)
+# ... validation logic ...
+```
+
+**Pattern: Configuration-based activation**
+```bash
+#!/bin/bash
+# Check configuration for activation
+CONFIG_FILE="$CLAUDE_PROJECT_DIR/.claude/plugin-config.json"
+
+if [ -f "$CONFIG_FILE" ]; then
+  enabled=$(jq -r '.strictMode // false' "$CONFIG_FILE")
+  if [ "$enabled" != "true" ]; then
+    exit 0  # Not enabled, skip
+  fi
+fi
+
+# Enabled, run hook logic
+input=$(cat)
+# ... hook logic ...
+```
+
+**Use cases:**
+- Enable strict validation only when needed
+- Temporary debugging hooks
+- Project-specific hook behavior
+- Feature flags for hooks
+
+**Best practice:** Document activation mechanism in plugin README so users know how to enable/disable temporary hooks.
+
+## Hook Lifecycle and Limitations
+
+### Hooks Load at Session Start
+
+**Important:** Hooks are loaded when Claude Code session starts. Changes to hook configuration require restarting Claude Code.
+
+**Cannot hot-swap hooks:**
+- Editing `hooks/hooks.json` won't affect current session
+- Adding new hook scripts won't be recognized
+- Changing hook commands/prompts won't update
+- Must restart Claude Code: exit and run `claude` again
+
+**To test hook changes:**
+1. Edit hook configuration or scripts
+2. Exit Claude Code session
+3. Restart: `claude` or `cc`
+4. New hook configuration loads
+5. Test hooks with `claude --debug`
+
+### Hook Validation at Startup
+
+Hooks are validated when Claude Code starts:
+- Invalid JSON in hooks.json causes loading failure
+- Missing scripts cause warnings
+- Syntax errors reported in debug mode
+
+Use `/hooks` command to review loaded hooks in current session.
+
+## Debugging Hooks
+
+### Enable Debug Mode
+
+```bash
+claude --debug
+```
+
+Look for hook registration, execution logs, input/output JSON, and timing information.
+
+### Test Hook Scripts
+
+Test command hooks directly:
+
+```bash
+echo '{"tool_name": "Write", "tool_input": {"file_path": "/test"}}' | \
+  bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate.sh
+
+echo "Exit code: $?"
+```
+
+### Validate JSON Output
+
+Ensure hooks output valid JSON:
+
+```bash
+output=$(./your-hook.sh < test-input.json)
+echo "$output" | jq .
+```
+
+## Quick Reference
+
+### Hook Events Summary
+
+| Event | When | Use For |
+|-------|------|---------|
+| PreToolUse | Before tool | Validation, modification |
+| PostToolUse | After tool | Feedback, logging |
+| UserPromptSubmit | User input | Context, validation |
+| Stop | Agent stopping | Completeness check |
+| SubagentStop | Subagent done | Task validation |
+| SessionStart | Session begins | Context loading |
+| SessionEnd | Session ends | Cleanup, logging |
+| PreCompact | Before compact | Preserve context |
+| Notification | User notified | Logging, reactions |
+
+### Best Practices
+
+**DO:**
+- ✅ Default to command hooks with silent-exit for conditional/gating logic
+- ✅ Use prompt hooks **only** when the output is genuinely meant to be visible every time (reviews, summaries, critiques)
+- ✅ Start every command hook with a fast bail-out (`[ -f state ] || exit 0`) so it's a no-op in projects that don't use your tool
+- ✅ Use ${CLAUDE_PLUGIN_ROOT} for portability
+- ✅ Validate all inputs in command hooks
+- ✅ Quote all bash variables
+- ✅ Set appropriate timeouts
+- ✅ Return structured JSON output
+- ✅ Test hooks thoroughly (especially the "condition not met" path — it must produce zero stdout)
+
+**DON'T:**
+- ❌ Use a prompt hook with conditional language (`"If X, then Y. Otherwise do nothing."`) — this spams on every matcher hit
+- ❌ Put any prompt hook on `PostToolUse` or `Stop` unless you want visible LLM output on *every* tool call / session end
+- ❌ Use hardcoded paths
+- ❌ Trust user input without validation
+- ❌ Create long-running hooks
+- ❌ Rely on hook execution order
+- ❌ Modify global state unpredictably
+- ❌ Log sensitive information
+
+## Anti-Patterns
+
+### The "conditional prompt" trap
+
+**Symptom:** Every tool call in every project where your plugin is installed produces a visible `<system-reminder>` saying something like *"PostToolUse:Bash hook stopped continuation: the command does not match the condition."*
+
+**Cause:** You wrote a prompt-type hook whose prompt contains conditional language — *"If the user ran npm install, suggest a rescan. Otherwise do nothing."* The hook runtime invokes the model on every matcher hit, and the model cannot actually "do nothing" — it synthesizes a visible reminder explaining why it chose not to act. Multiply by every Bash call across every project and the session becomes unusable.
+
+**Fix:** Rewrite as a command hook that performs the same conditional check in bash/python and exits silently (`exit 0`, no stdout) unless the condition truly applies. Only emit output when the suggestion is genuinely warranted. See the silent-exit pattern under "Command Hooks (Default — Use This)" above.
+
+**Smell test before shipping:** run a no-op command (`echo probe`) with your plugin enabled. If you see ANY output from your hook, your hook is too noisy. The zero-output case must be truly zero.
+
+### Other anti-patterns
+
+- **Prompt hooks on frequent events** — `PostToolUse:Bash` fires on every shell command, `Stop` fires on every session end. A prompt hook on either of these guarantees user-visible LLM output on every tool call or session end. Only acceptable if that output is the explicit feature (e.g. a mandatory completion summary).
+- **Cache-only edits** — patching `~/.claude/plugins/cache/<plugin>/.../hooks/hooks.json` without editing the source repo: the fix reverts on the next `/reload-plugins` or reinstall. Always edit the source; the cache is a copy.
+- **Matcher-based filtering only** — the `matcher` field filters by tool name, not command content. Command-content filtering must happen inside the hook script.
+
+## Additional Resources
+
+### Reference Files
+
+For detailed patterns and advanced techniques, consult:
+
+- **`references/patterns.md`** - Common hook patterns (8+ proven patterns)
+- **`references/migration.md`** - Migrating from basic to advanced hooks
+- **`references/advanced.md`** - Advanced use cases and techniques
+
+### Example Hook Scripts
+
+Working examples in `examples/`:
+
+- **`validate-write.sh`** - File write validation example
+- **`validate-bash.sh`** - Bash command validation example
+- **`load-context.sh`** - SessionStart context loading example
+
+### Utility Scripts
+
+Development tools in `scripts/`:
+
+- **`validate-hook-schema.sh`** - Validate hooks.json structure and syntax
+- **`test-hook.sh`** - Test hooks with sample input before deployment
+- **`hook-linter.sh`** - Check hook scripts for common issues and best practices
+
+### External Resources
+
+- **Official Docs**: https://docs.claude.com/en/docs/claude-code/hooks
+- **Examples**: See security-guidance plugin in marketplace
+- **Testing**: Use `claude --debug` for detailed logs
+- **Validation**: Use `jq` to validate hook JSON output
+
+## Implementation Workflow
+
+To implement hooks in a plugin:
+
+1. Identify events to hook into (PreToolUse, Stop, SessionStart, etc.)
+2. **Default to command hooks with silent-exit for conditional logic.** Use prompt hooks only when user-visible LLM output is the explicit goal (e.g. a mandatory review summary).
+3. Write hook configuration in `hooks/hooks.json`
+4. For command hooks, create hook scripts starting with a fast bail-out and using the silent-exit pattern
+5. Use ${CLAUDE_PLUGIN_ROOT} for all file references
+6. Validate configuration with `scripts/validate-hook-schema.sh hooks/hooks.json`
+7. Run `scripts/hook-linter.sh` to catch the "conditional prompt" anti-pattern
+8. Test hooks with `scripts/test-hook.sh` before deployment — especially the zero-output path
+9. Smoke-test with a no-op command (`echo probe`); any output means the hook is too noisy
+10. Document hooks in plugin README
+
+**Rule of thumb:** if the hook's job is to decide whether to nudge the user, use a command hook that nudges only when the condition applies. If the hook's job is to always produce visible reasoning the user will read, use a prompt hook. Conditional prompt hooks are almost always a bug.
