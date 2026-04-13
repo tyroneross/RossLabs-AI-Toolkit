@@ -13,6 +13,7 @@ Self-contained Claude Code plugins. Each plugin repo includes everything needed 
 | Showcase | [tyroneross/showcase](https://github.com/tyroneross/showcase) | Dev asset capture — screenshots and video for blog/website content | 0.1.0 |
 | Build Loop | [tyroneross/build-loop](https://github.com/tyroneross/build-loop) | Orchestrated 8-phase dev loop with agents, evals, and fact-checking | 0.1.0 |
 | Pyramid Principle | [tyroneross/pyramid-principle](https://github.com/tyroneross/pyramid-principle) | Minto's Pyramid Principle as composable writing skills — short-form, long-form, presentations, audit | 0.1.0 |
+| Prompt Builder | [tyroneross/prompt-builder](https://github.com/tyroneross/prompt-builder) | Prompt Policy Engine — classify, diagnose, rewrite, and score prompts by model tier and deployment. Callable by agents, tools, and slash commands. | 0.1.0 |
 
 ## Skills
 

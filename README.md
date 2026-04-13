@@ -25,6 +25,7 @@ archive/     Retired/deprecated items
 | [NavGator](https://github.com/tyroneross/NavGator) | Architecture tracking — dependency mapping and impact analysis | `claude plugin install tyroneross/NavGator` |
 | [Showcase](https://github.com/tyroneross/showcase) | Dev asset capture — screenshots and video for blog/website content | `claude plugin install tyroneross/showcase` |
 | [Build Loop](https://github.com/tyroneross/build-loop) | Orchestrated 8-phase dev loop with agents, evals, and fact-checking | `claude plugin install tyroneross/build-loop` |
+| [Prompt Builder](https://github.com/tyroneross/prompt-builder) | Prompt Policy Engine — classify, diagnose, rewrite, and score prompts by model tier and deployment | `claude plugin install tyroneross/prompt-builder` |
 
 ## Skills
 
@@ -53,6 +54,7 @@ claude plugin install navgator@RossLabs-AI-Toolkit
 claude plugin install showcase@RossLabs-AI-Toolkit
 claude plugin install build-loop@RossLabs-AI-Toolkit
 claude plugin install agent-builder@RossLabs-AI-Toolkit
+claude plugin install prompt-builder@RossLabs-AI-Toolkit
 ```
 
 ### Directly from GitHub
@@ -67,6 +69,7 @@ claude plugin install tyroneross/NavGator
 claude plugin install tyroneross/showcase
 claude plugin install tyroneross/build-loop
 claude plugin install tyroneross/agent-builder
+claude plugin install tyroneross/prompt-builder
 ```
 
 ## Cross-Platform Agent Support
