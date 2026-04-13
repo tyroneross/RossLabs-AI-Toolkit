@@ -8,7 +8,7 @@ Self-contained Claude Code plugins. Each plugin repo includes everything needed 
 |--------|------|-------------|---------|
 | Bookmark | [tyroneross/bookmark](https://github.com/tyroneross/bookmark) | Session context continuity — auto-save and restore across compactions | 0.3.2 |
 | Claude Code Debugger | [tyroneross/claude-code-debugger](https://github.com/tyroneross/claude-code-debugger) | Debugging memory — verdict-based retrieval and pattern extraction | 1.8.0 |
-| IBR | [tyroneross/interface-built-right](https://github.com/tyroneross/interface-built-right) | UI validation — live page scanning and visual regression | 0.7.0 |
+| IBR | [tyroneross/interface-built-right](https://github.com/tyroneross/interface-built-right) | UI validation — live page scanning and visual regression | 0.8.0 |
 | NavGator | [tyroneross/NavGator](https://github.com/tyroneross/NavGator) | Architecture tracking — dependency mapping and impact analysis | 0.6.1 |
 | Showcase | [tyroneross/showcase](https://github.com/tyroneross/showcase) | Dev asset capture — screenshots and video for blog/website content | 0.1.0 |
 | Build Loop | [tyroneross/build-loop](https://github.com/tyroneross/build-loop) | Orchestrated 8-phase dev loop with agents, evals, and fact-checking | 0.1.0 |

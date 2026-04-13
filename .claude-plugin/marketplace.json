@@ -48,7 +48,7 @@
     {
       "name": "ibr",
       "description": "UI validation — verify implementations match intent with live page scanning and visual regression",
-      "version": "0.7.0",
+      "version": "0.8.0",
       "author": {
         "name": "Tyrone Ross"
       },
