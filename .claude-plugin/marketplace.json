@@ -149,6 +149,30 @@
         "memory",
         "observability"
       ]
+    },
+    {
+      "name": "pyramid-principle",
+      "description": "Barbara Minto's Pyramid Principle as composable writing skills — short-form, long-form, presentations, and audit",
+      "version": "0.1.0",
+      "author": {
+        "name": "Tyrone Ross"
+      },
+      "source": {
+        "source": "github",
+        "repo": "tyroneross/pyramid-principle"
+      },
+      "repository": "https://github.com/tyroneross/pyramid-principle",
+      "category": "writing",
+      "keywords": [
+        "writing",
+        "pyramid-principle",
+        "minto",
+        "communication",
+        "executive",
+        "audit",
+        "scqa",
+        "mece"
+      ]
     }
   ]
 }
