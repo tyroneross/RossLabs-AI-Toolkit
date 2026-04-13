@@ -195,6 +195,114 @@
         "rewriting",
         "scoring"
       ]
+    },
+    {
+      "name": "replit-migrate",
+      "description": "Migrate Replit apps to web (Vercel) or native (iOS/macOS) with encoded lessons from real migrations",
+      "version": "0.1.0",
+      "author": {
+        "name": "Tyrone Ross"
+      },
+      "source": {
+        "source": "github",
+        "repo": "tyroneross/replit-migrate"
+      },
+      "repository": "https://github.com/tyroneross/replit-migrate",
+      "category": "developer-tools",
+      "keywords": [
+        "replit",
+        "migration",
+        "ios",
+        "vercel",
+        "native"
+      ]
+    },
+    {
+      "name": "scraper-app",
+      "description": "Intelligent web scraper for extracting blog/news content from any website",
+      "version": "0.5.0",
+      "author": {
+        "name": "Tyrone Ross"
+      },
+      "source": {
+        "source": "github",
+        "repo": "tyroneross/blog-content-scraper"
+      },
+      "repository": "https://github.com/tyroneross/blog-content-scraper",
+      "category": "developer-tools",
+      "keywords": [
+        "scraper",
+        "web",
+        "blog",
+        "rss",
+        "content",
+        "llm",
+        "articles"
+      ]
+    },
+    {
+      "name": "stratagem",
+      "description": "Market research agent with document processing, web scraping, SEC filings, and financial analysis",
+      "version": "0.1.0",
+      "author": {
+        "name": "Tyrone Ross"
+      },
+      "source": {
+        "source": "github",
+        "repo": "tyroneross/stratagem",
+        "path": "plugin"
+      },
+      "repository": "https://github.com/tyroneross/stratagem",
+      "category": "research",
+      "keywords": [
+        "research",
+        "sec",
+        "financial-analysis",
+        "market-research",
+        "earnings"
+      ]
+    },
+    {
+      "name": "mockup-gallery",
+      "description": "Visual mockup review gallery with component-level ratings, auto-save to file, and Claude Code integration",
+      "version": "0.4.0",
+      "author": {
+        "name": "Tyrone Ross"
+      },
+      "source": {
+        "source": "github",
+        "repo": "tyroneross/mockup-gallery"
+      },
+      "repository": "https://github.com/tyroneross/mockup-gallery",
+      "category": "design",
+      "keywords": [
+        "design-review",
+        "mockups",
+        "ui",
+        "ratings"
+      ]
+    },
+    {
+      "name": "spectra",
+      "description": "Content capture for marketing — screenshots, videos, and app usage sequences for blog posts, social media, and documentation across web, macOS, iOS, and watchOS",
+      "version": "0.1.0",
+      "author": {
+        "name": "Tyrone Ross"
+      },
+      "source": {
+        "source": "github",
+        "repo": "tyroneross/spectra"
+      },
+      "repository": "https://github.com/tyroneross/spectra",
+      "category": "developer-tools",
+      "keywords": [
+        "screenshots",
+        "video-capture",
+        "content-creation",
+        "marketing",
+        "demo-recording",
+        "accessibility"
+      ]
     }
   ]
 }
