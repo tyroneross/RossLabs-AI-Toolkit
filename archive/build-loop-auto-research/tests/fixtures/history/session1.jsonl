@@ -1,0 +1,5 @@
+{"type":"session_meta","payload":{"id":"s1","thread_name":"Auth flow review"}}
+{"type":"event_msg","payload":{"type":"user_message","message":"check the current auth flow and review the repo"}}
+{"type":"event_msg","payload":{"type":"user_message","message":"go for it"}}
+{"type":"event_msg","payload":{"type":"user_message","message":"re-check the integration and compare the current behavior"}}
+{"type":"event_msg","payload":{"type":"user_message","message":"commit and push once it passes"}}

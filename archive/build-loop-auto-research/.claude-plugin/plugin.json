@@ -1,0 +1,25 @@
+{
+  "name": "build-loop-auto-research",
+  "version": "0.2.0",
+  "description": "Build-loop extension with Karpathy's autoresearch pattern: constrained scope + mechanical metric + git commit/revert + autonomous iteration for app development optimization.",
+  "author": {
+    "name": "Tyrone Ross",
+    "url": "https://github.com/tyroneross"
+  },
+  "commands": "./commands",
+  "agents": "./agents",
+  "hooks": "./hooks/hooks.json",
+  "skills": "./skills",
+  "homepage": "https://github.com/tyroneross/build-loop-auto-research",
+  "license": "MIT",
+  "keywords": [
+    "autoresearch",
+    "optimization",
+    "research",
+    "planning",
+    "iteration",
+    "metrics",
+    "build-loop",
+    "software-engineering"
+  ]
+}

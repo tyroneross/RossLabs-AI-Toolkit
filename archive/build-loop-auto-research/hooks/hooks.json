@@ -1,0 +1,25 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "build-loop-auto-research is installed. Prefer the bundled skills as the stable interface: use `build-loop-auto-research` for the full phase loop, `autoresearch-loop` for autonomous metric-driven optimization, `research-build` for a packet shortcut, `analyze-history` for pattern extraction, `optimize-brief` to tighten a rough request, `context-snapshot` or `context-restore` for local context continuity, and `memory-lookup` before repeating an issue investigation. Commands: /autoresearch [goal], /autoresearch:plan, /autoresearch:status."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "If a deploy, release, or push step appears imminent for work being managed by build-loop-auto-research, briefly remind the user to confirm the loop reached fact-check and report with integration/documentation checks complete."
+          }
+        ]
+      }
+    ]
+  }
+}

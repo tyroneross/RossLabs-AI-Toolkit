@@ -1,0 +1,5 @@
+{"type":"session_meta","payload":{"id":"s2","thread_name":"Prompt handoff"}}
+{"type":"event_msg","payload":{"type":"user_message","message":"review the current prompt flow"}}
+{"type":"event_msg","payload":{"type":"user_message","message":"do this"}}
+{"type":"event_msg","payload":{"type":"user_message","message":"verify the result and compare to the previous version"}}
+{"type":"event_msg","payload":{"type":"user_message","message":"draft the plan in markdown so i can copy paste it"}}
