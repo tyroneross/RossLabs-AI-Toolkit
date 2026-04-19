@@ -1,12 +1,19 @@
 #!/usr/bin/env -S npx tsx
 import { Command } from 'commander';
 import { loadConfig, ConfigMissingError, DEFAULT_CONFIG_PATH } from './config.ts';
-import { scanSourcePlugins, readMarketplaceManifests, readRegistry } from './scan.ts';
+import {
+  scanSourcePlugins,
+  readMarketplaceManifests,
+  readRegistry,
+  DuplicateSourcePluginError,
+  type SourcePlugin,
+} from './scan.ts';
 import { computeDrift, type DriftReport } from './drift.ts';
 import { applyFixes, updateReadmes, writeStateFile } from './apply.ts';
 import { installHooks, uninstallHooks } from './hooks.ts';
 import { lintPlugins, type LintIssue } from './lint.ts';
 import { color, collapseHome } from './util.ts';
+import { auditCodexInstallability, type CodexAuditReport } from './codex.ts';
 
 const program = new Command();
 
@@ -21,14 +28,35 @@ program
   .command('status')
   .description('Print drift report (read-only)')
   .option('--json', 'emit machine-readable JSON instead of a table')
+  .option(
+    '--source-set-only',
+    'ignore orphan registry entries outside the configured canonical source set'
+  )
   .action((opts) => {
-    const drift = gather();
+    const drift = gather({ sourceSetOnly: opts.sourceSetOnly });
     if (opts.json) {
       console.log(JSON.stringify(drift, null, 2));
       process.exit(drift.hasDrift ? 1 : 0);
     }
     printStatus(drift);
     process.exit(drift.hasDrift ? 1 : 0);
+  });
+
+// ---- codex ----
+program
+  .command('codex')
+  .description('Audit Codex installability across source plugins (read-only)')
+  .option('--json', 'emit machine-readable JSON instead of a table')
+  .action((opts) => {
+    const config = tryLoadConfig();
+    const sources = scanSourcesOrExit(config);
+    const report = auditCodexInstallability(sources);
+    if (opts.json) {
+      console.log(JSON.stringify(report, null, 2));
+      process.exit(report.hasIssues ? 1 : 0);
+    }
+    printCodexStatus(report);
+    process.exit(report.hasIssues ? 1 : 0);
   });
 
 // ---- fix ----
@@ -38,7 +66,7 @@ program
   .option('--quiet', 'only print if changes were made')
   .action((opts) => {
     const config = tryLoadConfig();
-    const sources = scanSourcePlugins(config.searchRoots, config.exclude);
+    const sources = scanSourcesOrExit(config);
     const manifests = readMarketplaceManifests(config.marketplaceManifests);
     const registry = readRegistry(config.claudeCodeRegistry);
     const drift = computeDrift(sources, manifests, registry);
@@ -65,7 +93,7 @@ program
   .description('Write snapshot to state.json (dashboard input)')
   .action(() => {
     const config = tryLoadConfig();
-    const sources = scanSourcePlugins(config.searchRoots, config.exclude);
+    const sources = scanSourcesOrExit(config);
     const manifests = readMarketplaceManifests(config.marketplaceManifests);
     const registry = readRegistry(config.claudeCodeRegistry);
     const drift = computeDrift(sources, manifests, registry);
@@ -79,7 +107,7 @@ program
   .description('Update auto-managed sections in marketplace README files')
   .action(() => {
     const config = tryLoadConfig();
-    const sources = scanSourcePlugins(config.searchRoots, config.exclude);
+    const sources = scanSourcesOrExit(config);
     const manifests = readMarketplaceManifests(config.marketplaceManifests);
     const registry = readRegistry(config.claudeCodeRegistry);
     const drift = computeDrift(sources, manifests, registry);
@@ -100,7 +128,7 @@ program
   .option('--json', 'emit machine-readable JSON instead of a grouped report')
   .action((opts) => {
     const config = tryLoadConfig();
-    const sources = scanSourcePlugins(config.searchRoots, config.exclude);
+    const sources = scanSourcesOrExit(config);
     const issues = lintPlugins(sources);
 
     if (opts.json) {
@@ -123,7 +151,7 @@ program
   .description('Install post-commit hooks in every source plugin repo')
   .action(() => {
     const config = tryLoadConfig();
-    const sources = scanSourcePlugins(config.searchRoots, config.exclude);
+    const sources = scanSourcesOrExit(config);
     const result = installHooks(sources);
 
     if (result.installed.length > 0) {
@@ -142,7 +170,7 @@ program
   .description('Remove plugin-sync post-commit hooks from every source plugin repo')
   .action(() => {
     const config = tryLoadConfig();
-    const sources = scanSourcePlugins(config.searchRoots, config.exclude);
+    const sources = scanSourcesOrExit(config);
     const result = uninstallHooks(sources);
 
     if (result.removed.length > 0) {
@@ -177,12 +205,40 @@ function tryLoadConfig() {
   }
 }
 
-function gather(): DriftReport {
+function gather(opts?: { sourceSetOnly?: boolean }): DriftReport {
   const config = tryLoadConfig();
-  const sources = scanSourcePlugins(config.searchRoots, config.exclude);
+  const sources = scanSourcesOrExit(config);
   const manifests = readMarketplaceManifests(config.marketplaceManifests);
   const registry = readRegistry(config.claudeCodeRegistry);
-  return computeDrift(sources, manifests, registry);
+  const drift = computeDrift(sources, manifests, registry);
+  if (opts?.sourceSetOnly) {
+    return scopeDriftToSourceSet(drift);
+  }
+  return drift;
+}
+
+function scanSourcesOrExit(config: ReturnType<typeof tryLoadConfig>): SourcePlugin[] {
+  try {
+    return scanSourcePlugins(config.searchRoots, config.exclude, config.excludePaths);
+  } catch (err) {
+    if (err instanceof DuplicateSourcePluginError) {
+      console.error(color('error: duplicate plugin names detected in source roots', 'red'));
+      for (const duplicate of err.duplicates) {
+        console.error(color(`\n${duplicate.name}`, 'yellow'));
+        for (const sourceDir of duplicate.sourceDirs) {
+          console.error(`  ${collapseHome(sourceDir)}`);
+        }
+      }
+      console.error(
+        color(
+          '\nResolve by excluding toolkit mirrors or removing duplicate package roots before running plugin-sync.',
+          'dim'
+        )
+      );
+      process.exit(2);
+    }
+    throw err;
+  }
 }
 
 function printStatus(drift: DriftReport): void {
@@ -235,6 +291,73 @@ function printStatus(drift: DriftReport): void {
   } else {
     console.log(color('✓ Everything in sync.', 'green'));
   }
+}
+
+function scopeDriftToSourceSet(drift: DriftReport): DriftReport {
+  const hasPluginDrift = drift.plugins.some((plugin) => plugin.status !== 'in-sync');
+  return {
+    ...drift,
+    orphanRegistry: [],
+    hasDrift: hasPluginDrift,
+  };
+}
+
+function printCodexStatus(report: CodexAuditReport): void {
+  if (report.plugins.length === 0) {
+    console.log(color('No source plugins found in configured searchRoots.', 'yellow'));
+    return;
+  }
+
+  const nameW = Math.max(6, ...report.plugins.map((p) => p.source.name.length));
+  const pathW = Math.max(
+    5,
+    ...report.plugins.map((p) => collapseHome(p.source.sourceDir).length)
+  );
+  const surfaceW = Math.max(
+    7,
+    ...report.plugins.map((p) =>
+      `${p.skillsCount} skill${p.skillsCount === 1 ? '' : 's'}${p.hasMcpSurface ? ' + MCP' : ''}`
+        .length
+    )
+  );
+  const header = `${pad('plugin', nameW)}  ${pad('source', pathW)}  ${pad('surface', surfaceW)}  codex`;
+  console.log(color(header, 'bold'));
+  console.log(color('─'.repeat(header.length), 'dim'));
+
+  for (const plugin of report.plugins) {
+    const surface = `${plugin.skillsCount} skill${plugin.skillsCount === 1 ? '' : 's'}${
+      plugin.hasMcpSurface ? ' + MCP' : ''
+    }`;
+    const icon = plugin.ok ? color('✓', 'green') : color('✗', 'red');
+    const statusText = plugin.ok
+      ? color(plugin.summary, 'green')
+      : color(plugin.summary, 'red');
+    console.log(
+      `${pad(plugin.source.name, nameW)}  ${pad(
+        collapseHome(plugin.source.sourceDir),
+        pathW
+      )}  ${pad(surface, surfaceW)}  ${icon} ${statusText}`
+    );
+  }
+
+  const failures = report.plugins.filter((plugin) => !plugin.ok);
+  if (failures.length > 0) {
+    console.log(color('\nCodex audit issues:', 'yellow'));
+    for (const plugin of failures) {
+      console.log(color(`\n${plugin.source.name}`, 'yellow'));
+      for (const issue of plugin.issues) {
+        console.log(`  • ${issue.message}`);
+      }
+    }
+    console.log();
+    console.log(
+      color('Codex issues detected — fix them before treating the plugin as Codex-installable.', 'yellow')
+    );
+    return;
+  }
+
+  console.log();
+  console.log(color('✓ All source plugins passed the Codex installability audit.', 'green'));
 }
 
 function pad(s: string, w: number): string {

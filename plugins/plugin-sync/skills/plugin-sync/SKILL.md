@@ -1,6 +1,6 @@
 ---
 name: plugin-sync
-description: Use when the user asks to "sync plugins", "check plugin versions", "which plugins are drifting", "refresh marketplace versions", "update the plugin readme", "install plugin-sync hooks", "lint my plugin manifests", "validate plugin.json paths", "plugin-sync status", or similar. Tool tracks local Claude Code plugins across source repos, marketplace manifests, and Claude Code's installed_plugins.json registry; detects drift and optionally fixes it; also lints plugin.json path fields against the manifest reference rules. Personal tool scoped to its author's machine — bail silently if ~/.config/claude-plugins/config.json is missing.
+description: Use when the user asks to "sync plugins", "check plugin versions", "which plugins are drifting", "refresh marketplace versions", "update the plugin readme", "install plugin-sync hooks", "lint my plugin manifests", "validate plugin.json paths", "audit Codex installability", "plugin-sync status", or similar. Tool tracks local Claude Code plugins across source repos, marketplace manifests, and Claude Code's installed_plugins.json registry; detects drift and optionally fixes it; also lints plugin.json path fields against the manifest reference rules and audits additive Codex packaging. Personal tool scoped to its author's machine — bail silently if ~/.config/claude-plugins/config.json is missing.
 ---
 
 # plugin-sync
@@ -34,6 +34,9 @@ The tool is installed at `~/.local/bin/plugin-sync` (wrapper around `tsx` runnin
 |---|---|
 | `plugin-sync status` | Read-only drift report — exits 0 if clean, 1 if drift found |
 | `plugin-sync status --json` | Same, machine-readable output |
+| `plugin-sync status --source-set-only` | Same drift report, but ignores orphan registry entries outside the configured canonical source set |
+| `plugin-sync codex` | Read-only audit of Codex installability across canonical source plugins |
+| `plugin-sync codex --json` | Same, machine-readable output |
 | `plugin-sync fix` | Update marketplace manifests and registry to match source versions |
 | `plugin-sync fix --quiet` | Same, but silent when nothing changed (used by git hooks) |
 | `plugin-sync state` | Write `~/.config/claude-plugins/state.json` snapshot (dashboard input) |
@@ -51,6 +54,14 @@ The tool is installed at `~/.local/bin/plugin-sync` (wrapper around `tsx` runnin
 4. On confirmation, run `plugin-sync fix` and show its output
 5. Offer to also run `plugin-sync readme` if any marketplace manifests changed (so the README table reflects the fix)
 
+If the user is validating the canonical source set rather than the entire local Claude registry, prefer `plugin-sync status --source-set-only`.
+
+## Typical flow when user asks about Codex packaging
+
+1. Run `plugin-sync codex`
+2. Summarize any missing `.codex-plugin/plugin.json` manifests, missing Codex docs, or plugins with no Codex-usable surface
+3. Keep the recommendation additive — Codex packaging must not weaken Claude behavior
+
 ## Typical flow when user asks to install auto-sync
 
 1. Run `plugin-sync install-hooks`
@@ -62,6 +73,7 @@ The tool is installed at `~/.local/bin/plugin-sync` (wrapper around `tsx` runnin
 - `✓ in sync` — source version matches all marketplace + registry entries
 - `○ orphan` — plugin source found but not referenced anywhere (informational; not an error)
 - `✗ drift` — source version differs from at least one marketplace/registry version, OR a registry entry's installPath doesn't exist on disk
+- **Duplicate source error** — more than one canonical source root advertises the same plugin name; fix the config or the duplicate package roots before continuing
 - **Orphan registry entries** — third-party or uninstalled plugins still referenced by `installed_plugins.json`; the tool never modifies these automatically
 
 ## What the tool will NOT do

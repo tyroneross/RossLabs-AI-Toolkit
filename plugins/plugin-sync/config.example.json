@@ -6,6 +6,13 @@
     "~/Desktop/git-folder"
   ],
 
+  "excludePaths": [
+    "~/Desktop/git-folder/RossLabs-AI-Toolkit/plugins",
+    "~/Desktop/git-folder/RossLabs-AI-Toolkit/skills",
+    "~/Desktop/git-folder/RossLabs-AI-Toolkit/archive",
+    "~/Desktop/git-folder/secrets-vault/plugins"
+  ],
+
   "marketplaceManifests": [
     "~/Desktop/git-folder/RossLabs-AI-Toolkit/.claude-plugin/marketplace.json"
   ],

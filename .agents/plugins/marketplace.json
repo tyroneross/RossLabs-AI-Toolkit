@@ -1,0 +1,200 @@
+{
+  "name": "ross-labs-local",
+  "interface": {
+    "displayName": "RossLabs local"
+  },
+  "plugins": [
+    {
+      "name": "build-loop",
+      "source": {
+        "source": "local",
+        "path": "./plugins/build-loop"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Coding"
+    },
+    {
+      "name": "claude-code-debugger",
+      "source": {
+        "source": "local",
+        "path": "./plugins/claude-code-debugger"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Coding"
+    },
+    {
+      "name": "prompt-builder",
+      "source": {
+        "source": "local",
+        "path": "./plugins/prompt-builder"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Coding"
+    },
+    {
+      "name": "agent-builder",
+      "source": {
+        "source": "local",
+        "path": "./plugins/agent-builder"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Coding"
+    },
+    {
+      "name": "agent-astronomer",
+      "source": {
+        "source": "local",
+        "path": "./plugins/agent-astronomer"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Coding"
+    },
+    {
+      "name": "gator",
+      "source": {
+        "source": "local",
+        "path": "./plugins/gator"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Coding"
+    },
+    {
+      "name": "ibr",
+      "source": {
+        "source": "local",
+        "path": "./plugins/ibr"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Coding"
+    },
+    {
+      "name": "replit-migrate",
+      "source": {
+        "source": "local",
+        "path": "./plugins/replit-migrate"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Coding"
+    },
+    {
+      "name": "scraper-app",
+      "source": {
+        "source": "local",
+        "path": "./plugins/scraper-app"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Coding"
+    },
+    {
+      "name": "bookmark",
+      "source": {
+        "source": "local",
+        "path": "./plugins/bookmark"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "pyramid-principle",
+      "source": {
+        "source": "local",
+        "path": "./plugins/pyramid-principle"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "showcase",
+      "source": {
+        "source": "local",
+        "path": "./plugins/showcase"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "spectra",
+      "source": {
+        "source": "local",
+        "path": "./plugins/spectra"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "research",
+      "source": {
+        "source": "local",
+        "path": "./plugins/research"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Research"
+    },
+    {
+      "name": "stratagem",
+      "source": {
+        "source": "local",
+        "path": "./plugins/stratagem"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Research"
+    },
+    {
+      "name": "mockup-gallery",
+      "source": {
+        "source": "local",
+        "path": "./plugins/mockup-gallery"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Design"
+    }
+  ]
+}

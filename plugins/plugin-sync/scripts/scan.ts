@@ -9,8 +9,27 @@ export interface SourcePlugin {
   description: string;
   sourceDir: string;
   pluginJsonPath: string;
+  codexPluginJsonPath: string | null;
+  legacyCodexPluginJsonPath: string | null;
+  readmePath: string | null;
   /** Raw plugin.json for passthrough when writing marketplace entries */
   raw: Record<string, unknown>;
+}
+
+export interface DuplicatePluginSource {
+  name: string;
+  sourceDirs: string[];
+}
+
+export class DuplicateSourcePluginError extends Error {
+  constructor(public duplicates: DuplicatePluginSource[]) {
+    super(
+      duplicates
+        .map((duplicate) => `${duplicate.name}: ${duplicate.sourceDirs.join(', ')}`)
+        .join('\n')
+    );
+    this.name = 'DuplicateSourcePluginError';
+  }
 }
 
 /** A manifest entry in a marketplace.json `plugins[]` array */
@@ -39,25 +58,41 @@ export interface RegistryEntry {
  * Walk searchRoots and find every directory containing `.claude-plugin/plugin.json`.
  * Does not recurse into a plugin once found (prevents double-counting nested plugins).
  */
-export function scanSourcePlugins(searchRoots: string[], exclude: string[]): SourcePlugin[] {
+export function scanSourcePlugins(
+  searchRoots: string[],
+  exclude: string[],
+  excludePaths: string[] = []
+): SourcePlugin[] {
   const plugins: SourcePlugin[] = [];
   const excludeSet = new Set(exclude);
+  const expandedExcludePaths = excludePaths.map((p) => path.resolve(expandHome(p)));
 
   for (const root of searchRoots) {
     const abs = expandHome(root);
     if (!fs.existsSync(abs)) continue;
-    walk(abs, plugins, excludeSet);
+    walk(abs, plugins, excludeSet, expandedExcludePaths);
   }
 
   // Sort for stable output
   plugins.sort((a, b) => a.name.localeCompare(b.name));
+  throwOnDuplicatePluginNames(plugins);
   return plugins;
 }
 
-function walk(dir: string, plugins: SourcePlugin[], exclude: Set<string>): void {
+function walk(
+  dir: string,
+  plugins: SourcePlugin[],
+  exclude: Set<string>,
+  excludePaths: string[]
+): void {
+  if (isExcludedPath(dir, excludePaths)) return;
+
   const pluginJson = path.join(dir, '.claude-plugin', 'plugin.json');
   if (fs.existsSync(pluginJson)) {
     const raw = readJsonOrNull<Record<string, unknown>>(pluginJson);
+    const codexPluginJson = path.join(dir, '.codex-plugin', 'plugin.json');
+    const legacyCodexPluginJson = path.join(dir, '.Codex-plugin', 'plugin.json');
+    const readmePath = path.join(dir, 'README.md');
     if (raw && typeof raw.name === 'string' && typeof raw.version === 'string') {
       plugins.push({
         name: raw.name,
@@ -65,6 +100,11 @@ function walk(dir: string, plugins: SourcePlugin[], exclude: Set<string>): void 
         description: typeof raw.description === 'string' ? raw.description : '',
         sourceDir: dir,
         pluginJsonPath: pluginJson,
+        codexPluginJsonPath: fs.existsSync(codexPluginJson) ? codexPluginJson : null,
+        legacyCodexPluginJsonPath: fs.existsSync(legacyCodexPluginJson)
+          ? legacyCodexPluginJson
+          : null,
+        readmePath: fs.existsSync(readmePath) ? readmePath : null,
         raw,
       });
     }
@@ -85,7 +125,47 @@ function walk(dir: string, plugins: SourcePlugin[], exclude: Set<string>): void 
     // Skip hidden dirs except we still recurse into the top-level because
     // .claude-plugin/plugin.json is detected via the explicit path above.
     if (entry.name.startsWith('.')) continue;
-    walk(path.join(dir, entry.name), plugins, exclude);
+    walk(path.join(dir, entry.name), plugins, exclude, excludePaths);
+  }
+}
+
+function isExcludedPath(dir: string, excludePaths: string[]): boolean {
+  const resolvedDir = path.resolve(dir);
+  return excludePaths.some((excludedPath) => {
+    if (resolvedDir === excludedPath) return true;
+    return resolvedDir.startsWith(excludedPath + path.sep);
+  });
+}
+
+function throwOnDuplicatePluginNames(plugins: SourcePlugin[]): void {
+  const grouped = new Map<string, Set<string>>();
+
+  for (const plugin of plugins) {
+    const sourceDirs = grouped.get(plugin.name) ?? new Set<string>();
+    sourceDirs.add(realSourceDir(plugin.sourceDir));
+    grouped.set(plugin.name, sourceDirs);
+  }
+
+  const duplicates: DuplicatePluginSource[] = [];
+  for (const [name, sourceDirs] of grouped) {
+    if (sourceDirs.size < 2) continue;
+    duplicates.push({
+      name,
+      sourceDirs: Array.from(sourceDirs).sort(),
+    });
+  }
+
+  if (duplicates.length > 0) {
+    duplicates.sort((a, b) => a.name.localeCompare(b.name));
+    throw new DuplicateSourcePluginError(duplicates);
+  }
+}
+
+function realSourceDir(sourceDir: string): string {
+  try {
+    return fs.realpathSync.native(sourceDir);
+  } catch {
+    return path.resolve(sourceDir);
   }
 }
 

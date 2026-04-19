@@ -46,30 +46,9 @@
       ]
     },
     {
-      "name": "research",
-      "description": "Central, token-efficient research knowledge base — SQLite FTS5, source tier scoring, claim verification, lifecycle management. Persists to ~/research/ with project symlinks.",
-      "version": "0.3.1",
-      "author": {
-        "name": "Tyrone Ross"
-      },
-      "source": {
-        "source": "github",
-        "repo": "tyroneross/research"
-      },
-      "repository": "https://github.com/tyroneross/research",
-      "category": "developer-tools",
-      "keywords": [
-        "research",
-        "knowledge-base",
-        "fact-checking",
-        "source-scoring",
-        "fts5"
-      ]
-    },
-    {
       "name": "ibr",
       "description": "UI validation — verify implementations match intent with live page scanning and visual regression",
-      "version": "1.0.0",
+      "version": "1.0.0-alpha",
       "author": {
         "name": "Tyrone Ross"
       },
@@ -128,7 +107,7 @@
     {
       "name": "build-loop",
       "description": "Orchestrated 8-phase development loop with agents, evals, and fact-checking",
-      "version": "0.2.0",
+      "version": "0.2.0-alpha",
       "author": {
         "name": "Tyrone Ross"
       },
@@ -326,26 +305,26 @@
       ]
     },
     {
-      "name": "agent-astronomer",
-      "description": "Query your local Claude Code skill, agent, and plugin library from any conversation. Wraps the Agent Astronomer CLI (bin/aa) as MCP tools.",
+      "name": "research",
+      "description": "Central research knowledge base — SQLite FTS5 index, Dendron slugs, three-layer template, deterministic source scoring, claim verification (arXiv/OpenAlex/SymPy), and lifecycle management with archive and staleness detection",
       "version": "0.1.0",
       "author": {
         "name": "Tyrone Ross"
       },
       "source": {
         "source": "github",
-        "repo": "tyroneross/agent-astronomer",
-        "path": "plugin"
+        "repo": "tyroneross/research"
       },
-      "repository": "https://github.com/tyroneross/agent-astronomer",
-      "category": "developer-tools",
+      "repository": "https://github.com/tyroneross/research",
+      "category": "research",
       "keywords": [
-        "skills",
-        "plugins",
-        "agents",
-        "search",
-        "library",
-        "catalog"
+        "research",
+        "knowledge-base",
+        "aggregation",
+        "fact-checking",
+        "source-scoring",
+        "fts5",
+        "zettelkasten"
       ]
     }
   ]

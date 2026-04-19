@@ -9,6 +9,9 @@ export const ConfigSchema = z.object({
   /** Directories to walk looking for `.claude-plugin/plugin.json` files */
   searchRoots: z.array(z.string()).min(1),
 
+  /** Absolute or ~/ paths to exclude entirely from search-root walks */
+  excludePaths: z.array(z.string()).default([]),
+
   /** Marketplace manifests to keep in sync with source versions */
   marketplaceManifests: z.array(z.string()).default([]),
 
