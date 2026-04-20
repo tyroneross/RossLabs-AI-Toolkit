@@ -1,10 +1,11 @@
 {
-  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "RossLabs-AI-Toolkit",
-  "description": "Developer productivity plugins and skills for AI coding agents",
+  "name": "rosslabs-ai-toolkit",
   "owner": {
     "name": "Tyrone Ross",
     "email": "tyrone@rosslabs.ai"
+  },
+  "metadata": {
+    "description": "Developer productivity plugins and skills for AI coding agents"
   },
   "plugins": [
     {

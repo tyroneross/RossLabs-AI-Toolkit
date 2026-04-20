@@ -49,17 +49,17 @@ Two steps: add the marketplace, then install plugins from it. In Claude Code's `
 claude plugin marketplace add tyroneross/RossLabs-AI-Toolkit
 
 # Install individual plugins
-claude plugin install bookmark@RossLabs-AI-Toolkit
-claude plugin install claude-code-debugger@RossLabs-AI-Toolkit
-claude plugin install ibr@RossLabs-AI-Toolkit
-claude plugin install navgator@RossLabs-AI-Toolkit
-claude plugin install showcase@RossLabs-AI-Toolkit
-claude plugin install build-loop@RossLabs-AI-Toolkit
-claude plugin install agent-builder@RossLabs-AI-Toolkit
-claude plugin install prompt-builder@RossLabs-AI-Toolkit
-claude plugin install pyramid-principle@RossLabs-AI-Toolkit
-claude plugin install research@RossLabs-AI-Toolkit
-claude plugin install mockup-gallery@RossLabs-AI-Toolkit
+claude plugin install bookmark@rosslabs-ai-toolkit
+claude plugin install claude-code-debugger@rosslabs-ai-toolkit
+claude plugin install ibr@rosslabs-ai-toolkit
+claude plugin install navgator@rosslabs-ai-toolkit
+claude plugin install showcase@rosslabs-ai-toolkit
+claude plugin install build-loop@rosslabs-ai-toolkit
+claude plugin install agent-builder@rosslabs-ai-toolkit
+claude plugin install prompt-builder@rosslabs-ai-toolkit
+claude plugin install pyramid-principle@rosslabs-ai-toolkit
+claude plugin install research@rosslabs-ai-toolkit
+claude plugin install mockup-gallery@rosslabs-ai-toolkit
 ```
 
 **Common mistake**: pasting `https://github.com/tyroneross/RossLabs-AI-Toolkit/tree/main` into the dialog fails because Claude Code appends `.git/` → `…/tree/main.git/` (404). Use the owner/repo form.

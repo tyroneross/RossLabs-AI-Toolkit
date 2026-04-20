@@ -25,7 +25,7 @@ Self-contained Claude Code plugins. Each plugin repo includes everything needed 
 
 ```bash
 # From marketplace
-claude plugin install bookmark@RossLabs-AI-Toolkit
+claude plugin install bookmark@rosslabs-ai-toolkit
 
 # Directly from GitHub
 claude plugin install tyroneross/bookmark
