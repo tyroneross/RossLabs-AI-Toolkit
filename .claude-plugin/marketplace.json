@@ -10,7 +10,7 @@
   "plugins": [
     {
       "name": "bookmark",
-      "description": "Session context continuity — auto-save and restore context across compactions and terminal closures",
+      "description": "Session context continuity \u2014 auto-save and restore context across compactions and terminal closures",
       "version": "0.3.2",
       "author": {
         "name": "Tyrone Ross"
@@ -29,8 +29,8 @@
     },
     {
       "name": "claude-code-debugger",
-      "description": "Debugging memory — learn from past bugs with verdict-based retrieval and pattern extraction",
-      "version": "1.8.0",
+      "description": "Debugging memory \u2014 learn from past bugs with verdict-based retrieval and pattern extraction",
+      "version": "1.8.1",
       "author": {
         "name": "Tyrone Ross"
       },
@@ -48,8 +48,8 @@
     },
     {
       "name": "research",
-      "description": "Central, token-efficient research knowledge base — SQLite FTS5, source tier scoring, claim verification, lifecycle management. Persists to ~/research/ with project symlinks.",
-      "version": "0.3.1",
+      "description": "Central, token-efficient research knowledge base \u2014 SQLite FTS5, source tier scoring, claim verification, lifecycle management. Persists to ~/research/ with project symlinks.",
+      "version": "0.3.2",
       "author": {
         "name": "Tyrone Ross"
       },
@@ -69,8 +69,8 @@
     },
     {
       "name": "ibr",
-      "description": "UI validation — verify implementations match intent with live page scanning and visual regression",
-      "version": "1.0.0",
+      "description": "UI validation \u2014 verify implementations match intent with live page scanning and visual regression",
+      "version": "1.0.1",
       "author": {
         "name": "Tyrone Ross"
       },
@@ -88,8 +88,8 @@
     },
     {
       "name": "navgator",
-      "description": "Architecture tracking — map dependencies, analyze impact, and visualize your stack",
-      "version": "0.6.1",
+      "description": "Architecture tracking \u2014 map dependencies, analyze impact, and visualize your stack",
+      "version": "0.6.2",
       "author": {
         "name": "Tyrone Ross"
       },
@@ -107,8 +107,8 @@
     },
     {
       "name": "showcase",
-      "description": "Dev asset capture — screenshots and video clips during development for blog/website content",
-      "version": "0.1.0",
+      "description": "Dev asset capture \u2014 screenshots and video clips during development for blog/website content",
+      "version": "0.1.1",
       "author": {
         "name": "Tyrone Ross"
       },
@@ -128,7 +128,7 @@
     },
     {
       "name": "build-loop",
-      "description": "Orchestrated 5-phase development loop (Assess → Plan → Execute → Review → Iterate) plus optional Learn. Review combines critic, validate, optimize, fact-check, simplify, and report. Includes NavGator / claude-code-debugger / logging-tracer bridges with standalone fallbacks. Opus 4.7 orchestrator.",
+      "description": "Orchestrated 5-phase development loop (Assess \u2192 Plan \u2192 Execute \u2192 Review \u2192 Iterate) plus optional Learn. Review combines critic, validate, optimize, fact-check, simplify, and report. Includes NavGator / claude-code-debugger / logging-tracer bridges with standalone fallbacks. Opus 4.7 orchestrator.",
       "version": "0.3.0",
       "author": {
         "name": "Tyrone Ross"
@@ -150,7 +150,7 @@
     },
     {
       "name": "agent-builder",
-      "description": "Design and evaluate agentic harnesses — methodology playbooks plus an empirical catalog of architectures, frameworks, memory substrates, and production lab patterns",
+      "description": "Design and evaluate agentic harnesses \u2014 methodology playbooks plus an empirical catalog of architectures, frameworks, memory substrates, and production lab patterns",
       "version": "0.1.0",
       "author": {
         "name": "Tyrone Ross"
@@ -176,8 +176,8 @@
     },
     {
       "name": "pyramid-principle",
-      "description": "Barbara Minto's Pyramid Principle as composable writing skills — short-form, long-form, presentations, and audit",
-      "version": "0.1.1",
+      "description": "Barbara Minto's Pyramid Principle as composable writing skills \u2014 short-form, long-form, presentations, and audit",
+      "version": "0.1.2",
       "author": {
         "name": "Tyrone Ross"
       },
@@ -200,8 +200,8 @@
     },
     {
       "name": "prompt-builder",
-      "description": "Prompt Policy Engine — classify, diagnose, rewrite, and score prompts by model tier and deployment. Callable by agents, tools, and slash commands.",
-      "version": "0.1.0",
+      "description": "Prompt Policy Engine \u2014 classify, diagnose, rewrite, and score prompts by model tier and deployment. Callable by agents, tools, and slash commands.",
+      "version": "0.1.1",
       "author": {
         "name": "Tyrone Ross"
       },
@@ -223,7 +223,7 @@
     {
       "name": "replit-migrate",
       "description": "Migrate Replit apps to web (Vercel) or native (iOS/macOS) with encoded lessons from real migrations",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "author": {
         "name": "Tyrone Ross"
       },
@@ -289,7 +289,7 @@
     {
       "name": "mockup-gallery",
       "description": "Visual mockup review gallery with component-level ratings, auto-save to file, and Claude Code integration",
-      "version": "0.4.0",
+      "version": "0.4.1",
       "author": {
         "name": "Tyrone Ross"
       },
@@ -308,8 +308,8 @@
     },
     {
       "name": "spectra",
-      "description": "Content capture for marketing — screenshots, videos, and app usage sequences for blog posts, social media, and documentation across web, macOS, iOS, and watchOS",
-      "version": "0.1.0",
+      "description": "Content capture for marketing \u2014 screenshots, videos, and app usage sequences for blog posts, social media, and documentation across web, macOS, iOS, and watchOS",
+      "version": "0.1.1",
       "author": {
         "name": "Tyrone Ross"
       },
