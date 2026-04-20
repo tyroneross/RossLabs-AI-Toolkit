@@ -127,8 +127,8 @@
     },
     {
       "name": "build-loop",
-      "description": "Orchestrated 8-phase development loop with agents, evals, and fact-checking",
-      "version": "0.2.0",
+      "description": "Orchestrated 5-phase development loop (Assess → Plan → Execute → Review → Iterate) plus optional Learn. Review combines critic, validate, optimize, fact-check, simplify, and report. Includes NavGator / claude-code-debugger / logging-tracer bridges with standalone fallbacks. Opus 4.7 orchestrator.",
+      "version": "0.3.0",
       "author": {
         "name": "Tyrone Ross"
       },
@@ -142,7 +142,9 @@
         "build-loop",
         "orchestration",
         "agents",
-        "evaluation"
+        "evaluation",
+        "self-improvement",
+        "prompt-engineering"
       ]
     },
     {

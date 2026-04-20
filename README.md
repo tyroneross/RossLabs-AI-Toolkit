@@ -24,7 +24,7 @@ archive/     Retired/deprecated items
 | [IBR](https://github.com/tyroneross/interface-built-right) | UI validation — live page scanning and visual regression | `claude plugin install tyroneross/interface-built-right` |
 | [NavGator](https://github.com/tyroneross/NavGator) | Architecture tracking — dependency mapping and impact analysis | `claude plugin install tyroneross/NavGator` |
 | [Showcase](https://github.com/tyroneross/showcase) | Dev asset capture — screenshots and video for blog/website content | `claude plugin install tyroneross/showcase` |
-| [Build Loop](https://github.com/tyroneross/build-loop) | Orchestrated 8-phase dev loop with agents, evals, and fact-checking | `claude plugin install tyroneross/build-loop` |
+| [Build Loop](https://github.com/tyroneross/build-loop) | Orchestrated 5-phase dev loop (+ optional Learn) with bridges to NavGator, debugger, logging-tracer and standalone fallbacks | `claude plugin install tyroneross/build-loop` |
 | [Prompt Builder](https://github.com/tyroneross/prompt-builder) | Prompt Policy Engine — classify, diagnose, rewrite, and score prompts by model tier and deployment | `claude plugin install tyroneross/prompt-builder` |
 
 ## Skills
@@ -40,10 +40,12 @@ archive/     Retired/deprecated items
 
 ## Install
 
-### From the marketplace
+### From the marketplace (recommended)
+
+Two steps: add the marketplace, then install plugins from it. In Claude Code's `/plugin marketplace add` dialog, the input format is **`owner/repo`** — do NOT paste the GitHub web URL.
 
 ```bash
-# Add the marketplace
+# Add the marketplace — use owner/repo format, not a full URL
 claude plugin marketplace add tyroneross/RossLabs-AI-Toolkit
 
 # Install individual plugins
@@ -55,7 +57,12 @@ claude plugin install showcase@RossLabs-AI-Toolkit
 claude plugin install build-loop@RossLabs-AI-Toolkit
 claude plugin install agent-builder@RossLabs-AI-Toolkit
 claude plugin install prompt-builder@RossLabs-AI-Toolkit
+claude plugin install pyramid-principle@RossLabs-AI-Toolkit
+claude plugin install research@RossLabs-AI-Toolkit
+claude plugin install mockup-gallery@RossLabs-AI-Toolkit
 ```
+
+**Common mistake**: pasting `https://github.com/tyroneross/RossLabs-AI-Toolkit/tree/main` into the dialog fails because Claude Code appends `.git/` → `…/tree/main.git/` (404). Use the owner/repo form.
 
 ### Directly from GitHub
 
