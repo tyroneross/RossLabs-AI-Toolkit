@@ -17,15 +17,44 @@ archive/     Retired/deprecated items
 
 ## Plugins
 
-| Plugin | Description | Install |
-|--------|-------------|---------|
-| [Bookmark](https://github.com/tyroneross/bookmark) | Session context continuity — auto-save and restore across compactions | `claude plugin install tyroneross/bookmark` |
-| [Claude Code Debugger](https://github.com/tyroneross/claude-code-debugger) | Debugging memory — verdict-based retrieval and pattern extraction | `claude plugin install tyroneross/claude-code-debugger` |
-| [IBR](https://github.com/tyroneross/interface-built-right) | UI validation — live page scanning and visual regression | `claude plugin install tyroneross/interface-built-right` |
-| [NavGator](https://github.com/tyroneross/NavGator) | Architecture tracking — dependency mapping and impact analysis | `claude plugin install tyroneross/NavGator` |
-| [Showcase](https://github.com/tyroneross/showcase) | Dev asset capture — screenshots and video for blog/website content | `claude plugin install tyroneross/showcase` |
-| [Build Loop](https://github.com/tyroneross/build-loop) | Orchestrated 5-phase dev loop (+ optional Learn) with bridges to NavGator, debugger, logging-tracer and standalone fallbacks | `claude plugin install tyroneross/build-loop` |
-| [Prompt Builder](https://github.com/tyroneross/prompt-builder) | Prompt Policy Engine — classify, diagnose, rewrite, and score prompts by model tier and deployment | `claude plugin install tyroneross/prompt-builder` |
+Browse a clickable version at [rosslabs.ai/toolkit](https://rosslabs.ai/toolkit). Each plugin below links to its repo.
+
+### Core workflow
+
+| Plugin | Version | What it does |
+|--------|---------|--------------|
+| [build-loop](https://github.com/tyroneross/build-loop) | `0.3.0` | Orchestrated 5-phase dev loop — Assess → Plan → Execute → Review → Iterate, plus optional Learn. Opus 4.7 orchestrator with NavGator, debugger, and tracer bridges. |
+| [navgator](https://github.com/tyroneross/NavGator) | `0.6.2` | Architecture tracking — map dependencies, analyze impact, and visualize your stack before you change it. |
+| [ibr](https://github.com/tyroneross/interface-built-right) | `1.0.1` | UI validation — verify implementations match intent with live page scanning and visual regression. |
+| [bookmark](https://github.com/tyroneross/bookmark) | `0.3.2` | Session context continuity — auto-save and restore across compactions and terminal closures. |
+| [claude-code-debugger](https://github.com/tyroneross/claude-code-debugger) | `1.8.1` | Debugging memory — verdict-based retrieval and pattern extraction from past incidents. |
+| [research](https://github.com/tyroneross/research) | `0.3.2` | Token-efficient research KB — SQLite FTS5, source tier scoring, claim verification, lifecycle management. |
+
+### Agents & prompts
+
+| Plugin | Version | What it does |
+|--------|---------|--------------|
+| [agent-builder](https://github.com/tyroneross/agent-builder) | `0.1.0` | Design and evaluate agentic harnesses — playbooks plus a catalog of architectures, memory substrates, and production patterns. |
+| [agent-astronomer](https://github.com/tyroneross/agent-astronomer) | `0.1.0` | Query your local skill, agent, and plugin library from any conversation. Wraps the Agent Astronomer CLI as MCP tools. |
+| [prompt-builder](https://github.com/tyroneross/prompt-builder) | `0.1.1` | Prompt Policy Engine — classify, diagnose, rewrite, and score prompts by model tier and deployment. |
+| [pyramid-principle](https://github.com/tyroneross/pyramid-principle) | `0.1.2` | Barbara Minto's Pyramid Principle as composable writing skills — short-form, long-form, presentations, and audit. |
+
+### Capture, design, and research
+
+| Plugin | Version | What it does |
+|--------|---------|--------------|
+| [showcase](https://github.com/tyroneross/showcase) | `0.1.1` | Dev asset capture — screenshots and video clips during development for blog and website content. |
+| [spectra](https://github.com/tyroneross/spectra) | `0.1.1` | Content capture for marketing — screenshots, videos, and usage sequences across web, macOS, iOS, and watchOS. |
+| [mockup-gallery](https://github.com/tyroneross/mockup-gallery) | `0.4.1` | Visual mockup review with component-level ratings, auto-save to file, and Claude Code integration. |
+| [replit-migrate](https://github.com/tyroneross/replit-migrate) | `0.1.1` | Migrate Replit apps to web (Vercel) or native (iOS/macOS) with encoded lessons from real migrations. |
+| [scraper-app](https://github.com/tyroneross/blog-content-scraper) | `0.5.0` | Intelligent web scraper for extracting blog and news content from any website. |
+| [stratagem](https://github.com/tyroneross/stratagem) | `0.1.0` | Market research agent with document processing, web scraping, SEC filings, and financial analysis. |
+
+Install any of them after adding the marketplace:
+
+```bash
+claude plugin install <name>@rosslabs-ai-toolkit
+```
 
 ## Skills
 
