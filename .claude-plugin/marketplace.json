@@ -128,8 +128,8 @@
     },
     {
       "name": "build-loop",
-      "description": "Orchestrated 5-phase development loop (Assess \u2192 Plan \u2192 Execute \u2192 Review \u2192 Iterate) plus optional Learn. Review combines critic, validate, optimize, fact-check, simplify, and report. Includes NavGator / claude-code-debugger / logging-tracer bridges with standalone fallbacks. Opus 4.7 orchestrator.",
-      "version": "0.3.1",
+      "description": "Orchestrated 5-phase development loop (Assess \u2192 Plan \u2192 Execute \u2192 Review \u2192 Iterate) plus optional Learn. Review combines critic, validate, optimize, fact-check, simplify, and report. Includes NavGator / claude-code-debugger / logging-tracer bridges with standalone fallbacks. Opus 4.7 orchestrator. 0.3.2 adds a deterministic Review-F writer (state.json.runs[] is now actually populated) + plugin cache-sync gate in Review-D.",
+      "version": "0.3.2",
       "author": {
         "name": "Tyrone Ross"
       },
