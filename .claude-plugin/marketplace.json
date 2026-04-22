@@ -350,6 +350,27 @@
         "library",
         "catalog"
       ]
+    },
+    {
+      "name": "api-registry",
+      "description": "Local registry of authoritative API/library/tool source URLs. Prevents stale-training-data drift when configuring or debugging external services.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Tyrone Ross"
+      },
+      "source": {
+        "source": "github",
+        "repo": "tyroneross/api-registry"
+      },
+      "repository": "https://github.com/tyroneross/api-registry",
+      "category": "developer-tools",
+      "keywords": [
+        "api",
+        "registry",
+        "docs",
+        "source-verification",
+        "stale-data"
+      ]
     }
   ]
 }

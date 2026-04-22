@@ -29,6 +29,7 @@ Browse a clickable version at [rosslabs.ai/toolkit](https://rosslabs.ai/toolkit)
 | [bookmark](https://github.com/tyroneross/bookmark) | `0.3.2` | Session context continuity — auto-save and restore across compactions and terminal closures. |
 | [claude-code-debugger](https://github.com/tyroneross/claude-code-debugger) | `1.8.1` | Debugging memory — verdict-based retrieval and pattern extraction from past incidents. |
 | [research](https://github.com/tyroneross/research) | `0.3.2` | Token-efficient research KB — SQLite FTS5, source tier scoring, claim verification, lifecycle management. |
+| [api-registry](https://github.com/tyroneross/api-registry) | `0.1.0` | Local registry of authoritative API/library/tool source URLs — prevents stale-training-data drift when configuring or debugging external services. |
 
 ### Agents & prompts
 
