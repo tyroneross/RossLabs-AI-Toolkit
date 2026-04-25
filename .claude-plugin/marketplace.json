@@ -89,7 +89,7 @@
     {
       "name": "navgator",
       "description": "Architecture tracking \u2014 map dependencies, analyze impact, and visualize your stack",
-      "version": "0.6.2",
+      "version": "0.7.0",
       "author": {
         "name": "Tyrone Ross"
       },
@@ -107,7 +107,7 @@
     },
     {
       "name": "showcase",
-      "description": "[DEPRECATED — use spectra] Dev asset capture \u2014 screenshots and video clips during development for blog/website content. The spectra plugin's spectra_library tool covers all functionality plus a non-destructive migration from .showcase/.",
+      "description": "[DEPRECATED \u2014 use spectra] Dev asset capture \u2014 screenshots and video clips during development for blog/website content. The spectra plugin's spectra_library tool covers all functionality plus a non-destructive migration from .showcase/.",
       "version": "0.1.2",
       "author": {
         "name": "Tyrone Ross"

@@ -24,7 +24,7 @@ Browse a clickable version at [rosslabs.ai/toolkit](https://rosslabs.ai/toolkit)
 | Plugin | Version | What it does |
 |--------|---------|--------------|
 | [build-loop](https://github.com/tyroneross/build-loop) | `0.3.2` | Orchestrated 5-phase dev loop — Assess → Plan → Execute → Review → Iterate, plus optional Learn. Opus 4.7 orchestrator with NavGator, debugger, and tracer bridges. |
-| [navgator](https://github.com/tyroneross/NavGator) | `0.6.2` | Architecture tracking — map dependencies, analyze impact, and visualize your stack before you change it. |
+| [navgator](https://github.com/tyroneross/NavGator) | `0.7.0` | Architecture tracking — map dependencies, analyze impact, and visualize your stack before you change it. |
 | [ibr](https://github.com/tyroneross/interface-built-right) | `1.0.1` | UI validation — verify implementations match intent with live page scanning and visual regression. |
 | [bookmark](https://github.com/tyroneross/bookmark) | `0.3.2` | Session context continuity — auto-save and restore across compactions and terminal closures. |
 | [claude-code-debugger](https://github.com/tyroneross/claude-code-debugger) | `1.8.1` | Debugging memory — verdict-based retrieval and pattern extraction from past incidents. |
