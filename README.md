@@ -28,7 +28,7 @@ Browse a clickable version at [rosslabs.ai/toolkit](https://rosslabs.ai/toolkit)
 | [ibr](https://github.com/tyroneross/interface-built-right) | `1.0.1` | UI validation — verify implementations match intent with live page scanning and visual regression. |
 | [bookmark](https://github.com/tyroneross/bookmark) | `0.3.2` | Session context continuity — auto-save and restore across compactions and terminal closures. |
 | [claude-code-debugger](https://github.com/tyroneross/claude-code-debugger) | `1.8.1` | Debugging memory — verdict-based retrieval and pattern extraction from past incidents. |
-| [research](https://github.com/tyroneross/research) | `0.3.2` | Token-efficient research KB — SQLite FTS5, source tier scoring, claim verification, lifecycle management. |
+| [research](https://github.com/tyroneross/research) | `0.3.3` | Token-efficient research KB — SQLite FTS5, source tier scoring, claim verification, lifecycle management. |
 | [api-registry](https://github.com/tyroneross/api-registry) | `0.1.0` | Local registry of authoritative API/library/tool source URLs — prevents stale-training-data drift when configuring or debugging external services. |
 
 ### Agents & prompts
@@ -44,8 +44,8 @@ Browse a clickable version at [rosslabs.ai/toolkit](https://rosslabs.ai/toolkit)
 
 | Plugin | Version | What it does |
 |--------|---------|--------------|
-| [showcase](https://github.com/tyroneross/showcase) | `0.1.1` | **Deprecated — use `spectra`.** Folded into `spectra` v0.2.0 via `spectra_library`; migrate with `spectra_library action="migrate-from-showcase"`. |
-| [spectra](https://github.com/tyroneross/spectra) | `0.2.0` | Content capture + library for marketing — screenshots, videos, usage sequences across web/macOS/iOS/watchOS, with a tagged library (find, gallery, export, migrate-from-showcase). |
+| [showcase](https://github.com/tyroneross/showcase) | `0.1.2` | **Deprecated — use `spectra`.** Folded into `spectra` v0.2.0 via `spectra_library`; migrate with `spectra_library action="migrate-from-showcase"`. |
+| [spectra](https://github.com/tyroneross/spectra) | `0.2.1` | Content capture + library for marketing — screenshots, videos, usage sequences across web/macOS/iOS/watchOS, with a tagged library (find, gallery, export, migrate-from-showcase). |
 | [mockup-gallery](https://github.com/tyroneross/mockup-gallery) | `0.4.1` | Visual mockup review with component-level ratings, auto-save to file, and Claude Code integration. |
 | [replit-migrate](https://github.com/tyroneross/replit-migrate) | `0.1.1` | Migrate Replit apps to web (Vercel) or native (iOS/macOS) with encoded lessons from real migrations. |
 | [web-scraper](https://github.com/tyroneross/blog-content-scraper) | `0.5.0` | Intelligent web scraper for extracting blog and news content from any website. |
