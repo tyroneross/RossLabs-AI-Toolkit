@@ -55,9 +55,9 @@
       },
       "source": {
         "source": "github",
-        "repo": "tyroneross/research"
+        "repo": "tyroneross/research-plugin"
       },
-      "repository": "https://github.com/tyroneross/research",
+      "repository": "https://github.com/tyroneross/research-plugin",
       "category": "developer-tools",
       "keywords": [
         "research",
