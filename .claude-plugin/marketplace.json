@@ -48,8 +48,8 @@
     },
     {
       "name": "research",
-      "description": "Central, token-efficient research knowledge base \u2014 SQLite FTS5, source tier scoring, claim verification, lifecycle management. Persists to ~/research/ with project symlinks.",
-      "version": "0.3.3",
+      "description": "Structured research with central persistence at ~/dev/research/, source scoring, claim verification, quantitative/database analysis, lifecycle management, bulk ingestion, sync-from-markdown, and project symlink views.",
+      "version": "0.5.0",
       "author": {
         "name": "Tyrone Ross"
       },
@@ -129,7 +129,7 @@
     {
       "name": "build-loop",
       "description": "Orchestrated 5-phase development loop (Assess \u2192 Plan \u2192 Execute \u2192 Review \u2192 Iterate) plus optional Learn. Review combines critic, validate, optimize, fact-check, simplify, and report. Includes NavGator / claude-code-debugger / logging-tracer bridges with standalone fallbacks. Opus 4.7 orchestrator. 0.3.5 adds Phase 1 workspace concurrency check (advisory) \u2014 surfaces concurrent Claude sessions and recommends branching from origin/main to avoid silent commit-loss via squash-rebase. Builds on 0.3.4 (intent capture + deployment policy + modular systems guidance from PR #5).",
-      "version": "0.3.5",
+      "version": "0.3.6",
       "author": {
         "name": "Tyrone Ross"
       },

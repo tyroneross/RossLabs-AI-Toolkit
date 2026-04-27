@@ -23,12 +23,12 @@ Browse a clickable version at [rosslabs.ai/toolkit](https://rosslabs.ai/toolkit)
 
 | Plugin | Version | What it does |
 |--------|---------|--------------|
-| [build-loop](https://github.com/tyroneross/build-loop) | `0.3.5` | Orchestrated 5-phase dev loop — Assess → Plan → Execute → Review → Iterate, plus optional Learn. Opus 4.7 orchestrator with NavGator, debugger, and tracer bridges. 0.3.5 adds Phase 1 workspace concurrency check (advisory). |
+| [build-loop](https://github.com/tyroneross/build-loop) | `0.3.6` | Orchestrated 5-phase dev loop — Assess → Plan → Execute → Review → Iterate, plus optional Learn. Opus 4.7 orchestrator with NavGator, debugger, and tracer bridges. UI builds get design-rule gates and visual validation (IBR/simulator). |
 | [navgator](https://github.com/tyroneross/NavGator) | `0.8.0` | Architecture tracking — map dependencies, analyze impact, and visualize your stack before you change it. |
 | [ibr](https://github.com/tyroneross/interface-built-right) | `1.0.1` | UI validation — verify implementations match intent with live page scanning and visual regression. |
 | [bookmark](https://github.com/tyroneross/bookmark) | `0.3.2` | Session context continuity — auto-save and restore across compactions and terminal closures. |
 | [claude-code-debugger](https://github.com/tyroneross/claude-code-debugger) | `1.8.1` | Debugging memory — verdict-based retrieval and pattern extraction from past incidents. |
-| [research](https://github.com/tyroneross/research-plugin) | `0.3.3` | Token-efficient research KB — SQLite FTS5, source tier scoring, claim verification, lifecycle management. |
+| [research](https://github.com/tyroneross/research-plugin) | `0.5.0` | Token-efficient research KB — SQLite FTS5, source tier scoring, claim + quantitative verification, bulk ingest, project symlinks. |
 | [api-registry](https://github.com/tyroneross/api-registry) | `0.1.0` | Local registry of authoritative API/library/tool source URLs — prevents stale-training-data drift when configuring or debugging external services. |
 
 ### Agents & prompts
