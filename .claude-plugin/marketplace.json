@@ -10,7 +10,7 @@
   "plugins": [
     {
       "name": "bookmark",
-      "description": "Session context continuity \u2014 auto-save and restore context across compactions and terminal closures",
+      "description": "Auto-save and restore session context across compactions and restarts",
       "version": "0.3.2",
       "author": {
         "name": "Tyrone Ross"
@@ -29,7 +29,7 @@
     },
     {
       "name": "claude-code-debugger",
-      "description": "Debugging memory \u2014 learn from past bugs with verdict-based retrieval and pattern extraction",
+      "description": "Debug with memory of past bugs — pattern extraction and parallel domain assessment",
       "version": "1.8.1",
       "author": {
         "name": "Tyrone Ross"
@@ -48,7 +48,7 @@
     },
     {
       "name": "research",
-      "description": "Structured research with central persistence at ~/dev/research/, source scoring, claim verification, quantitative/database analysis, lifecycle management, bulk ingestion, sync-from-markdown, and project symlink views.",
+      "description": "Structured research with central knowledge base, source scoring, and claim verification",
       "version": "0.5.0",
       "author": {
         "name": "Tyrone Ross"
@@ -69,7 +69,7 @@
     },
     {
       "name": "ibr",
-      "description": "UI validation \u2014 verify implementations match intent with live page scanning and visual regression",
+      "description": "End-to-end UI design and validation — guided builds, visual checks, mockup matching, native scanning",
       "version": "1.0.1",
       "author": {
         "name": "Tyrone Ross"
@@ -88,7 +88,7 @@
     },
     {
       "name": "navgator",
-      "description": "Architecture tracking \u2014 map dependencies, analyze impact, and visualize your stack",
+      "description": "Map dependencies and analyze blast radius before changing code",
       "version": "0.8.0",
       "author": {
         "name": "Tyrone Ross"
@@ -107,7 +107,7 @@
     },
     {
       "name": "showcase",
-      "description": "[DEPRECATED \u2014 use spectra] Dev asset capture \u2014 screenshots and video clips during development for blog/website content. The spectra plugin's spectra_library tool covers all functionality plus a non-destructive migration from .showcase/.",
+      "description": "[Deprecated — use spectra] Dev asset capture for blog and website content",
       "version": "0.1.2",
       "author": {
         "name": "Tyrone Ross"
@@ -128,7 +128,7 @@
     },
     {
       "name": "build-loop",
-      "description": "Orchestrated 5-phase development loop (Assess \u2192 Plan \u2192 Execute \u2192 Review \u2192 Iterate) plus optional Learn. Review combines critic, validate, optimize, fact-check, simplify, and report. Includes NavGator / claude-code-debugger / logging-tracer bridges with standalone fallbacks. Opus 4.7 orchestrator. 0.3.5 adds Phase 1 workspace concurrency check (advisory) \u2014 surfaces concurrent Claude sessions and recommends branching from origin/main to avoid silent commit-loss via squash-rebase. Builds on 0.3.4 (intent capture + deployment policy + modular systems guidance from PR #5).",
+      "description": "Multi-phase build orchestration: assess, plan, execute, review, iterate. Optional UI design gates.",
       "version": "0.3.6",
       "author": {
         "name": "Tyrone Ross"
@@ -150,14 +150,15 @@
     },
     {
       "name": "agent-builder",
-      "description": "Design and evaluate agentic harnesses \u2014 methodology playbooks plus an empirical catalog of architectures, frameworks, memory substrates, and production lab patterns",
-      "version": "0.1.0",
+      "description": "Design and evaluate agentic harnesses with playbooks and an architecture catalog",
+      "version": "0.3.0",
       "author": {
         "name": "Tyrone Ross"
       },
       "source": {
         "source": "github",
-        "repo": "tyroneross/agent-builder"
+        "repo": "tyroneross/agent-builder",
+        "path": "plugin"
       },
       "repository": "https://github.com/tyroneross/agent-builder",
       "category": "developer-tools",
@@ -176,7 +177,7 @@
     },
     {
       "name": "pyramid-principle",
-      "description": "Barbara Minto's Pyramid Principle as composable writing skills \u2014 short-form, long-form, presentations, and audit",
+      "description": "Barbara Minto's Pyramid Principle for short-form, long-form, presentations, and audits",
       "version": "0.1.2",
       "author": {
         "name": "Tyrone Ross"
@@ -200,7 +201,7 @@
     },
     {
       "name": "prompt-builder",
-      "description": "Prompt Policy Engine \u2014 classify, diagnose, rewrite, and score prompts by model tier and deployment. Callable by agents, tools, and slash commands.",
+      "description": "Classify, diagnose, rewrite, and score prompts by model tier and deployment",
       "version": "0.1.1",
       "author": {
         "name": "Tyrone Ross"
@@ -222,7 +223,7 @@
     },
     {
       "name": "replit-migrate",
-      "description": "Migrate Replit apps to web (Vercel) or native (iOS/macOS) with encoded lessons from real migrations",
+      "description": "Migrate Replit apps to web (Vercel) or native (iOS/macOS)",
       "version": "0.1.1",
       "author": {
         "name": "Tyrone Ross"
@@ -243,7 +244,7 @@
     },
     {
       "name": "web-scraper",
-      "description": "Intelligent web scraper for extracting blog/news content from any website",
+      "description": "Extract blog and news content from any website",
       "version": "0.5.0",
       "author": {
         "name": "Tyrone Ross"
@@ -266,7 +267,7 @@
     },
     {
       "name": "stratagem",
-      "description": "Market research agent with document processing, web scraping, SEC filings, and financial analysis",
+      "description": "Market research agent — documents, web scraping, SEC filings, financial analysis",
       "version": "0.1.0",
       "author": {
         "name": "Tyrone Ross"
@@ -288,7 +289,7 @@
     },
     {
       "name": "mockup-gallery",
-      "description": "Visual mockup review gallery with component-level ratings, auto-save to file, and Claude Code integration",
+      "description": "Visual mockup review with component-level ratings",
       "version": "0.4.1",
       "author": {
         "name": "Tyrone Ross"
@@ -308,7 +309,7 @@
     },
     {
       "name": "spectra",
-      "description": "Content capture and library for marketing \u2014 screenshots, videos, and usage sequences across web, macOS, iOS, watchOS, plus a tagged library for organizing and exporting assets. Supersedes the deprecated showcase plugin (one-command migration via spectra_library action=\"migrate-from-showcase\").",
+      "description": "Capture screenshots, videos, and demos across platforms with a tagged library",
       "version": "0.2.1",
       "author": {
         "name": "Tyrone Ross"
@@ -330,7 +331,7 @@
     },
     {
       "name": "agent-astronomer",
-      "description": "Query your local Claude Code skill, agent, and plugin library from any conversation. Wraps the Agent Astronomer CLI (bin/aa) as MCP tools.",
+      "description": "Query local Claude Code skills, agents, and plugins from any conversation",
       "version": "0.1.0",
       "author": {
         "name": "Tyrone Ross"
@@ -353,7 +354,7 @@
     },
     {
       "name": "api-registry",
-      "description": "Local registry of authoritative API/library/tool source URLs. Prevents stale-training-data drift when configuring or debugging external services.",
+      "description": "Local registry of authoritative API source URLs to prevent stale-data drift",
       "version": "0.1.0",
       "author": {
         "name": "Tyrone Ross"
