@@ -89,7 +89,7 @@
     {
       "name": "navgator",
       "description": "Map dependencies and analyze blast radius before changing code",
-      "version": "0.8.0",
+      "version": "0.8.1",
       "author": {
         "name": "Tyrone Ross"
       },
