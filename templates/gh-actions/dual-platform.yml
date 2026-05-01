@@ -1,0 +1,120 @@
+# Dual-platform TestFlight upload (iOS + macOS) — single tag, two uploads
+#
+# For apps that ship both an iOS and a macOS build under the same project,
+# such as FloDoro. One `testflight-*` tag fans out to two parallel jobs.
+#
+# This addresses `feedback_flodoro_dual_upload.md` — never archive one
+# platform without the other when pushing to TestFlight.
+#
+# Required repo secrets — same as the single-platform templates:
+#   ASC_API_KEY_ID, ASC_API_ISSUER_ID, ASC_API_KEY_BASE64, APPLE_TEAM_ID
+#
+# All `uses:` pinned to commit SHA. Customize SCHEME and PROJECT for each
+# platform; if iOS and macOS use different schemes, set them here.
+
+name: Dual Platform TestFlight (iOS + macOS)
+
+on:
+  push:
+    tags:
+      - 'testflight-*'
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-upload:
+    strategy:
+      # Don't fail-fast — if iOS uploads but macOS fails, we want to know.
+      fail-fast: false
+      matrix:
+        include:
+          - platform: iOS
+            destination: generic/platform=iOS
+            scheme: "App-iOS"
+          - platform: macOS
+            destination: generic/platform=macOS
+            scheme: "App-macOS"
+    runs-on: macos-15
+    timeout-minutes: 45
+    name: Upload ${{ matrix.platform }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.app
+
+      - name: Decode App Store Connect API key
+        env:
+          ASC_API_KEY_BASE64: ${{ secrets.ASC_API_KEY_BASE64 }}
+          ASC_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo "$ASC_API_KEY_BASE64" | base64 --decode > ~/.appstoreconnect/private_keys/AuthKey_${ASC_API_KEY_ID}.p8
+          chmod 600 ~/.appstoreconnect/private_keys/AuthKey_${ASC_API_KEY_ID}.p8
+
+      - name: Resolve build number from tag
+        id: build_number
+        run: |
+          TAG="${GITHUB_REF##*/}"
+          BUILD=$(echo "$TAG" | sed 's/testflight-//; s/-//g')
+          echo "build=$BUILD" >> "$GITHUB_OUTPUT"
+
+      - name: Archive ${{ matrix.platform }}
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          BUILD_NUMBER: ${{ steps.build_number.outputs.build }}
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project "App.xcodeproj" \
+            -scheme "${{ matrix.scheme }}" \
+            -configuration "Release" \
+            -destination "${{ matrix.destination }}" \
+            -archivePath "$RUNNER_TEMP/App-${{ matrix.platform }}.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${{ secrets.ASC_API_KEY_ID }}.p8 \
+            -authenticationKeyID "${{ secrets.ASC_API_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.ASC_API_ISSUER_ID }}" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            archive
+
+      - name: Write ExportOptions.plist
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key><string>app-store-connect</string>
+              <key>teamID</key><string>${APPLE_TEAM_ID}</string>
+              <key>signingStyle</key><string>automatic</string>
+              <key>uploadSymbols</key><true/>
+              <key>destination</key><string>upload</string>
+          </dict>
+          </plist>
+          EOF
+
+      - name: Export and upload ${{ matrix.platform }}
+        run: |
+          set -euo pipefail
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/App-${{ matrix.platform }}.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/App-${{ matrix.platform }}-export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${{ secrets.ASC_API_KEY_ID }}.p8 \
+            -authenticationKeyID "${{ secrets.ASC_API_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.ASC_API_ISSUER_ID }}"
+
+      - name: Cleanup secrets from runner
+        if: always()
+        run: rm -rf ~/.appstoreconnect/private_keys

@@ -1,0 +1,119 @@
+# iOS TestFlight upload — tag-triggered CI build
+#
+# Triggers when a tag matching `testflight-*` is pushed.
+# Builds the app in a clean macOS runner, exports an IPA, uploads
+# to TestFlight via the App Store Connect API key stored in repo secrets.
+#
+# Required repo secrets (set in GitHub → Settings → Secrets and variables → Actions):
+#   ASC_API_KEY_ID         — App Store Connect API key ID (e.g. NTNAA84KU6)
+#   ASC_API_ISSUER_ID      — App Store Connect issuer ID
+#   ASC_API_KEY_BASE64     — base64-encoded contents of AuthKey_<id>.p8
+#   APPLE_TEAM_ID          — 10-char Apple developer team ID
+#   KEYCHAIN_PASSWORD      — random string used as ad-hoc keychain password
+#
+# All `uses:` references are pinned to a specific commit SHA, not a floating tag.
+# Replace placeholders for: app scheme, project path, bundle ID, and any signing setup.
+#
+# Reversibility: delete this file from `.github/workflows/` to disable. The repo
+# secrets stay in GitHub Settings until you remove them there.
+
+name: iOS TestFlight
+
+on:
+  push:
+    tags:
+      - 'testflight-*'
+
+# Least-privilege token — read-only checkout, no write to repo.
+permissions:
+  contents: read
+
+jobs:
+  build-and-upload:
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          # Don't persist the GITHUB_TOKEN beyond this step.
+          persist-credentials: false
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.app
+
+      - name: Decode App Store Connect API key
+        env:
+          ASC_API_KEY_BASE64: ${{ secrets.ASC_API_KEY_BASE64 }}
+          ASC_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo "$ASC_API_KEY_BASE64" | base64 --decode > ~/.appstoreconnect/private_keys/AuthKey_${ASC_API_KEY_ID}.p8
+          chmod 600 ~/.appstoreconnect/private_keys/AuthKey_${ASC_API_KEY_ID}.p8
+
+      - name: Resolve build number from tag
+        id: build_number
+        run: |
+          TAG="${GITHUB_REF##*/}"
+          # testflight-YYYYMMDD-HHMMSS → YYYYMMDDHHMMSS as a sortable build number
+          BUILD=$(echo "$TAG" | sed 's/testflight-//; s/-//g')
+          echo "build=$BUILD" >> "$GITHUB_OUTPUT"
+
+      - name: Archive
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          BUILD_NUMBER: ${{ steps.build_number.outputs.build }}
+        run: |
+          set -euo pipefail
+          # Replace SCHEME/PROJECT/CONFIG with this app's values.
+          xcodebuild \
+            -project "App.xcodeproj" \
+            -scheme "App" \
+            -configuration "Release" \
+            -destination "generic/platform=iOS" \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${{ secrets.ASC_API_KEY_ID }}.p8 \
+            -authenticationKeyID "${{ secrets.ASC_API_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.ASC_API_ISSUER_ID }}" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            archive
+
+      - name: Write ExportOptions.plist
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key><string>app-store-connect</string>
+              <key>teamID</key><string>${APPLE_TEAM_ID}</string>
+              <key>signingStyle</key><string>automatic</string>
+              <key>uploadSymbols</key><true/>
+              <key>destination</key><string>upload</string>
+          </dict>
+          </plist>
+          EOF
+
+      - name: Export and upload to TestFlight
+        run: |
+          set -euo pipefail
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/App-export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${{ secrets.ASC_API_KEY_ID }}.p8 \
+            -authenticationKeyID "${{ secrets.ASC_API_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.ASC_API_ISSUER_ID }}"
+
+      - name: Cleanup secrets from runner
+        if: always()
+        run: |
+          # Belt-and-suspenders — runner is ephemeral but be explicit.
+          rm -rf ~/.appstoreconnect/private_keys
