@@ -2,7 +2,7 @@
 name: prd-builder
 description: Generate a living, LLM-navigable PRD for an app or feature by answering 3-5 strategic questions. Output is a generative model an AI coding agent can reason from to make tactical decisions without escalating to the human on every choice. Use when starting a new app, scoping a new feature surface, doing a mid-project realignment after reactive iteration, before a major pivot, or whenever an LLM keeps asking the same kind of "should I do A or B?" question because the strategic frame is missing. Trigger phrases include "I want to build an app for", "scoping a new project", "thinking about building", "PRD for", "what should this product be", "starting a new app", "we've been building reactively", "the LLM keeps asking the same kind of question". Skill produces a markdown PRD with frontmatter (always-true principles + load_when triggers), an LLM Navigation Map, a Section Index for offset/limit reads, and a Fidelity check that validates the PRD has enough density to derive any tactical decision.
 author: Tyrone Ross
-version: 0.1.0
+version: 0.2.0
 tags: [prd, product-strategy, scoping, kickoff, north-star, persona, generative-model, living-doc]
 category: product-development
 difficulty: intermediate
@@ -184,28 +184,33 @@ core_principles:
 ---
 ```
 
-### Body sections (in order)
+### Body sections (in order, LLM-first ordering)
 
-1. **How to use this PRD** — one paragraph framing it as a generative model, not a checklist. Instructs LLMs to cite sections in justifications.
-2. **LLM Navigation Map** — table mapping decision types to PRD sections to read. Every section here resolves a class of decisions.
-3. **Section Index** — line ranges for `Read --offset --limit` calls. Living; drift more than ~5 lines triggers a sync pass.
-4. **Fidelity check** — questions the LLM should be able to answer from only the PRD. If it can't, the PRD has a gap. (See section below.)
-5. **Intent** — one paragraph derived from Q1+Q2.
-6. **North Star** — the metric from Q2 + the rationale.
-7. **Persona** — full Q1 expansion.
-8. **Outcome** — Q2 expanded with 3-5 specific user-visible outcomes.
-9. **Methodology** — how the app delivers the outcome. Frameworks, content basis, evidence stance.
-10. **Stance** — Q3 expanded into three or four subsections.
-11. **Non-goals (illustrative)** — derived from Persona + Outcome, listed only as examples of refusals already debated. Note that the LLM derives new non-goals from Q1-3 logic, not from this list.
-12. **Roadmap stance** — what NOT to build next; how to prioritize. Points to any audit / research packets that operationalize this.
-13. **One-line summary** — distills the entire PRD to a single sentence.
-14. **Open questions** — what was deferred or unresolved. Flagged as TAG:UNRESOLVED if Q3 had blank "because" clauses.
-15. **Pivot log** — major direction changes, one line each. Initially empty.
-16. **Document maintenance** — when this PRD updates, how to keep section line numbers fresh.
+The PRD is **LLM-first but human-readable**. Frontmatter (above) is the always-loaded machine-readable core. The body opens with a single condensed Reading guide that humanizes the same intent for top-to-bottom reading; the strategic content follows in natural human order; LLM-only tooling sits at the very end. This avoids the v0.1-style anti-pattern where 80+ lines of separate How-to / Navigation / Section-Index / Fidelity-check sections at the top blocked human readers from reaching strategic content.
 
-### Fidelity check (built into every PRD)
+1. **Reading guide** — single condensed section, ~25 lines, that:
+   - Frames the PRD as a generative model (one paragraph, both audiences).
+   - Has explicit *"For humans:"* and *"For LLM agents:"* sub-paragraphs (3-4 lines each) directing how each audience should read.
+   - Embeds the **Decision-routing map** as a table — decision type → which sections to read. Useful as a TOC for humans and a router for LLMs.
+   - Followed by a `---` separator to mark the transition to strategic content.
+2. **Intent** — one paragraph derived from Q1+Q2. The TL;DR humans hit first after the Reading guide.
+3. **North Star** — the metric from Q2 + the rationale.
+4. **Persona** — full Q1 expansion: who they are, what they bring, what they want sharper, trigger moments.
+5. **Outcome** — Q2 expanded with 3-5 specific user-visible outcomes.
+6. **Methodology** — how the app delivers the outcome. Frameworks, content basis, evidence stance.
+7. **Stance** — Q3 expanded into three or four subsections.
+8. **Non-goals (illustrative)** — derived from Persona + Outcome, listed only as examples of refusals already debated. Notes that the LLM derives new non-goals from Q1-3 logic, not from this list.
+9. **Roadmap stance** — what NOT to build next; how to prioritize. Points to any audit / research packets that operationalize this.
+10. **One-line summary** — distills the entire PRD to a single sentence.
+11. **Open questions** — what was deferred or unresolved. Flagged as `TAG:UNRESOLVED` if Q3 had blank "because" clauses.
+12. **Pivot log** — major direction changes, one line each. Initially empty.
+13. **Document maintenance** — when this PRD updates, how to keep section line numbers fresh.
+14. **Fidelity check** — at the end of the doc, NOT the top. A self-test the reader runs AFTER absorbing the strategic content. Useful for humans as a quarterly review; for LLMs as a pre-action validation.
+15. **Section Index** — last section. LLM-only line-number tooling for `Read --offset --limit`. Explicitly labeled as such; humans can ignore it. Drift more than ~5 lines triggers a sync pass.
 
-Before declaring the PRD adequate, predict the answer to each question below from only the PRD body. If you can't predict, or the PRD doesn't justify the answer, the PRD has a gap.
+### Fidelity check (built into every PRD, placed at the end)
+
+A self-test for whether the PRD is dense enough. Predict the answer to each question below from only the PRD body. If you can't predict, or the PRD doesn't justify the answer, the PRD has a gap.
 
 - Should the next major release prioritize speed or accuracy?
 - Should new features add complexity or simplify existing ones?

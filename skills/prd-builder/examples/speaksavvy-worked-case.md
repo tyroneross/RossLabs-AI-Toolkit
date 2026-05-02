@@ -99,12 +99,25 @@ Created `.claude/CLAUDE.md` with one section:
 
 This is the discovery mechanism. Every Claude Code session in the SpeakSavvy repo auto-loads CLAUDE.md, so the pointer is always present.
 
+## Structural iteration (v0.1 → v0.2 → v0.3)
+
+The PRD's structure went through three revisions before landing. Each move encoded a real lesson about dual-audience documents.
+
+**v0.1 — LLM-first, verbose.** Frontmatter + four separate top-level sections (How to use / Navigation Map / Section Index / Fidelity check) before the strategic body. Total: ~85 lines of LLM tooling before a human reader hit "Intent." Optimized for the LLM but blocked human entry into the doc.
+
+**v0.2 — Human-first, LLM appendix.** Strategic content (Intent → Maintenance) led the document; LLM tooling moved to a clearly-marked `# Appendix — for LLM coding agents` at the bottom. Humans reached strategic content fast, but the LLM had to scroll past the entire body to find the navigation map and section index. Worse for LLMs without obvious gain for humans, since the strategic body is what humans actually want anyway.
+
+**v0.3 — LLM-first, condensed.** The four top-level tooling sections collapse into a single `## Reading guide` section (~25 lines) with explicit "For humans:" and "For LLM agents:" sub-paragraphs and the Decision-routing map embedded as a table. Strategic body follows immediately. Fidelity check and Section Index sit at the very end where they're most useful (Fidelity check as a self-test AFTER reading; Section Index as LLM-only line-number tooling). This was the version that landed.
+
+**The lesson:** dual-audience documents fail when you treat the audiences as separate sections. They succeed when the same content is framed for both at once, with audience-specific instructions inline. The Reading guide is one section that opens with prose both audiences can read, then gives short audience-specific direction without duplicating the content.
+
 ## Lessons from this case
 
 1. **Drafting answers in advance worked.** Tyrone redirected each draft rather than writing from scratch. Faster and more concrete than blank prompts.
 2. **The reframe mid-process was important.** Tyrone clarified that the PRD shouldn't list non-goals as rules — it should be a generative model from which non-goals are derived. The skill's framing was updated to reflect this.
 3. **Industry-tested counts as research-backed.** This was not the LLM's default assumption. Pyramid Principle has minimal academic literature but is the working language of consulting and corporate strategy. The PRD codifies this stance so the LLM doesn't reach for peer-reviewed sources where industry practice is the better authority.
 4. **The Fidelity check found gaps the principles alone missed.** Until the LLM tried to predict "should we move work to cloud?", the tech ladder (on-device → Groq → OpenAI) wasn't pinned down. Predicting it forced the explicit statement.
+5. **Structure matters as much as content.** v0.1's content was already correct, but the structure made it unreadable for humans. v0.2 over-corrected by burying LLM tooling. v0.3 found the right balance. Two iterations to land — worth it.
 
 ## What you'd repeat for your own app
 
