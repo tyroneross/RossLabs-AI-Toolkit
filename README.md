@@ -23,7 +23,7 @@ Browse a clickable version at [rosslabs.ai/toolkit](https://rosslabs.ai/toolkit)
 
 | Plugin | Version | What it does |
 |--------|---------|--------------|
-| [build-loop](https://github.com/tyroneross/build-loop) | `0.4.0` | Orchestrated 5-phase dev loop — Assess → Plan → Execute → Review → Iterate, plus optional Learn. Opus 4.7 orchestrator with NavGator, debugger, and tracer bridges. Phase 2 plan-verify gate catches unverified delete/orphan claims, route changes, and numeric drift before plans ship. UI builds get design-rule gates and visual validation (IBR/simulator). |
+| [build-loop](https://github.com/tyroneross/build-loop) | `0.5.0` | Orchestrated 5-phase dev loop — Assess → Plan → Execute → Review → Iterate, plus optional Learn. Opus 4.7 orchestrator with NavGator, debugger, tracer, and PRD bridges. Phase 1 grounds every build in the project's strategic frame (`docs/prd-*.md`); Phase 2 plan-verify gate catches unverified delete/orphan claims, route changes, and numeric drift before plans ship. UI builds get design-rule gates and visual validation (IBR/simulator). |
 | [navgator](https://github.com/tyroneross/NavGator) | `0.8.2` | Architecture tracking — map dependencies, analyze impact, and visualize your stack before you change it. |
 | [ibr](https://github.com/tyroneross/interface-built-right) | `1.0.1` | UI validation — verify implementations match intent with live page scanning and visual regression. |
 | [bookmark](https://github.com/tyroneross/bookmark) | `0.3.2` | Session context continuity — auto-save and restore across compactions and terminal closures. |
