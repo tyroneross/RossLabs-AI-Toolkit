@@ -28,25 +28,6 @@
       ]
     },
     {
-      "name": "claude-code-debugger",
-      "description": "Debug with memory of past bugs — pattern extraction and parallel domain assessment",
-      "version": "1.8.2",
-      "author": {
-        "name": "Tyrone Ross"
-      },
-      "source": {
-        "source": "github",
-        "repo": "tyroneross/claude-code-debugger"
-      },
-      "repository": "https://github.com/tyroneross/claude-code-debugger",
-      "category": "developer-tools",
-      "keywords": [
-        "debugging",
-        "memory",
-        "incident-tracking"
-      ]
-    },
-    {
       "name": "research",
       "description": "Structured research with central knowledge base, source scoring, and claim verification",
       "version": "0.5.0",
