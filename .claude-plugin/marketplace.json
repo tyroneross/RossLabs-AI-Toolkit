@@ -28,6 +28,26 @@
       ]
     },
     {
+      "name": "claude-code-debugger",
+      "description": "Standalone supporting plugin for build-loop's debugger bridges — extended capability (cross-project incident memory, additional assessor coverage, coordination across build-loop instances). Build-loop bundles its own debug-loop / debugging-memory / logging-tracer skills + MCP server; install this only when bundled capability isn't enough.",
+      "version": "1.8.2",
+      "author": {
+        "name": "Tyrone Ross"
+      },
+      "source": {
+        "source": "github",
+        "repo": "tyroneross/claude-code-debugger"
+      },
+      "repository": "https://github.com/tyroneross/claude-code-debugger",
+      "category": "developer-tools",
+      "keywords": [
+        "debugging",
+        "memory",
+        "incident-tracking",
+        "build-loop-supporting"
+      ]
+    },
+    {
       "name": "research",
       "description": "Structured research with central knowledge base, source scoring, and claim verification",
       "version": "0.5.0",
