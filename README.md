@@ -62,6 +62,7 @@ claude plugin install <name>@rosslabs-ai-toolkit
 | Skill | Description | Source Plugin |
 |-------|-------------|--------------|
 | [Agent Builder](https://github.com/tyroneross/agent-builder) | Design and evaluate agentic harnesses | [Standalone repo](https://github.com/tyroneross/agent-builder) |
+| [PRD Builder](./skills/prd-builder) | Generate a living, LLM-navigable PRD by answering 3-5 strategic questions | Standalone |
 | [Context Continuity](./skills/context-continuity) | Session snapshot and restore logic | Bookmark |
 | [Debugging Memory](./skills/debugging-memory) | Verdict-based bug retrieval | Claude Code Debugger |
 | [Design Validation](./skills/design-validation) | UI scan and visual regression | IBR |
