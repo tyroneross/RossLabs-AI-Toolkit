@@ -129,8 +129,8 @@
     },
     {
       "name": "build-loop",
-      "description": "Multi-phase build orchestration with integrated debugging: assess, plan, execute, review, iterate. Plan-verify gate on Phase 2 (with security rules). Phase 4-A build-time security review (OWASP LLM/Agentic Top 10 + MITRE ATLAS) when riskSurfaceChange triggers. Optional UI design gates. Bundled debug-loop, debugging-memory, logging-tracer, security-methodology, defenseclaw-bridge skills + MCP incident-memory server.",
-      "version": "0.8.0",
+      "description": "Multi-phase build orchestration with integrated debugging: assess, plan, execute, review, iterate. Plan-verify gate on Phase 2 (with security rules). Phase 4-A build-time security review (OWASP LLM/Agentic Top 10 + MITRE ATLAS) when riskSurfaceChange triggers. DOE-first multi-factor optimization with autoresearch baseline handoff. Optional UI design gates. Bundled debug-loop, debugging-memory, logging-tracer, security-methodology, defenseclaw-bridge skills + MCP incident-memory server (renamed `build-loop-debugger` to coexist with standalone claude-code-debugger).",
+      "version": "0.9.0",
       "author": {
         "name": "Tyrone Ross"
       },
