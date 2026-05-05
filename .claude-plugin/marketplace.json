@@ -129,7 +129,7 @@
     },
     {
       "name": "build-loop",
-      "description": "Multi-phase build orchestration with integrated debugging and repo-episodic-memory: assess, plan, execute, review, iterate. v0.10 introduces a global path/schema resolver and project-tagged decision capture in a private build-loop-memory store (replaces per-repo .episodic/decisions/ + per-project schema). Plan-verify gate on Phase 2 (with security rules). Phase 4-A build-time security review (OWASP LLM/Agentic Top 10 + MITRE ATLAS) when riskSurfaceChange triggers. DOE-first multi-factor optimization with autoresearch baseline handoff. Optional UI design gates. Bundled debug-loop, debugging-memory, logging-tracer, security-methodology, defenseclaw-bridge skills + MCP incident-memory server.",
+      "description": "Multi-phase build orchestration with native architecture awareness, integrated debugging, and repo-episodic-memory: assess, plan, execute, review, iterate. Owns a Python-native architecture engine (scan/impact/trace/rules/dead/lessons) with NavGator demoted to optional escalation; aggressive freshness via Edit/Write hooks; Architecture Context Pack injected into every phase; architecture-scout read-only subagent dispatched at Phase 1/2/4D/5/6. Capability registry + ≤8 shortlist keeps orchestrator decision space below the tool-selection ceiling; unified recall() facade fans across runs/decisions/semantic/debugger backends. Plan-verify gate on Phase 2 (security + schema-migration-full-chain rules). Phase 4-A build-time security review (OWASP LLM/Agentic Top 10 + MITRE ATLAS) when riskSurfaceChange triggers. DOE-first multi-factor optimization with autoresearch baseline handoff. Optional UI design gates. Bundled debug-loop, debugging-memory, logging-tracer, security-methodology, defenseclaw-bridge skills + MCP incident-memory server. v0.10 introduces global path/schema resolver and project-tagged decision capture in a private build-loop-memory store. v0.11 (pending) ships the architecture-awareness initiative.",
       "version": "0.10.0",
       "author": {
         "name": "Tyrone Ross"
@@ -144,6 +144,8 @@
         "build-loop",
         "orchestration",
         "agents",
+        "architecture",
+        "capability-registry",
         "evaluation",
         "self-improvement",
         "prompt-engineering"
