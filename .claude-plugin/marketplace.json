@@ -29,7 +29,7 @@
     },
     {
       "name": "claude-code-debugger",
-      "description": "Standalone supporting plugin for build-loop's debugger bridges — extended capability (cross-project incident memory, additional assessor coverage, coordination across build-loop instances). Build-loop bundles its own debug-loop / debugging-memory / logging-tracer skills + MCP server; install this only when bundled capability isn't enough.",
+      "description": "Standalone supporting plugin for build-loop's debugger bridges \u2014 extended capability (cross-project incident memory, additional assessor coverage, coordination across build-loop instances). Build-loop bundles its own debug-loop / debugging-memory / logging-tracer skills + MCP server; install this only when bundled capability isn't enough.",
       "version": "1.8.2",
       "author": {
         "name": "Tyrone Ross"
@@ -70,7 +70,7 @@
     },
     {
       "name": "ibr",
-      "description": "End-to-end UI design and validation — guided builds, visual checks, mockup matching, native scanning",
+      "description": "End-to-end UI design and validation \u2014 guided builds, visual checks, mockup matching, native scanning",
       "version": "1.0.1",
       "author": {
         "name": "Tyrone Ross"
@@ -108,7 +108,7 @@
     },
     {
       "name": "showcase",
-      "description": "[Deprecated — use spectra] Dev asset capture for blog and website content",
+      "description": "[Deprecated \u2014 use spectra] Dev asset capture for blog and website content",
       "version": "0.1.2",
       "author": {
         "name": "Tyrone Ross"
@@ -129,8 +129,8 @@
     },
     {
       "name": "build-loop",
-      "description": "Multi-phase build orchestration with integrated debugging: assess, plan, execute, review, iterate. Plan-verify gate on Phase 2 (with security rules). Phase 4-A build-time security review (OWASP LLM/Agentic Top 10 + MITRE ATLAS) when riskSurfaceChange triggers. DOE-first multi-factor optimization with autoresearch baseline handoff. Optional UI design gates. Bundled debug-loop, debugging-memory, logging-tracer, security-methodology, defenseclaw-bridge skills + MCP incident-memory server (renamed `build-loop-debugger` to coexist with standalone claude-code-debugger).",
-      "version": "0.9.0",
+      "description": "Multi-phase build orchestration with integrated debugging and repo-episodic-memory: assess, plan, execute, review, iterate. v0.10 introduces a global path/schema resolver and project-tagged decision capture in a private build-loop-memory store (replaces per-repo .episodic/decisions/ + per-project schema). Plan-verify gate on Phase 2 (with security rules). Phase 4-A build-time security review (OWASP LLM/Agentic Top 10 + MITRE ATLAS) when riskSurfaceChange triggers. DOE-first multi-factor optimization with autoresearch baseline handoff. Optional UI design gates. Bundled debug-loop, debugging-memory, logging-tracer, security-methodology, defenseclaw-bridge skills + MCP incident-memory server.",
+      "version": "0.10.0",
       "author": {
         "name": "Tyrone Ross"
       },
@@ -268,7 +268,7 @@
     },
     {
       "name": "stratagem",
-      "description": "Market research agent — documents, web scraping, SEC filings, financial analysis",
+      "description": "Market research agent \u2014 documents, web scraping, SEC filings, financial analysis",
       "version": "0.1.0",
       "author": {
         "name": "Tyrone Ross"
