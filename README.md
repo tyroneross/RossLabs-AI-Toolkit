@@ -68,6 +68,8 @@ claude plugin install <name>@rosslabs-ai-toolkit
 | [Design Validation](./skills/design-validation) | UI scan and visual regression | IBR |
 | [Architecture Scan](./skills/architecture-scan) | Dependency graph and impact analysis | NavGator |
 | [Showcase Awareness](./skills/showcase-awareness) | Passive capture suggestions | Showcase |
+| [Grounded LLM Prompt](./skills/grounded-llm-prompt) | Composable citation + number-labeling + two-register rule blocks for grounded RAG/audit prompts | Standalone |
+| [Multi-Pass LLM Pipeline](./skills/multi-pass-llm-pipeline) | Two-pass LLM pattern (cheap decompose + precision score + deterministic post-process) with auditable methodTrace | Standalone |
 
 ## Install
 
