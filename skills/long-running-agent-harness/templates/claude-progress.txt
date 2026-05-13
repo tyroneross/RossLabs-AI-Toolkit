@@ -1,0 +1,30 @@
+Aida project progress log. Append-only. One paragraph per material event.
+
+Material events: feature status changes, test-suite color flips, commits, external actions (deploy / migration / db_push), blockers identified.
+
+Not material: every tool call, every file read. Those live in session transcripts.
+
+Format per entry:
+[YYYY-MM-DD HH:MM] (agent-name) Feature-or-area — what happened.
+What state changed. Why this matters. What's next.
+
+===
+
+[2026-05-11 10:00] (claude-code-session-1) F-003 — SMB eval set draft committed.
+33 queries across 6 categories (compare-tools, prompt-writing, skill-design,
+plugin-design, workflow-automation, decision-frameworks) in
+tests/smb-query-eval.test.ts. Status: pending → in-progress. Next: run
+EVAL_SCOPE=focused locally to confirm baseline.
+
+[2026-05-11 12:30] (claude-code-session-1) F-003 — SMB eval set passes at
+default target. Recall@10 = 0.74 on the 6 categories. Status:
+in-progress → complete. Next: pick up F-002.
+
+[2026-05-11 14:00] (claude-code-session-2) F-002 — picked up embedding
+catchup CLI. Reading workers/src/jobs/embedding-catchup.ts to confirm
+existing partial work. Status: pending → in-progress. Owner set.
+
+[2026-05-11 14:51] (claude-code-session-2) F-002 — blocker. Re-embed needs
+Railway burst pool ~$5-20 and 30-60 min wall-clock. User decision required
+before proceeding. Status: in-progress → blocked. blocked_on:
+"user-consent-for-railway-burst".

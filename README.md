@@ -70,6 +70,11 @@ claude plugin install <name>@rosslabs-ai-toolkit
 | [Showcase Awareness](./skills/showcase-awareness) | Passive capture suggestions | Showcase |
 | [Grounded LLM Prompt](./skills/grounded-llm-prompt) | Composable citation + number-labeling + two-register rule blocks for grounded RAG/audit prompts | Standalone |
 | [Multi-Pass LLM Pipeline](./skills/multi-pass-llm-pipeline) | Two-pass LLM pattern (cheap decompose + precision score + deterministic post-process) with auditable methodTrace | Standalone |
+| [Agent Tool Design](./skills/agent-tool-design) | Anthropic + OpenAI rules for designing tools an LLM agent will call — naming, params, returns, errors, descriptions | Standalone |
+| [Agent Eval Harness](./skills/agent-eval-harness) | 20–50 real-failure tasks, three grader types, pass@k vs pass^k, calibrated LLM judge — Anthropic/OpenAI eval methodology | Standalone |
+| [Prompt Cache Shaping](./skills/prompt-cache-shaping) | Static-to-dynamic ordering plus per-vendor cache mechanics (Anthropic cache_control, OpenAI auto-prefix) for 5–10× cost savings | Standalone |
+| [Long-Running Agent Harness](./skills/long-running-agent-harness) | progress.txt + feature-list.json + git as cross-context state, initializer/coder split, session-init protocol | Standalone |
+| [Reasoning Model Prompting](./skills/reasoning-model-prompting) | Counter-skill for o-series / extended-thinking targets — zero-shot first, no CoT, developer messages, thinking-block echo-back | Standalone |
 
 ## Install
 

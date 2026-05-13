@@ -1,0 +1,53 @@
+{
+  "$schema": "./feature-list.schema.json",
+  "project": "your-project-slug",
+  "owner_team": "your-team",
+  "features": [
+    {
+      "id": "F-001",
+      "title": "Imperative one-line description of the feature",
+      "criteria": [
+        "Bullet 1: a specific, testable criterion for done",
+        "Bullet 2: another",
+        "Bullet 3: another"
+      ],
+      "status": "pending",
+      "owner": null,
+      "started_at": null,
+      "completed_at": null,
+      "blocked_on": null,
+      "notes": null
+    },
+    {
+      "id": "F-002",
+      "title": "Example: Embedding catchup CLI + hourly gap health-check",
+      "criteria": [
+        "CLI invokable with --dry-run and --apply flags",
+        "Hourly cron job posts a gap report to the team channel",
+        "Tests in tests/embedding-catchup.test.ts pass"
+      ],
+      "status": "in-progress",
+      "owner": "claude-code-session-2026-05-11",
+      "started_at": "2026-05-11T14:00:00Z",
+      "completed_at": null,
+      "blocked_on": null,
+      "notes": "Pending Railway burst-pool consent for the full re-crawl."
+    },
+    {
+      "id": "F-003",
+      "title": "Example: SMB eval set — 33 queries × 6 categories",
+      "criteria": [
+        "tests/smb-query-eval.test.ts present with 33 queries",
+        "6 category labels: compare-tools, prompt-writing, skill-design, plugin-design, workflow-automation, decision-frameworks",
+        "RECALL_TARGET_SMB env honored",
+        "Tests pass at default target"
+      ],
+      "status": "complete",
+      "owner": "claude-code-session-2026-05-11",
+      "started_at": "2026-05-11T10:00:00Z",
+      "completed_at": "2026-05-11T12:30:00Z",
+      "blocked_on": null,
+      "notes": null
+    }
+  ]
+}
