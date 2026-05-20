@@ -130,7 +130,7 @@
     {
       "name": "build-loop",
       "description": "Turns big code changes into a checked, repeatable workflow. Five phases: plan, execute, review, iterate, learn. Splits work into parallel chunks where it can. Picks the right model for each task. A strong model plans and reviews. A faster model writes code. A small model does pattern checks. Catches the common ways big changes go wrong. The diff drifts from the plan. The implementer makes quiet design calls you never see. Tests pass but pages do not render. Fake data leaks into production. Plans must list every design decision up front. The implementer must say which decisions it made. A lint compares the claim to the actual diff. Work with six or more design decisions auto-routes to the strong model in one pass. A read-only critic runs before full validation. Cheap checks catch the obvious mistakes first. Includes an optimize mode that runs multiple tests in a single experiment using Design of Experiments. You can test six variables at once instead of one. The mode plans the test matrix, runs each combination, and tells you which variable actually moved the number. Bundles a debugger memory and an architecture engine that maps the codebase before each build. Use it for features, refactors, migrations, schema changes, anything that touches more than one file. Skip it for fixes under about 20 lines. Verifies the production deploy after a push (Vercel): polls the deployment to a terminal state and probes changed routes \u2014 an auth-gated 401/403 is healthy, only a 5xx or build error fails.",
-      "version": "0.12.7",
+      "version": "0.12.8",
       "author": {
         "name": "Tyrone Ross"
       },
