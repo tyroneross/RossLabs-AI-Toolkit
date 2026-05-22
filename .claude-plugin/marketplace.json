@@ -357,8 +357,8 @@
     },
     {
       "name": "api-registry",
-      "description": "Local registry of authoritative API source URLs to prevent stale-data drift",
-      "version": "0.1.0",
+      "description": "Local doc-content cache and authoritative API source registry. Caches docs as dated markdown with a 7-day freshness contract and answers from the local cache first, falling back to Context7 only when no source is registered. A staleness detector flags docs past the window. Tracks the publish date of each package's latest version and emits an install-cooldown verdict — third-party releases under 7 days old are flagged, the author's own packages exempt. Curation is done in-session, never by a background daemon.",
+      "version": "0.2.0",
       "author": {
         "name": "Tyrone Ross"
       },
