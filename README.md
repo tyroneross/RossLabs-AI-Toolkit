@@ -149,4 +149,4 @@ Skills reference MCP tools by name, not CLI commands. The agent calls tools prog
 
 ## License
 
-MIT
+[Apache License 2.0](./LICENSE) © Tyrone Ross, Jr. See [`NOTICE`](./NOTICE) for attribution.
