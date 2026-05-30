@@ -1,34 +1,42 @@
 #!/usr/bin/env python3
 """
-marketplace-sync: propose marketplace.json + README.md updates for a single child
-plugin (C2, week-2 plan).
+marketplace-sync: reconcile every distribution surface to a plugin's true version.
 
-Reads the child plugin's `.claude-plugin/plugin.json` and emits a unified diff
-of the changes that would land in the toolkit's `marketplace.json` and README.md.
+Three surfaces drift independently and must describe the same state:
+  1. .claude-plugin/marketplace.json   — drives Claude Code installs
+  2. .agents/plugins/marketplace.json   — drives Codex / cross-agent installs
+  3. README.md                          — drives GitHub discovery
 
-Manual-invoke for now. A future GH Action could call this on a child plugin's
-`v*` tag (out of scope for this iteration).
+Source of truth for a github-source plugin is its EXTERNAL repo's
+`.claude-plugin/plugin.json` (that's what `claude plugin install` actually
+clones), not the local mirror under `plugins/<name>/`, which lags. This tool
+reads the external version via `gh api` and falls back to the local mirror only
+when the network/gh is unavailable.
 
 Usage:
-  marketplace-sync.py <child-plugin-path> [--write]
-  marketplace-sync.py /Users/tyroneross/dev/git-folder/RossLabs-AI-Toolkit/plugins/build-loop
+  marketplace-sync.py --all [--write]            # reconcile every plugin
+  marketplace-sync.py <child-plugin-path> [--write]   # single plugin (local mirror)
+  marketplace-sync.py --all --source local       # force local-mirror sourcing
 
 Exit codes:
-  0  success (diff printed; nothing written unless --write)
-  1  child plugin or marketplace file shape problem
-  2  no changes (everything already in sync)
+  0  changes proposed (and written with --write)
+  1  shape problem (bad JSON, missing file, plugin not found)
+  2  no changes (every surface already in sync)
 """
 from __future__ import annotations
 
 import argparse
+import base64
 import difflib
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
 TOOLKIT_ROOT = Path(__file__).resolve().parent.parent
 MARKETPLACE = TOOLKIT_ROOT / ".claude-plugin" / "marketplace.json"
+AGENTS_MARKETPLACE = TOOLKIT_ROOT / ".agents" / "plugins" / "marketplace.json"
 README = TOOLKIT_ROOT / "README.md"
 
 
@@ -37,166 +45,197 @@ def die(msg: str, code: int = 1) -> None:
     sys.exit(code)
 
 
-def load_child(child_dir: Path) -> dict:
-    pj = child_dir / ".claude-plugin" / "plugin.json"
-    if not pj.exists():
-        die(f"child plugin.json not found: {pj}")
-    try:
-        return json.loads(pj.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as e:
-        die(f"child plugin.json invalid JSON: {e}")
+# ---------------------------------------------------------------------------
+# Version sourcing
+# ---------------------------------------------------------------------------
+
+def external_version(source: dict) -> str | None:
+    """Read version from the external github repo's plugin.json via gh api.
+
+    Honors an optional `path` (monorepo sub-dir) on the source object. Returns
+    None on any failure (gh missing, network error, file absent) so callers can
+    fall back to the local mirror.
+    """
+    if not isinstance(source, dict) or source.get("source") != "github":
+        return None
+    repo = source.get("repo")
+    if not repo:
+        return None
+    path = source.get("path", "").strip("/")
+    candidates: list[str] = []
+    if path:
+        candidates += [f"{path}/.claude-plugin/plugin.json", f"{path}/plugin.json"]
+    candidates += [".claude-plugin/plugin.json", "plugin.json"]
+    for c in candidates:
+        try:
+            out = subprocess.run(
+                ["gh", "api", f"repos/{repo}/contents/{c}"],
+                capture_output=True, text=True, timeout=20,
+            )
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            return None
+        if out.returncode != 0:
+            continue
+        try:
+            payload = json.loads(out.stdout)
+            content = base64.b64decode(payload["content"]).decode("utf-8", "ignore")
+            return json.loads(content).get("version")
+        except (json.JSONDecodeError, KeyError, ValueError):
+            continue
+    return None
 
 
-def update_marketplace(text: str, child: dict) -> tuple[str, list[str]]:
-    """Return updated marketplace text and a list of changes applied."""
-    data = json.loads(text)
-    name = child.get("name")
-    if not name:
-        die("child plugin.json missing required field: name")
+def local_version(name: str) -> str | None:
+    """Version from the in-repo mirror plugins/<name>/.claude-plugin/plugin.json."""
+    for rel in (f"plugins/{name}/.claude-plugin/plugin.json", f"plugins/{name}/plugin.json"):
+        pj = TOOLKIT_ROOT / rel
+        if pj.exists():
+            try:
+                return json.loads(pj.read_text(encoding="utf-8")).get("version")
+            except json.JSONDecodeError:
+                return None
+    return None
 
-    target = None
+
+def resolve_version(entry: dict, prefer: str) -> tuple[str | None, str]:
+    """Return (version, where) for a marketplace entry. prefer = 'external'|'local'."""
+    name = entry.get("name", "")
+    src = entry.get("source", {})
+    if prefer == "local":
+        v = local_version(name)
+        return (v, "local") if v else (external_version(src), "external")
+    v = external_version(src)
+    if v:
+        return v, "external"
+    v = local_version(name)
+    return (v, "local-fallback") if v else (None, "unresolved")
+
+
+# ---------------------------------------------------------------------------
+# Surface writers
+# ---------------------------------------------------------------------------
+
+def apply_manifest(path: Path, label: str, versions: dict[str, str], changes: list[str]) -> str:
+    """Update existing per-plugin `version` fields in a marketplace manifest.
+
+    Only touches entries that already declare `version` — never injects the
+    field. The .agents (Codex) mirror deliberately carries `version` on a
+    subset of entries; injecting it everywhere would restructure that surface.
+    """
+    data = json.loads(path.read_text(encoding="utf-8"))
     for entry in data.get("plugins", []):
-        if entry.get("name") == name:
-            target = entry
-            break
-
-    if target is None:
-        die(f"plugin {name!r} not found in marketplace.json")
-
-    changes: list[str] = []
-    # Sync version
-    if "version" in child and target.get("version") != child["version"]:
-        changes.append(
-            f"marketplace.json: {name}.version {target.get('version')!r} → {child['version']!r}"
-        )
-        target["version"] = child["version"]
-
-    # Sync description (only if child has one — don't blank it out)
-    if child.get("description") and target.get("description") != child["description"]:
-        changes.append(f"marketplace.json: {name}.description updated")
-        target["description"] = child["description"]
-
-    # Re-render with same indent. The existing file uses 2-space indent and
-    # trailing newline. ensure_ascii=False preserves em-dashes etc. so the
-    # diff doesn't churn unrelated entries with — escapes.
-    out = json.dumps(data, indent=2, ensure_ascii=False) + "\n"
-    return out, changes
+        name = entry.get("name")
+        new_v = versions.get(name)
+        if new_v and "version" in entry and entry["version"] != new_v:
+            changes.append(f"{label}: {name}.version {entry['version']!r} → {new_v!r}")
+            entry["version"] = new_v
+    return json.dumps(data, indent=2, ensure_ascii=False) + "\n"
 
 
-# README table-row regex. Matches:
-#   | [name](url) | `version` | description |
-# Capturing groups: 1=link-block, 2=name, 3=url, 4=version, 5=description.
+# README table-row regex: | [name](url) | `version` | description |
 README_ROW_RE = re.compile(
     r"^(\|\s*\[([A-Za-z0-9_\-]+)\]\(([^)]+)\)\s*\|\s*)`([^`]+)`(\s*\|\s*)([^|]*?)(\s*\|\s*)$",
     re.MULTILINE,
 )
 
 
-def update_readme(text: str, child: dict, sync_desc: bool) -> tuple[str, list[str]]:
-    name = child["name"]
-    new_version = child.get("version")
-    new_desc = child.get("description")
-
-    changes: list[str] = []
-    found = False
-
+def apply_readme(text: str, versions: dict[str, str], changes: list[str]) -> str:
     def replacer(m: re.Match) -> str:
-        nonlocal found, changes
-        row_name = m.group(2)
-        if row_name != name:
-            return m.group(0)
-        found = True
-        old_version = m.group(4)
-        old_desc = m.group(6).strip()
-        version_block = f"`{new_version}`" if new_version else f"`{old_version}`"
-        # Description policy: README rows are often hand-authored editorial
-        # prose richer than plugin.json.description. Default: leave alone.
-        # Pass --sync-desc to force the README to match plugin.json.
-        desc_block = old_desc
-        if sync_desc and new_desc and new_desc.strip() != old_desc:
-            desc_block = new_desc.strip()
-            changes.append(f"README.md: {name} description updated (--sync-desc)")
-        if new_version and new_version != old_version:
-            changes.append(f"README.md: {name} version {old_version} → {new_version}")
-        return f"{m.group(1)}{version_block}{m.group(5)}{desc_block}{m.group(7)}"
-
-    new_text = README_ROW_RE.sub(replacer, text)
-    if not found:
-        # Don't fail hard — README may legitimately not list every plugin.
-        # Surface it so the user can decide whether to add a row.
-        changes.append(f"README.md: no table row found for {name!r} (skipped)")
-    return new_text, changes
+        name = m.group(2)
+        new_v = versions.get(name)
+        old_v = m.group(4)
+        if new_v and new_v != old_v:
+            changes.append(f"README.md: {name} version {old_v} → {new_v}")
+            return f"{m.group(1)}`{new_v}`{m.group(5)}{m.group(6)}{m.group(7)}"
+        return m.group(0)
+    return README_ROW_RE.sub(replacer, text)
 
 
 def diff_block(label: str, before: str, after: str) -> str:
     if before == after:
         return ""
-    diff = difflib.unified_diff(
-        before.splitlines(keepends=True),
-        after.splitlines(keepends=True),
-        fromfile=f"{label} (current)",
-        tofile=f"{label} (proposed)",
-        n=2,
-    )
-    return "".join(diff)
+    return "".join(difflib.unified_diff(
+        before.splitlines(keepends=True), after.splitlines(keepends=True),
+        fromfile=f"{label} (current)", tofile=f"{label} (proposed)", n=2,
+    ))
+
+
+# ---------------------------------------------------------------------------
+# Drivers
+# ---------------------------------------------------------------------------
+
+def build_version_map(prefer: str) -> dict[str, str]:
+    """Resolve the true version for every plugin in .claude-plugin/marketplace.json."""
+    data = json.loads(MARKETPLACE.read_text(encoding="utf-8"))
+    versions: dict[str, str] = {}
+    print("Resolving source-of-truth versions:")
+    for entry in data.get("plugins", []):
+        name = entry.get("name")
+        v, where = resolve_version(entry, prefer)
+        if v is None:
+            print(f"  ! {name:<22} UNRESOLVED — leaving as-is")
+            continue
+        versions[name] = v
+        flag = "" if entry.get("version") == v else f"  (was {entry.get('version')})"
+        print(f"  · {name:<22} {v:<10} [{where}]{flag}")
+    return versions
 
 
 def main(argv: list[str]) -> int:
-    ap = argparse.ArgumentParser(description="Sync marketplace.json + README.md to a child plugin")
-    ap.add_argument("child_path", help="Path to a plugin directory (containing .claude-plugin/plugin.json)")
-    ap.add_argument("--write", action="store_true", help="Apply changes to marketplace.json and README.md (default: dry-run)")
-    ap.add_argument("--sync-desc", action="store_true", help="Also overwrite README's editorial description with plugin.json.description (default: leave README description alone)")
+    ap = argparse.ArgumentParser(description="Reconcile marketplace + README to true plugin versions")
+    ap.add_argument("child_path", nargs="?", help="Single plugin dir (local mirror mode)")
+    ap.add_argument("--all", action="store_true", help="Reconcile every plugin across all surfaces")
+    ap.add_argument("--source", choices=["external", "local"], default="external",
+                    help="Version source of truth (default: external repo via gh)")
+    ap.add_argument("--write", action="store_true", help="Apply changes (default: dry-run)")
     args = ap.parse_args(argv)
 
-    child_dir = Path(args.child_path).expanduser().resolve()
-    if not child_dir.is_dir():
-        die(f"not a directory: {child_dir}")
+    for p in (MARKETPLACE, AGENTS_MARKETPLACE, README):
+        if not p.exists():
+            die(f"expected file not found: {p}")
 
-    if not MARKETPLACE.exists():
-        die(f"marketplace.json not found at expected path: {MARKETPLACE}")
-    if not README.exists():
-        die(f"README.md not found at expected path: {README}")
+    if args.all:
+        versions = build_version_map(args.source)
+    elif args.child_path:
+        child = Path(args.child_path).expanduser().resolve() / ".claude-plugin" / "plugin.json"
+        if not child.exists():
+            die(f"child plugin.json not found: {child}")
+        pj = json.loads(child.read_text(encoding="utf-8"))
+        if not pj.get("name"):
+            die("child plugin.json missing 'name'")
+        versions = {pj["name"]: pj.get("version")}
+    else:
+        die("provide a plugin path or --all")
 
-    child = load_child(child_dir)
-
+    changes: list[str] = []
     mk_before = MARKETPLACE.read_text(encoding="utf-8")
+    ag_before = AGENTS_MARKETPLACE.read_text(encoding="utf-8")
     rd_before = README.read_text(encoding="utf-8")
 
-    mk_after, mk_changes = update_marketplace(mk_before, child)
-    rd_after, rd_changes = update_readme(rd_before, child, sync_desc=args.sync_desc)
+    mk_after = apply_manifest(MARKETPLACE, ".claude-plugin/marketplace.json", versions, changes)
+    ag_after = apply_manifest(AGENTS_MARKETPLACE, ".agents/plugins/marketplace.json", versions, changes)
+    rd_after = apply_readme(rd_before, versions, changes)
 
-    all_changes = mk_changes + rd_changes
-    actionable = [c for c in all_changes if "no table row found" not in c]
-
-    print(f"marketplace-sync: child plugin = {child.get('name')} v{child.get('version')}")
-    print(f"  marketplace.json: {MARKETPLACE}")
-    print(f"  README.md:        {README}")
     print()
-
-    if not actionable:
-        print("Already in sync. No changes proposed.")
-        # Surface skipped rows as warnings
-        for c in all_changes:
-            if "no table row found" in c:
-                print(f"  warning: {c}")
+    if not changes:
+        print("Every surface already in sync. No changes.")
         return 2
 
     print("Proposed changes:")
-    for c in all_changes:
+    for c in changes:
         print(f"  - {c}")
     print()
-
-    mk_diff = diff_block("marketplace.json", mk_before, mk_after)
-    rd_diff = diff_block("README.md", rd_before, rd_after)
-    if mk_diff:
-        print("--- marketplace.json diff ---")
-        print(mk_diff)
-    if rd_diff:
-        print("--- README.md diff ---")
-        print(rd_diff)
+    for label, b, a in (("marketplace.json", mk_before, mk_after),
+                        (".agents marketplace.json", ag_before, ag_after),
+                        ("README.md", rd_before, rd_after)):
+        d = diff_block(label, b, a)
+        if d:
+            print(f"--- {label} diff ---")
+            print(d)
 
     if args.write:
         MARKETPLACE.write_text(mk_after, encoding="utf-8")
+        AGENTS_MARKETPLACE.write_text(ag_after, encoding="utf-8")
         README.write_text(rd_after, encoding="utf-8")
         print("\nApplied (--write).")
     else:

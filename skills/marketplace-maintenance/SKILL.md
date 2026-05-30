@@ -12,12 +12,21 @@ Based on real incidents from the RossLabs-AI-Toolkit marketplace (2026-04-20 ses
 
 ## Required sync whenever a plugin change ships
 
-When any plugin listed in the marketplace bumps its version, changes description, or ships significant features, update **both** files in lockstep:
+A plugin version lives on **three** surfaces that drift independently. When any plugin bumps its version, changes description, or ships significant features, reconcile all three in lockstep:
 
-1. **`.claude-plugin/marketplace.json`** — the plugin entry's `version`, `description`, `keywords`. Drives Claude Code installs.
-2. **`README.md`** — Plugins table row + install-example block. Drives GitHub discovery.
+1. **`.claude-plugin/marketplace.json`** — the entry's `version`, `description`, `keywords`. Drives Claude Code installs.
+2. **`.agents/plugins/marketplace.json`** — the Codex / cross-agent mirror. Carries `version` only on the subset of entries that declare it (today: `build-loop`). Update existing version fields; do **not** inject `version` into entries that omit it by design.
+3. **`README.md`** — Plugins table row + install-example block. Drives GitHub discovery.
 
-Drift between these two is the #1 symptom of a stale marketplace. Users either install via the marketplace (reads JSON) or follow the README (reads prose). Both paths must describe the same state.
+Drift between these surfaces is the #1 symptom of a stale marketplace. The classic failure is three different versions for one plugin (README `0.12.10`, `.claude-plugin` `0.12.16`, external repo `0.13.5`). Don't hand-edit — run the reconciler:
+
+```bash
+# Source of truth = each plugin's EXTERNAL repo plugin.json (what install actually clones)
+python3 scripts/marketplace-sync.py --all            # dry-run: show drift across all three surfaces
+python3 scripts/marketplace-sync.py --all --write    # apply
+```
+
+`--all` resolves every plugin's true version from its external github repo via `gh api` (falling back to the local mirror only if gh/network is unavailable), then updates both manifests' `version` fields and the README version cells in one pass. It does **not** touch curated descriptions or the install-command lists — those stay hand-authored, so re-check install-list completeness (all current plugins listed, deprecated ones excluded) manually after a plugin is added or retired.
 
 ## Schema requirements (per Anthropic docs)
 

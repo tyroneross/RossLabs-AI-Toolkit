@@ -23,21 +23,21 @@ Browse a clickable version at [rosslabs.ai/toolkit](https://rosslabs.ai/toolkit)
 
 | Plugin | Version | What it does |
 |--------|---------|--------------|
-| [build-loop](https://github.com/tyroneross/build-loop) | `0.12.10` | Turns big code changes into a checked, repeatable workflow. Five phases: plan, execute, review, iterate, learn. Picks the right model for each task. A strong model plans and reviews. A faster model writes code. A small model does pattern checks. Plans must list every design decision up front. The implementer must say which decisions it made. A lint compares the claim to the actual diff. Work with six or more design decisions auto-routes to the strong model in one pass. A read-only critic runs before full validation. Has an optimize mode that runs multiple tests in a single experiment using Design of Experiments. You can test six variables at once instead of one. The mode plans the test matrix, runs each combination, and tells you which variable actually moved the number. Bundles a debugger memory and a code-base architecture map. Catches the common ways big changes go wrong. The diff drifts from the plan. Quiet design calls slip in. Tests pass but pages do not render. Fake data leaks into production. Use it for features, refactors, migrations, schema changes, anything that touches more than one file. Skip for fixes under about 20 lines. Verifies the production deploy after a push (Vercel): polls the deployment to a terminal state and probes changed routes — an auth-gated 401/403 is healthy, only a 5xx or build error fails. |
+| [build-loop](https://github.com/tyroneross/build-loop) | `0.13.5` | Turns big code changes into a checked, repeatable workflow. Five phases: plan, execute, review, iterate, learn. Picks the right model for each task. A strong model plans and reviews. A faster model writes code. A small model does pattern checks. Plans must list every design decision up front. The implementer must say which decisions it made. A lint compares the claim to the actual diff. Work with six or more design decisions auto-routes to the strong model in one pass. A read-only critic runs before full validation. Has an optimize mode that runs multiple tests in a single experiment using Design of Experiments. You can test six variables at once instead of one. The mode plans the test matrix, runs each combination, and tells you which variable actually moved the number. Bundles a debugger memory and a code-base architecture map. Catches the common ways big changes go wrong. The diff drifts from the plan. Quiet design calls slip in. Tests pass but pages do not render. Fake data leaks into production. Use it for features, refactors, migrations, schema changes, anything that touches more than one file. Skip for fixes under about 20 lines. Verifies the production deploy after a push (Vercel): polls the deployment to a terminal state and probes changed routes — an auth-gated 401/403 is healthy, only a 5xx or build error fails. |
 | [navgator](https://github.com/tyroneross/NavGator) | `0.8.2` | Architecture tracking — map dependencies, analyze impact, and visualize your stack before you change it. |
-| [ibr](https://github.com/tyroneross/interface-built-right) | `1.0.1` | UI validation — verify implementations match intent with live page scanning and visual regression. |
+| [ibr](https://github.com/tyroneross/interface-built-right) | `1.1.1` | UI validation — verify implementations match intent with live page scanning and visual regression. |
 | [bookmark](https://github.com/tyroneross/bookmark) | `0.3.2` | Session context continuity — auto-save and restore across compactions and terminal closures. |
-| [claude-code-debugger](https://github.com/tyroneross/claude-code-debugger) | `1.8.1` | Debugging memory — verdict-based retrieval and pattern extraction from past incidents. |
-| [research](https://github.com/tyroneross/research-plugin) | `0.5.0` | Token-efficient research KB — SQLite FTS5, source tier scoring, claim + quantitative verification, bulk ingest, project symlinks. |
+| [claude-code-debugger](https://github.com/tyroneross/claude-code-debugger) | `1.8.2` | Debugging memory — verdict-based retrieval and pattern extraction from past incidents. |
+| [research](https://github.com/tyroneross/research-plugin) | `0.5.1` | Token-efficient research KB — SQLite FTS5, source tier scoring, claim + quantitative verification, bulk ingest, project symlinks. |
 | [api-registry](https://github.com/tyroneross/api-registry) | `0.2.0` | Local doc-content cache and authoritative API source registry. Caches docs as dated markdown with a 7-day freshness contract, answers from the local cache first (Context7 is fallback only), and flags docs past the window. Tracks each package's latest-release date and emits an install-cooldown verdict — third-party releases under 7 days old are flagged, the author's own packages exempt. |
 
 ### Agents & prompts
 
 | Plugin | Version | What it does |
 |--------|---------|--------------|
-| [agent-builder](https://github.com/tyroneross/agent-builder) | `0.1.0` | Design and evaluate agentic harnesses — playbooks plus a catalog of architectures, memory substrates, and production patterns. |
+| [agent-builder](https://github.com/tyroneross/agent-builder) | `0.3.1` | Design and evaluate agentic harnesses — playbooks plus a catalog of architectures, memory substrates, and production patterns. |
 | [agent-astronomer](https://github.com/tyroneross/agent-astronomer) | `0.1.0` | Query your local skill, agent, and plugin library from any conversation. Wraps the Agent Astronomer CLI as MCP tools. |
-| [prompt-builder](https://github.com/tyroneross/prompt-builder) | `0.1.1` | Prompt Policy Engine — classify, diagnose, rewrite, and score prompts by model tier and deployment. |
+| [prompt-builder](https://github.com/tyroneross/prompt-builder) | `0.1.2` | Prompt Policy Engine — classify, diagnose, rewrite, and score prompts by model tier and deployment. |
 | [pyramid-principle](https://github.com/tyroneross/pyramid-principle) | `0.1.2` | Barbara Minto's Pyramid Principle as composable writing skills — short-form, long-form, presentations, and audit. |
 
 ### Capture, design, and research
@@ -45,7 +45,7 @@ Browse a clickable version at [rosslabs.ai/toolkit](https://rosslabs.ai/toolkit)
 | Plugin | Version | What it does |
 |--------|---------|--------------|
 | [showcase](https://github.com/tyroneross/showcase) | `0.1.2` | **Deprecated — use `spectra`.** Folded into `spectra` v0.2.0 via `spectra_library`; migrate with `spectra_library action="migrate-from-showcase"`. |
-| [spectra](https://github.com/tyroneross/spectra) | `0.2.1` | Content capture + library for marketing — screenshots, videos, usage sequences across web/macOS/iOS/watchOS, with a tagged library (find, gallery, export, migrate-from-showcase). |
+| [spectra](https://github.com/tyroneross/spectra) | `0.3.0` | Content capture + library for marketing — screenshots, videos, usage sequences across web/macOS/iOS/watchOS, with a tagged library (find, gallery, export, migrate-from-showcase). |
 | [mockup-gallery](https://github.com/tyroneross/mockup-gallery) | `0.4.1` | Visual mockup review with component-level ratings, auto-save to file, and Claude Code integration. |
 | [replit-migrate](https://github.com/tyroneross/replit-migrate) | `0.1.1` | Migrate Replit apps to web (Vercel) or native (iOS/macOS) with encoded lessons from real migrations. |
 | [web-scraper](https://github.com/tyroneross/blog-content-scraper) | `0.5.0` | Intelligent web scraper for extracting blog and news content from any website. |
@@ -75,6 +75,11 @@ claude plugin install <name>@rosslabs-ai-toolkit
 | [Prompt Cache Shaping](./skills/prompt-cache-shaping) | Static-to-dynamic ordering plus per-vendor cache mechanics (Anthropic cache_control, OpenAI auto-prefix) for 5–10× cost savings | Standalone |
 | [Long-Running Agent Harness](./skills/long-running-agent-harness) | progress.txt + feature-list.json + git as cross-context state, initializer/coder split, session-init protocol | Standalone |
 | [Reasoning Model Prompting](./skills/reasoning-model-prompting) | Counter-skill for o-series / extended-thinking targets — zero-shot first, no CoT, developer messages, thinking-block echo-back | Standalone |
+| [Judge](./skills/judge) | Score an artifact against a locked 5-dimension rubric with evidence anchoring — deterministic table + aggregate | Standalone |
+| [Marketplace Maintenance](./skills/marketplace-maintenance) | Operational rules for maintaining a plugin marketplace — schema, three-surface sync, install-command drift | Standalone |
+| [MCP Safe Design](./skills/mcp-safe-design) | Metadata-only MCP tool contract — return references and IDs, never secret values or tokens | Standalone |
+| [Publish Packages](./skills/publish-packages) | Publish public npm packages to GitHub Packages (@tyroneross scope) — single-repo + monorepo patterns | Standalone |
+| [Test Pattern Library](./skills/test-pattern-library) | Routes "what should I test first" to substrate-specific, risk-prioritized test sequences | Standalone |
 
 ## Install
 
@@ -86,35 +91,45 @@ Two steps: add the marketplace, then install plugins from it. In Claude Code's `
 # Add the marketplace — use owner/repo format, not a full URL
 claude plugin marketplace add tyroneross/RossLabs-AI-Toolkit
 
-# Install individual plugins
+# Install individual plugins (all keys use the @rosslabs-ai-toolkit suffix)
+
+# Core workflow
+claude plugin install build-loop@rosslabs-ai-toolkit
+claude plugin install navgator@rosslabs-ai-toolkit
+claude plugin install ibr@rosslabs-ai-toolkit
 claude plugin install bookmark@rosslabs-ai-toolkit
 claude plugin install claude-code-debugger@rosslabs-ai-toolkit
-claude plugin install ibr@rosslabs-ai-toolkit
-claude plugin install navgator@rosslabs-ai-toolkit
-claude plugin install showcase@rosslabs-ai-toolkit
-claude plugin install build-loop@rosslabs-ai-toolkit
+claude plugin install research@rosslabs-ai-toolkit
+claude plugin install api-registry@rosslabs-ai-toolkit
+
+# Agents & prompts
 claude plugin install agent-builder@rosslabs-ai-toolkit
+claude plugin install agent-astronomer@rosslabs-ai-toolkit
 claude plugin install prompt-builder@rosslabs-ai-toolkit
 claude plugin install pyramid-principle@rosslabs-ai-toolkit
-claude plugin install research@rosslabs-ai-toolkit
+
+# Capture, design & research
+claude plugin install spectra@rosslabs-ai-toolkit
 claude plugin install mockup-gallery@rosslabs-ai-toolkit
+claude plugin install replit-migrate@rosslabs-ai-toolkit
+claude plugin install web-scraper@rosslabs-ai-toolkit
+claude plugin install stratagem@rosslabs-ai-toolkit
 ```
+
+> `showcase` is deprecated — install `spectra` instead (showcase folded into `spectra` v0.2.0; migrate with `spectra_library action="migrate-from-showcase"`).
 
 **Common mistake**: pasting `https://github.com/tyroneross/RossLabs-AI-Toolkit/tree/main` into the dialog fails because Claude Code appends `.git/` → `…/tree/main.git/` (404). Use the owner/repo form.
 
 ### Directly from GitHub
 
-Each plugin is a standalone installable repo:
+Each plugin is also a standalone installable repo — `claude plugin install tyroneross/<repo>`. The canonical repo for every plugin is linked from the [Plugins](#plugins) table above. A few repo names differ from the plugin name:
 
 ```bash
-claude plugin install tyroneross/bookmark
-claude plugin install tyroneross/claude-code-debugger
-claude plugin install tyroneross/interface-built-right
-claude plugin install tyroneross/NavGator
-claude plugin install tyroneross/showcase
 claude plugin install tyroneross/build-loop
-claude plugin install tyroneross/agent-builder
-claude plugin install tyroneross/prompt-builder
+claude plugin install tyroneross/interface-built-right   # ibr
+claude plugin install tyroneross/NavGator                # navgator
+claude plugin install tyroneross/research-plugin         # research
+claude plugin install tyroneross/blog-content-scraper    # web-scraper
 ```
 
 ## Cross-Platform Agent Support
