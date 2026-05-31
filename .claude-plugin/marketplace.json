@@ -293,7 +293,7 @@
     {
       "name": "mockup-gallery",
       "description": "Visual mockup review with component-level ratings",
-      "version": "0.4.1",
+      "version": "0.5.1",
       "author": {
         "name": "Tyrone Ross"
       },
