@@ -1,0 +1,54 @@
+{
+  "version": 2,
+  "plugins": {
+    "build-loop@rosslabs-ai-toolkit": [
+      {
+        "scope": "project",
+        "projectPath": "/Users/alice",
+        "installPath": "/Users/alice/.claude/plugins/cache/rosslabs-ai-toolkit/build-loop/0.20.0",
+        "version": "0.20.0",
+        "installedAt": "2026-04-20T20:10:52.823Z",
+        "lastUpdated": "2026-05-01T00:13:55.151Z",
+        "gitCommitSha": "aabbcc"
+      },
+      {
+        "scope": "user",
+        "installPath": "/Users/alice/.claude/plugins/cache/rosslabs-ai-toolkit/build-loop/0.22.0",
+        "version": "0.22.0",
+        "installedAt": "2026-05-03T19:35:00.000Z",
+        "lastUpdated": "2026-05-10T00:13:53.111Z",
+        "gitCommitSha": "ddeeff"
+      }
+    ],
+    "ibr@rosslabs-ai-toolkit": [
+      {
+        "scope": "user",
+        "installPath": "/Users/alice/.claude/plugins/cache/rosslabs-ai-toolkit/ibr/1.3.0",
+        "version": "1.3.0",
+        "installedAt": "2026-04-20T20:56:01.452Z",
+        "lastUpdated": "2026-05-31T00:16:39.576Z",
+        "gitCommitSha": "112233"
+      }
+    ],
+    "bookmark@rosslabs-ai-toolkit": [
+      {
+        "scope": "project",
+        "projectPath": "/Users/alice",
+        "installPath": "/Users/alice/.claude/plugins/cache/rosslabs-ai-toolkit/bookmark/0.3.2",
+        "version": "0.3.2",
+        "installedAt": "2026-04-20T20:01:29.161Z",
+        "lastUpdated": "2026-04-21T18:43:20.904Z",
+        "gitCommitSha": "445566"
+      }
+    ],
+    "unrelated@some-other-marketplace": [
+      {
+        "scope": "user",
+        "installPath": "/some/path",
+        "version": "9.9.9",
+        "installedAt": "2026-01-01T00:00:00.000Z",
+        "lastUpdated": "2026-01-01T00:00:00.000Z"
+      }
+    ]
+  }
+}
