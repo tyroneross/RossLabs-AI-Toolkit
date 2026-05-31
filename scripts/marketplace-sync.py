@@ -17,11 +17,17 @@ Usage:
   marketplace-sync.py --all [--write]            # reconcile every plugin
   marketplace-sync.py <child-plugin-path> [--write]   # single plugin (local mirror)
   marketplace-sync.py --all --source local       # force local-mirror sourcing
+  marketplace-sync.py --check-hosts              # report installed host drift + fix cmds
+  marketplace-sync.py --all --check-hosts        # catalog sync + host drift in one pass
+  marketplace-sync.py --check                    # read-only: exit 3 if ANY surface drifts
+  marketplace-sync.py --install-cron             # install launchd daily drift-check (macOS)
+  marketplace-sync.py --uninstall-cron           # remove launchd plist
 
 Exit codes:
   0  changes proposed (and written with --write)
   1  shape problem (bad JSON, missing file, plugin not found)
   2  no changes (every surface already in sync)
+  3  --check mode: at least one surface is drifted (catalog, README, .agents, or hosts)
 """
 from __future__ import annotations
 
@@ -29,6 +35,7 @@ import argparse
 import base64
 import difflib
 import json
+import os
 import re
 import subprocess
 import sys
@@ -38,6 +45,9 @@ TOOLKIT_ROOT = Path(__file__).resolve().parent.parent
 MARKETPLACE = TOOLKIT_ROOT / ".claude-plugin" / "marketplace.json"
 AGENTS_MARKETPLACE = TOOLKIT_ROOT / ".agents" / "plugins" / "marketplace.json"
 README = TOOLKIT_ROOT / "README.md"
+
+CLAUDE_MARKETPLACE_KEY = "rosslabs-ai-toolkit"
+CODEX_MARKETPLACE_KEY = "ross-labs-local"
 
 
 def die(msg: str, code: int = 1) -> None:
@@ -181,6 +191,596 @@ def build_version_map(prefer: str) -> dict[str, str]:
     return versions
 
 
+# ---------------------------------------------------------------------------
+# Chunk 1: Semver comparison
+# ---------------------------------------------------------------------------
+
+def semver_lt(a: str | None, b: str | None) -> bool:
+    """Return True if version a is strictly less than version b.
+
+    Uses a simple numeric-part comparison: splits on '.' and compares each
+    segment as an integer. Non-numeric segments are treated as 0 (safe
+    degradation for git SHAs, pre-release tags, etc.). Missing parts are 0.
+    Returns False on any None input — None is not considered stale.
+    """
+    if a is None or b is None:
+        return False
+    if a == b:
+        return False
+
+    def parse(v: str) -> list[int]:
+        parts = []
+        for seg in str(v).split("."):
+            try:
+                parts.append(int(seg))
+            except (ValueError, TypeError):
+                parts.append(0)
+        return parts
+
+    pa, pb = parse(a), parse(b)
+    # Pad to equal length
+    maxlen = max(len(pa), len(pb))
+    pa += [0] * (maxlen - len(pa))
+    pb += [0] * (maxlen - len(pb))
+    return pa < pb
+
+
+# ---------------------------------------------------------------------------
+# Chunk 1: Claude installed_plugins.json parsing
+# ---------------------------------------------------------------------------
+
+def parse_claude_installed(data: dict, marketplace_key: str) -> dict[str, list[dict]]:
+    """Parse installed_plugins.json and return toolkit plugins keyed by plugin name.
+
+    Args:
+        data: parsed JSON dict from installed_plugins.json
+        marketplace_key: e.g. "rosslabs-ai-toolkit"
+
+    Returns:
+        {plugin_name: [{scope, version, projectPath?}, ...]}
+    """
+    result: dict[str, list[dict]] = {}
+    suffix = f"@{marketplace_key}"
+    for key, installs in data.get("plugins", {}).items():
+        if not key.endswith(suffix):
+            continue
+        name = key[: -len(suffix)]
+        entries = []
+        for inst in (installs or []):
+            entry: dict = {"scope": inst.get("scope", ""), "version": inst.get("version", "")}
+            if inst.get("projectPath"):
+                entry["projectPath"] = inst["projectPath"]
+            entries.append(entry)
+        if entries:
+            result[name] = entries
+    return result
+
+
+def load_claude_installed(marketplace_key: str = CLAUDE_MARKETPLACE_KEY) -> dict[str, list[dict]] | None:
+    """Load and parse ~/.claude/plugins/installed_plugins.json.
+
+    Returns None with a printed warning if the file is absent or malformed.
+    """
+    p = Path.home() / ".claude" / "plugins" / "installed_plugins.json"
+    if not p.exists():
+        print(f"  (skip Claude host check — {p} not found)")
+        return None
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError) as e:
+        print(f"  (skip Claude host check — could not read {p}: {e})")
+        return None
+    return parse_claude_installed(data, marketplace_key)
+
+
+# ---------------------------------------------------------------------------
+# Chunk 1: Codex plugin list parsing
+# ---------------------------------------------------------------------------
+
+def parse_codex_plugin_list(output: str, marketplace_key: str) -> dict[str, dict]:
+    """Parse `codex plugin list` stdout and return installed plugins for marketplace_key.
+
+    The output format is:
+      Marketplace `<key>`
+      <path>
+      <blank>
+      PLUGIN  STATUS  VERSION  PATH
+      <rows...>
+      <blank>
+      Marketplace `<next>`
+      ...
+
+    Returns:
+        {plugin_name: {version, status}} for installed entries (not "not installed").
+    """
+    result: dict[str, dict] = {}
+    if not output.strip():
+        return result
+
+    in_target = False
+    header_seen = False
+    suffix = f"@{marketplace_key}"
+
+    for line in output.splitlines():
+        # Detect marketplace section header
+        mkt_match = re.match(r"^Marketplace\s+`([^`]+)`", line)
+        if mkt_match:
+            in_target = mkt_match.group(1) == marketplace_key
+            header_seen = False
+            continue
+
+        if not in_target:
+            continue
+
+        # Skip the file-path line (starts with /) and blank lines
+        if not line.strip() or line.strip().startswith("/"):
+            continue
+
+        # Detect header row (PLUGIN STATUS VERSION PATH)
+        if re.match(r"^\s*PLUGIN\s+STATUS", line, re.IGNORECASE):
+            header_seen = True
+            continue
+
+        if not header_seen:
+            continue
+
+        # Parse data rows — split on 2+ spaces to handle multi-word STATUS
+        # Format: <name>  <status>  <version>  <path>
+        parts = re.split(r"\s{2,}", line.strip())
+        if len(parts) < 2:
+            continue
+
+        full_name = parts[0]  # e.g. "build-loop@ross-labs-local"
+        status = parts[1] if len(parts) > 1 else ""
+        version = parts[2] if len(parts) > 2 else ""
+
+        # Only installed entries have a version and don't say "not installed"
+        if "not installed" in status.lower():
+            continue
+        if not version:
+            continue
+
+        # Strip marketplace suffix from plugin name
+        if full_name.endswith(suffix):
+            name = full_name[: -len(suffix)]
+        else:
+            name = full_name
+
+        result[name] = {"version": version, "status": status}
+
+    return result
+
+
+def run_codex_plugin_list() -> str | None:
+    """Run `codex plugin list` and return stdout, or None if codex is absent/fails."""
+    try:
+        out = subprocess.run(
+            ["codex", "plugin", "list"],
+            capture_output=True, text=True, timeout=30,
+        )
+        if out.returncode != 0:
+            print(f"  (skip Codex host check — codex plugin list returned {out.returncode})")
+            return None
+        return out.stdout
+    except FileNotFoundError:
+        print("  (skip Codex host check — codex CLI not found)")
+        return None
+    except subprocess.TimeoutExpired:
+        print("  (skip Codex host check — codex plugin list timed out)")
+        return None
+
+
+# ---------------------------------------------------------------------------
+# Chunk 1: Drift finders
+# ---------------------------------------------------------------------------
+
+def find_claude_drift(
+    installed: dict[str, list[dict]],
+    truth: dict[str, str],
+) -> list[dict]:
+    """Return list of stale Claude installs.
+
+    Each item: {name, scope, installed_version, truth_version, project_path?}
+    Only reports plugins present in truth map (ignores non-toolkit installs).
+    """
+    drift = []
+    for name, entries in installed.items():
+        truth_v = truth.get(name)
+        if truth_v is None:
+            continue  # not a toolkit plugin we're tracking
+        for entry in entries:
+            inst_v = entry.get("version", "")
+            if semver_lt(inst_v, truth_v):
+                item: dict = {
+                    "name": name,
+                    "scope": entry.get("scope", ""),
+                    "installed_version": inst_v,
+                    "truth_version": truth_v,
+                }
+                if entry.get("projectPath"):
+                    item["projectPath"] = entry["projectPath"]
+                drift.append(item)
+    return drift
+
+
+def find_codex_drift(
+    installed: dict[str, dict],
+    truth: dict[str, str],
+) -> list[dict]:
+    """Return list of stale Codex installs.
+
+    Each item: {name, installed_version, truth_version, status}
+    Only reports plugins present in truth map.
+    """
+    drift = []
+    for name, info in installed.items():
+        truth_v = truth.get(name)
+        if truth_v is None:
+            continue
+        inst_v = info.get("version", "")
+        if semver_lt(inst_v, truth_v):
+            drift.append({
+                "name": name,
+                "installed_version": inst_v,
+                "truth_version": truth_v,
+                "status": info.get("status", ""),
+            })
+    return drift
+
+
+# ---------------------------------------------------------------------------
+# Chunk 1: Remediation command generators
+# ---------------------------------------------------------------------------
+
+def claude_update_cmd(name: str, scope: str) -> str:
+    """Emit the exact `claude plugin update` command for a stale install."""
+    return f"claude plugin update {name}@{CLAUDE_MARKETPLACE_KEY} --scope {scope}"
+
+
+def codex_remediate_cmds(name: str, marketplace_key: str) -> tuple[str, str]:
+    """Emit remove + add commands (Codex has no update command)."""
+    key = f"{name}@{marketplace_key}"
+    return f"codex plugin remove {key}", f"codex plugin add {key}"
+
+
+# ---------------------------------------------------------------------------
+# Chunk 1: catalog truth from local file (no network)
+# ---------------------------------------------------------------------------
+
+def catalog_versions_local() -> dict[str, str]:
+    """Read version for every plugin from .claude-plugin/marketplace.json (local catalog only).
+
+    Used by --check-hosts when running standalone, so no gh API calls are made.
+    Falls back to local mirror when catalog entry lacks a version field.
+    """
+    data = json.loads(MARKETPLACE.read_text(encoding="utf-8"))
+    versions: dict[str, str] = {}
+    for entry in data.get("plugins", []):
+        name = entry.get("name")
+        if not name:
+            continue
+        v = entry.get("version") or local_version(name)
+        if v:
+            versions[name] = v
+    return versions
+
+
+# ---------------------------------------------------------------------------
+# Chunk 1: --check-hosts reporting
+# ---------------------------------------------------------------------------
+
+def check_hosts(truth: dict[str, str]) -> list[str]:
+    """Compare each toolkit plugin's installed version vs truth across Claude + Codex.
+
+    Returns a list of drift summary lines (one per stale scope/install).
+    Never auto-runs any host commands — report only.
+    """
+    drift_lines: list[str] = []
+
+    # --- Claude ---
+    print("\n--- Claude host installs ---")
+    claude_installed = load_claude_installed()
+    if claude_installed is not None:
+        claude_drift = find_claude_drift(claude_installed, truth)
+        if not claude_drift:
+            print("  All Claude installs up to date.")
+        else:
+            for item in claude_drift:
+                scope = item["scope"]
+                name = item["name"]
+                inst_v = item["installed_version"]
+                truth_v = item["truth_version"]
+                cmd = claude_update_cmd(name, scope)
+                line = (
+                    f"STALE Claude [{scope}] {name}: {inst_v} → {truth_v}"
+                    f"\n    Fix: {cmd}"
+                    f"\n    Note: restart Claude Code after update"
+                )
+                if item.get("projectPath"):
+                    line += f"\n    Project: {item['projectPath']}"
+                print(f"  {line}")
+                drift_lines.append(f"Claude [{scope}] {name}: {inst_v} → {truth_v}")
+
+    # --- Codex ---
+    print("\n--- Codex host installs ---")
+    codex_output = run_codex_plugin_list()
+    if codex_output is not None:
+        codex_installed = parse_codex_plugin_list(codex_output, CODEX_MARKETPLACE_KEY)
+        codex_drift = find_codex_drift(codex_installed, truth)
+        if not codex_drift:
+            print("  All Codex installs up to date.")
+        else:
+            print("  Note: Codex has NO `plugin update` command — must remove then re-add.")
+            for item in codex_drift:
+                name = item["name"]
+                inst_v = item["installed_version"]
+                truth_v = item["truth_version"]
+                remove_cmd, add_cmd = codex_remediate_cmds(name, CODEX_MARKETPLACE_KEY)
+                print(f"  STALE Codex {name}: {inst_v} → {truth_v}")
+                print(f"    Fix: {remove_cmd}")
+                print(f"         {add_cmd}")
+                drift_lines.append(f"Codex {name}: {inst_v} → {truth_v}")
+
+    return drift_lines
+
+
+# ---------------------------------------------------------------------------
+# Chunk 2: --check mode (CI/cron read-only)
+# ---------------------------------------------------------------------------
+
+def check_all_surfaces(prefer: str) -> int:
+    """Read-only check of all surfaces + host drift.
+
+    Prints one line per drift. Returns 3 if any drift found, 2 if clean.
+    Never modifies files.
+    """
+    all_drifts: list[str] = []
+
+    # Catalog surfaces
+    try:
+        versions = build_version_map(prefer)
+    except (OSError, json.JSONDecodeError) as e:
+        print(f"marketplace-sync: ERROR reading catalog — {e}", file=sys.stderr)
+        return 1
+
+    changes: list[str] = []
+    mk_before = MARKETPLACE.read_text(encoding="utf-8")
+    ag_before = AGENTS_MARKETPLACE.read_text(encoding="utf-8")
+    rd_before = README.read_text(encoding="utf-8")
+
+    apply_manifest(MARKETPLACE, ".claude-plugin/marketplace.json", versions, changes)
+    apply_manifest(AGENTS_MARKETPLACE, ".agents/plugins/marketplace.json", versions, changes)
+    apply_readme(rd_before, versions, changes)
+
+    if changes:
+        print("\nCatalog/README surface drifts:")
+        for c in changes:
+            print(f"  DRIFT {c}")
+        all_drifts.extend(changes)
+    else:
+        print("\nCatalog surfaces: clean")
+
+    # Host drift
+    host_drifts = check_hosts(versions)
+    all_drifts.extend(host_drifts)
+
+    # package.json / plugin.json drift (Chunk 3)
+    pkg_drifts = scan_package_json_drift(TOOLKIT_ROOT / "plugins")
+    drifted = [r for r in pkg_drifts if r["drifted"]]
+    if drifted:
+        print("\npackage.json ↔ plugin.json drifts:")
+        for item in drifted:
+            line = (
+                f"  DRIFT {item['name']}: package.json={item['package_json_version']} "
+                f"vs plugin.json={item['plugin_json_version']}"
+            )
+            print(line)
+            all_drifts.append(line.strip())
+    else:
+        print("\npackage.json ↔ plugin.json: clean")
+
+    if all_drifts:
+        print(f"\n{len(all_drifts)} drift(s) found — exit 3")
+        return 3
+    print("\nAll surfaces clean — exit 2")
+    return 2
+
+
+# ---------------------------------------------------------------------------
+# Chunk 3: package.json ↔ plugin.json drift detection
+# ---------------------------------------------------------------------------
+
+def scan_package_json_drift(plugins_dir: Path) -> list[dict]:
+    """For each plugins/<name>/ mirror with both package.json and plugin.json,
+    report version mismatch.
+
+    Returns list of dicts: {name, package_json_version, plugin_json_version, drifted}
+    """
+    results = []
+    if not plugins_dir.is_dir():
+        return results
+
+    for plugin_dir in sorted(plugins_dir.iterdir()):
+        if not plugin_dir.is_dir():
+            continue
+        name = plugin_dir.name
+
+        pj_path = plugin_dir / "package.json"
+        # plugin.json can be at .claude-plugin/plugin.json or plugin.json (root)
+        plj_path = plugin_dir / ".claude-plugin" / "plugin.json"
+        if not plj_path.exists():
+            plj_path = plugin_dir / "plugin.json"
+
+        if not pj_path.exists() or not plj_path.exists():
+            continue
+
+        try:
+            pj_v = json.loads(pj_path.read_text(encoding="utf-8")).get("version", "")
+        except (json.JSONDecodeError, OSError):
+            pj_v = ""
+        try:
+            plj_v = json.loads(plj_path.read_text(encoding="utf-8")).get("version", "")
+        except (json.JSONDecodeError, OSError):
+            plj_v = ""
+
+        results.append({
+            "name": name,
+            "package_json_version": pj_v,
+            "plugin_json_version": plj_v,
+            "drifted": pj_v != plj_v,
+        })
+
+    return results
+
+
+def detect_pkg_plugin_drift_from_pairs(pairs: list[dict]) -> list[dict]:
+    """Filter a list of {name, package_json_version, plugin_json_version} dicts
+    to only those with a mismatch, adding drifted=True.
+
+    This is the pure comparison logic, testable without touching the filesystem.
+    """
+    result = []
+    for item in pairs:
+        pj_v = item.get("package_json_version", "")
+        plj_v = item.get("plugin_json_version", "")
+        if pj_v != plj_v:
+            result.append({**item, "drifted": True})
+    return result
+
+
+def report_package_json_drift() -> list[dict]:
+    """Scan and print package.json ↔ plugin.json drift. Returns drifted items."""
+    results = scan_package_json_drift(TOOLKIT_ROOT / "plugins")
+    drifted = [r for r in results if r["drifted"]]
+
+    print(f"\n--- package.json ↔ plugin.json drift ({len(results)} mirrors checked) ---")
+    if not drifted:
+        print("  All mirrors in sync.")
+    else:
+        for item in drifted:
+            print(
+                f"  DRIFT {item['name']:<22} "
+                f"package.json={item['package_json_version']}  "
+                f"plugin.json={item['plugin_json_version']}"
+            )
+    return drifted
+
+
+# ---------------------------------------------------------------------------
+# Chunk 4: launchd cron installation / removal
+# ---------------------------------------------------------------------------
+
+LAUNCHD_LABEL = "ai.rosslabs.marketplace-sync"
+LAUNCHD_PLIST_DEST = Path.home() / "Library" / "LaunchAgents" / f"{LAUNCHD_LABEL}.plist"
+
+LAUNCHD_PLIST_TEMPLATE = """\
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>{label}</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>{python}</string>
+        <string>{script}</string>
+        <string>--all</string>
+        <string>--check</string>
+    </array>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>9</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>{log_dir}/marketplace-sync.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>{log_dir}/marketplace-sync.err</string>
+
+    <!-- Only run when the user is logged in (LaunchAgent, not LaunchDaemon) -->
+    <!-- The job exits 2 (clean) or 3 (drift found). Check the log file for details. -->
+</dict>
+</plist>
+"""
+
+
+def install_cron() -> int:
+    """Write the launchd plist and load it. Does NOT activate silently — user
+    must call --install-cron explicitly. Prints what it's doing."""
+    python = sys.executable
+    script = str(Path(__file__).resolve())
+    log_dir = str(Path.home() / "Library" / "Logs")
+    plist_content = LAUNCHD_PLIST_TEMPLATE.format(
+        label=LAUNCHD_LABEL,
+        python=python,
+        script=script,
+        log_dir=log_dir,
+    )
+
+    agents_dir = LAUNCHD_PLIST_DEST.parent
+    agents_dir.mkdir(parents=True, exist_ok=True)
+
+    LAUNCHD_PLIST_DEST.write_text(plist_content, encoding="utf-8")
+    print(f"Wrote plist: {LAUNCHD_PLIST_DEST}")
+
+    try:
+        r = subprocess.run(
+            ["launchctl", "load", str(LAUNCHD_PLIST_DEST)],
+            capture_output=True, text=True, timeout=10,
+        )
+        if r.returncode == 0:
+            print(f"launchctl load succeeded.")
+        else:
+            print(f"launchctl load returned {r.returncode}: {r.stderr.strip()}")
+            print("The plist file is written; you can load it manually:")
+            print(f"  launchctl load {LAUNCHD_PLIST_DEST}")
+    except (FileNotFoundError, subprocess.TimeoutExpired) as e:
+        print(f"Could not run launchctl: {e}")
+        print(f"Load manually: launchctl load {LAUNCHD_PLIST_DEST}")
+
+    print(
+        f"\nDaily check runs at 09:00. Logs at:\n"
+        f"  {log_dir}/marketplace-sync.log\n"
+        f"  {log_dir}/marketplace-sync.err\n"
+        f"\nTo uninstall: marketplace-sync.py --uninstall-cron"
+    )
+    return 0
+
+
+def uninstall_cron() -> int:
+    """Unload and remove the launchd plist."""
+    if not LAUNCHD_PLIST_DEST.exists():
+        print(f"Plist not found: {LAUNCHD_PLIST_DEST} — nothing to remove.")
+        return 0
+
+    try:
+        r = subprocess.run(
+            ["launchctl", "unload", str(LAUNCHD_PLIST_DEST)],
+            capture_output=True, text=True, timeout=10,
+        )
+        if r.returncode == 0:
+            print("launchctl unload succeeded.")
+        else:
+            print(f"launchctl unload returned {r.returncode}: {r.stderr.strip()}")
+    except (FileNotFoundError, subprocess.TimeoutExpired) as e:
+        print(f"Could not run launchctl unload: {e}")
+
+    LAUNCHD_PLIST_DEST.unlink(missing_ok=True)
+    print(f"Removed: {LAUNCHD_PLIST_DEST}")
+    return 0
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(description="Reconcile marketplace + README to true plugin versions")
     ap.add_argument("child_path", nargs="?", help="Single plugin dir (local mirror mode)")
@@ -188,7 +788,28 @@ def main(argv: list[str]) -> int:
     ap.add_argument("--source", choices=["external", "local"], default="external",
                     help="Version source of truth (default: external repo via gh)")
     ap.add_argument("--write", action="store_true", help="Apply changes (default: dry-run)")
+    ap.add_argument("--check-hosts", action="store_true",
+                    help="Compare installed host plugin versions vs source-of-truth; emit fix cmds")
+    ap.add_argument("--check", action="store_true",
+                    help="Read-only: exit 3 if ANY surface drifts (catalog/README/.agents/hosts). For CI/cron.")
+    ap.add_argument("--install-cron", action="store_true",
+                    help="Install launchd plist to run --all --check daily at 09:00 (macOS only)")
+    ap.add_argument("--uninstall-cron", action="store_true",
+                    help="Remove the launchd plist installed by --install-cron")
     args = ap.parse_args(argv)
+
+    # Cron management — no other files needed
+    if args.install_cron:
+        return install_cron()
+    if args.uninstall_cron:
+        return uninstall_cron()
+
+    # --check mode: read-only, CI-safe, exit 3 on any drift
+    if args.check:
+        for p in (MARKETPLACE, AGENTS_MARKETPLACE, README):
+            if not p.exists():
+                die(f"expected file not found: {p}")
+        return check_all_surfaces(args.source)
 
     for p in (MARKETPLACE, AGENTS_MARKETPLACE, README):
         if not p.exists():
@@ -196,6 +817,12 @@ def main(argv: list[str]) -> int:
 
     if args.all:
         versions = build_version_map(args.source)
+    elif args.check_hosts:
+        # --check-hosts standalone: read truth from local catalog (no gh calls needed)
+        versions = catalog_versions_local()
+        check_hosts(versions)
+        report_package_json_drift()
+        return 0
     elif args.child_path:
         child = Path(args.child_path).expanduser().resolve() / ".claude-plugin" / "plugin.json"
         if not child.exists():
@@ -205,7 +832,7 @@ def main(argv: list[str]) -> int:
             die("child plugin.json missing 'name'")
         versions = {pj["name"]: pj.get("version")}
     else:
-        die("provide a plugin path or --all")
+        die("provide a plugin path, --all, --check, --check-hosts, --install-cron, or --uninstall-cron")
 
     changes: list[str] = []
     mk_before = MARKETPLACE.read_text(encoding="utf-8")
@@ -215,6 +842,11 @@ def main(argv: list[str]) -> int:
     mk_after = apply_manifest(MARKETPLACE, ".claude-plugin/marketplace.json", versions, changes)
     ag_after = apply_manifest(AGENTS_MARKETPLACE, ".agents/plugins/marketplace.json", versions, changes)
     rd_after = apply_readme(rd_before, versions, changes)
+
+    # --check-hosts: report host install drift (summarized under --all too)
+    if args.check_hosts or args.all:
+        check_hosts(versions)
+        report_package_json_drift()
 
     print()
     if not changes:
