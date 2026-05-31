@@ -39,6 +39,7 @@ import os
 import re
 import subprocess
 import sys
+import xml.sax.saxutils
 from pathlib import Path
 
 TOOLKIT_ROOT = Path(__file__).resolve().parent.parent
@@ -198,26 +199,42 @@ def build_version_map(prefer: str) -> dict[str, str]:
 def semver_lt(a: str | None, b: str | None) -> bool:
     """Return True if version a is strictly less than version b.
 
-    Uses a simple numeric-part comparison: splits on '.' and compares each
-    segment as an integer. Non-numeric segments are treated as 0 (safe
-    degradation for git SHAs, pre-release tags, etc.). Missing parts are 0.
-    Returns False on any None input — None is not considered stale.
+    Strips prerelease/build metadata (everything from the first '-' or '+')
+    before comparing numeric parts.  This means "1.0.0-rc.1" and "1.0.0"
+    compare equal on their release portion, so neither direction of a
+    release/prerelease pair is considered stale — the safer choice vs.
+    emitting a downgrade command.
+
+    Design choice: strip suffix rather than returning UNRESOLVABLE, because
+    the common case is a toolkit version that has moved from a prerelease to
+    the identical release (e.g. "1.0.0-rc.1" → "1.0.0").  Treating them as
+    equal suppresses the false "update" in both directions.  Operators that
+    need strict prerelease ordering must use a different tool.
+
+    Non-numeric segments (after stripping) are treated as 0 (safe degradation
+    for git SHAs). Missing parts are 0.  Returns False on any None input —
+    None is not considered stale.
     """
     if a is None or b is None:
         return False
-    if a == b:
+
+    # Strip prerelease / build-metadata suffixes before any comparison
+    a_release = re.sub(r"[-+].*$", "", str(a))
+    b_release = re.sub(r"[-+].*$", "", str(b))
+
+    if a_release == b_release:
         return False
 
     def parse(v: str) -> list[int]:
         parts = []
-        for seg in str(v).split("."):
+        for seg in v.split("."):
             try:
                 parts.append(int(seg))
             except (ValueError, TypeError):
                 parts.append(0)
         return parts
 
-    pa, pb = parse(a), parse(b)
+    pa, pb = parse(a_release), parse(b_release)
     # Pad to equal length
     maxlen = max(len(pa), len(pb))
     pa += [0] * (maxlen - len(pa))
@@ -390,6 +407,8 @@ def find_claude_drift(
             continue  # not a toolkit plugin we're tracking
         for entry in entries:
             inst_v = entry.get("version", "")
+            if not inst_v:
+                continue  # missing version field — skip rather than emit a spurious update
             if semver_lt(inst_v, truth_v):
                 item: dict = {
                     "name": name,
@@ -539,14 +558,14 @@ def check_all_surfaces(prefer: str) -> int:
     # Catalog surfaces
     try:
         versions = build_version_map(prefer)
+        mk_before = MARKETPLACE.read_text(encoding="utf-8")
+        ag_before = AGENTS_MARKETPLACE.read_text(encoding="utf-8")
+        rd_before = README.read_text(encoding="utf-8")
     except (OSError, json.JSONDecodeError) as e:
         print(f"marketplace-sync: ERROR reading catalog — {e}", file=sys.stderr)
         return 1
 
     changes: list[str] = []
-    mk_before = MARKETPLACE.read_text(encoding="utf-8")
-    ag_before = AGENTS_MARKETPLACE.read_text(encoding="utf-8")
-    rd_before = README.read_text(encoding="utf-8")
 
     apply_manifest(MARKETPLACE, ".claude-plugin/marketplace.json", versions, changes)
     apply_manifest(AGENTS_MARKETPLACE, ".agents/plugins/marketplace.json", versions, changes)
@@ -713,10 +732,15 @@ LAUNCHD_PLIST_TEMPLATE = """\
 
 def install_cron() -> int:
     """Write the launchd plist and load it. Does NOT activate silently — user
-    must call --install-cron explicitly. Prints what it's doing."""
-    python = sys.executable
-    script = str(Path(__file__).resolve())
-    log_dir = str(Path.home() / "Library" / "Logs")
+    must call --install-cron explicitly. Prints what it's doing.
+
+    Idempotent: unloads any previously-loaded job before writing + loading, so
+    re-running --install-cron succeeds cleanly (unload failure is silently
+    ignored — the job may simply not be loaded yet).
+    """
+    python = xml.sax.saxutils.escape(sys.executable)
+    script = xml.sax.saxutils.escape(str(Path(__file__).resolve()))
+    log_dir = xml.sax.saxutils.escape(str(Path.home() / "Library" / "Logs"))
     plist_content = LAUNCHD_PLIST_TEMPLATE.format(
         label=LAUNCHD_LABEL,
         python=python,
@@ -726,6 +750,15 @@ def install_cron() -> int:
 
     agents_dir = LAUNCHD_PLIST_DEST.parent
     agents_dir.mkdir(parents=True, exist_ok=True)
+
+    # Unload any existing job before overwriting (ignore failure — not loaded is OK)
+    try:
+        subprocess.run(
+            ["launchctl", "unload", str(LAUNCHD_PLIST_DEST)],
+            capture_output=True, text=True, timeout=10,
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
 
     LAUNCHD_PLIST_DEST.write_text(plist_content, encoding="utf-8")
     print(f"Wrote plist: {LAUNCHD_PLIST_DEST}")

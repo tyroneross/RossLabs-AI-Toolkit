@@ -71,6 +71,31 @@ class TestSemverCompare(unittest.TestCase):
         result = ms.semver_lt(None, "1.0.0")
         self.assertIsInstance(result, bool)
 
+    # R1: prerelease / release parity — neither direction should emit a command
+    def test_release_vs_prerelease_not_stale(self):
+        # "1.0.0" installed, "1.0.0-rc.1" is truth → should NOT flag as stale
+        self.assertFalse(ms.semver_lt("1.0.0", "1.0.0-rc.1"))
+
+    def test_prerelease_vs_release_not_stale(self):
+        # "1.0.0-rc.1" installed, "1.0.0" is truth → should NOT flag as stale
+        self.assertFalse(ms.semver_lt("1.0.0-rc.1", "1.0.0"))
+
+    def test_prerelease_equal_release_not_stale(self):
+        # Identical modulo suffix
+        self.assertFalse(ms.semver_lt("2.3.4-alpha.1", "2.3.4"))
+
+    def test_older_prerelease_vs_newer_release_is_stale(self):
+        # "1.0.0-rc.1" installed, truth is "1.1.0" → numerically older, should be stale
+        self.assertTrue(ms.semver_lt("1.0.0-rc.1", "1.1.0"))
+
+    def test_newer_prerelease_vs_older_release_not_stale(self):
+        # "2.0.0-rc.1" installed, truth is "1.9.9" → numerically newer, not stale
+        self.assertFalse(ms.semver_lt("2.0.0-rc.1", "1.9.9"))
+
+    def test_build_metadata_stripped(self):
+        # Build metadata (+build.123) should be stripped the same way
+        self.assertFalse(ms.semver_lt("1.0.0+build.123", "1.0.0"))
+
 
 # ---------------------------------------------------------------------------
 # Claude installed_plugins.json parsing (Chunk 1)
@@ -168,6 +193,24 @@ class TestParseCodexPluginList(unittest.TestCase):
         # ibr@ross-labs-local is "not installed" in fixture, so absent
         self.assertNotIn("ibr", result)
 
+    # R3: positive-presence assertions for all installed entries
+    def test_prompt_builder_present(self):
+        result = ms.parse_codex_plugin_list(self.fixture_text, "ross-labs-local")
+        self.assertIn("prompt-builder", result)
+        self.assertEqual(result["prompt-builder"]["version"], "0.1.0")
+
+    def test_agent_builder_present(self):
+        result = ms.parse_codex_plugin_list(self.fixture_text, "ross-labs-local")
+        self.assertIn("agent-builder", result)
+        self.assertEqual(result["agent-builder"]["version"], "0.1.0")
+
+    def test_all_installed_entries_present(self):
+        # Fixture has 4 installed entries under ross-labs-local:
+        # build-loop, claude-code-debugger, prompt-builder, agent-builder
+        result = ms.parse_codex_plugin_list(self.fixture_text, "ross-labs-local")
+        for expected in ("build-loop", "claude-code-debugger", "prompt-builder", "agent-builder"):
+            self.assertIn(expected, result, f"Expected installed plugin '{expected}' to be present")
+
     def test_empty_output(self):
         result = ms.parse_codex_plugin_list("", "ross-labs-local")
         self.assertEqual(result, {})
@@ -209,6 +252,21 @@ class TestStaleDetection(unittest.TestCase):
             truth={"ibr": "1.3.0"},
         )
         self.assertEqual(drift, [])
+
+    # R2: empty installed version must not produce a spurious stale entry
+    def test_empty_installed_version_not_flagged_stale(self):
+        drift = ms.find_claude_drift(
+            installed={"ibr": [{"scope": "user", "version": ""}]},
+            truth={"ibr": "1.3.0"},
+        )
+        self.assertEqual(drift, [], "Empty installed version must not emit an update command")
+
+    def test_missing_version_key_not_flagged_stale(self):
+        drift = ms.find_claude_drift(
+            installed={"ibr": [{"scope": "user"}]},  # no 'version' key at all
+            truth={"ibr": "1.3.0"},
+        )
+        self.assertEqual(drift, [], "Missing version key must not emit an update command")
 
     def test_stale_codex_install(self):
         drift = ms.find_codex_drift(
