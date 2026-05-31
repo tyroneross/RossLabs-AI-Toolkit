@@ -44,8 +44,10 @@
     {
       "name": "agent-builder",
       "source": {
-        "source": "url",
-        "url": "https://github.com/tyroneross/agent-builder.git"
+        "source": "git-subdir",
+        "url": "https://github.com/tyroneross/agent-builder.git",
+        "path": "./plugin",
+        "ref": "main"
       },
       "policy": {
         "installation": "AVAILABLE",
@@ -56,8 +58,10 @@
     {
       "name": "agent-astronomer",
       "source": {
-        "source": "url",
-        "url": "https://github.com/tyroneross/agent-astronomer.git"
+        "source": "git-subdir",
+        "url": "https://github.com/tyroneross/agent-astronomer.git",
+        "path": "./plugin",
+        "ref": "main"
       },
       "policy": {
         "installation": "AVAILABLE",
@@ -188,8 +192,10 @@
     {
       "name": "stratagem",
       "source": {
-        "source": "url",
-        "url": "https://github.com/tyroneross/stratagem.git"
+        "source": "git-subdir",
+        "url": "https://github.com/tyroneross/stratagem.git",
+        "path": "./plugin",
+        "ref": "main"
       },
       "policy": {
         "installation": "AVAILABLE",
