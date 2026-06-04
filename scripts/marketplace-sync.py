@@ -598,6 +598,11 @@ def check_all_surfaces(prefer: str) -> int:
     else:
         print("\npackage.json ↔ plugin.json: clean")
 
+    # Mirror-on-main hygiene (Chunk 5)
+    off_main = report_mirror_branch_hygiene()
+    for r in off_main:
+        all_drifts.append(f"Mirror {r['name']} off-main (branch={r['branch'] or r['error']})")
+
     if all_drifts:
         print(f"\n{len(all_drifts)} drift(s) found — exit 3")
         return 3
@@ -683,6 +688,144 @@ def report_package_json_drift() -> list[dict]:
                 f"plugin.json={item['plugin_json_version']}"
             )
     return drifted
+
+
+# ---------------------------------------------------------------------------
+# Chunk 5: mirror-on-main invariant
+# ---------------------------------------------------------------------------
+#
+# Rule: every plugin mirror under plugins/<name>/ (symlink or directory) MUST
+# resolve to a git working tree whose current branch is `main`. The marketplace
+# distributes whatever the mirror reflects, so any drift (e.g. a source repo
+# worktree gets temporarily checked out on a feature branch) silently mis-ships
+# the wrong version. This check makes that drift impossible to ignore.
+#
+# Detection is read-only: `git -C <target> branch --show-current`. A non-git
+# target, missing target, or detached HEAD records an `error` field and is
+# treated as off-main. Plain directories (rare; e.g. .claude-code-debugger
+# stub-dirs that used to be tracked) are skipped — they have no source repo.
+
+
+def scan_mirror_branches(plugins_dir: Path) -> list[dict]:
+    """For each entry under plugins_dir, resolve symlink target + git branch.
+
+    Returns list of dicts:
+      {name, target_path, branch, on_main, error}
+    - target_path: absolute path the symlink resolves to (or the dir itself if not a symlink)
+    - branch: current branch name, or '' on error/detached HEAD
+    - on_main: True iff branch == 'main'
+    - error: human-readable reason when branch lookup fails, else ''
+    """
+    results: list[dict] = []
+    if not plugins_dir.is_dir():
+        return results
+
+    for entry in sorted(plugins_dir.iterdir()):
+        # Skip hidden + non-symlink-non-dir entries (README.md, .DS_Store, .bookmark stub, etc.)
+        if entry.name.startswith("."):
+            continue
+        if not (entry.is_symlink() or entry.is_dir()):
+            continue
+        # Skip plain dirs that aren't mirrors (no .claude-plugin/plugin.json AND not a symlink)
+        if not entry.is_symlink():
+            if not (entry / ".claude-plugin" / "plugin.json").exists() and not (entry / "plugin.json").exists():
+                continue
+
+        try:
+            target = entry.resolve(strict=True)
+        except (FileNotFoundError, RuntimeError) as e:
+            results.append({
+                "name": entry.name,
+                "target_path": str(entry),
+                "branch": "",
+                "on_main": False,
+                "error": f"resolve failed: {e}",
+            })
+            continue
+
+        # Need a git repo at the target
+        git_dir = target / ".git"
+        if not (git_dir.is_dir() or git_dir.is_file()):  # .git can be a file for worktrees
+            results.append({
+                "name": entry.name,
+                "target_path": str(target),
+                "branch": "",
+                "on_main": False,
+                "error": "target is not a git working tree",
+            })
+            continue
+
+        try:
+            out = subprocess.run(
+                ["git", "-C", str(target), "branch", "--show-current"],
+                capture_output=True, text=True, timeout=10,
+            )
+        except (FileNotFoundError, subprocess.TimeoutExpired) as e:
+            results.append({
+                "name": entry.name,
+                "target_path": str(target),
+                "branch": "",
+                "on_main": False,
+                "error": f"git branch failed: {e}",
+            })
+            continue
+
+        if out.returncode != 0:
+            results.append({
+                "name": entry.name,
+                "target_path": str(target),
+                "branch": "",
+                "on_main": False,
+                "error": f"git returned {out.returncode}: {out.stderr.strip()}",
+            })
+            continue
+
+        branch = out.stdout.strip()
+        results.append({
+            "name": entry.name,
+            "target_path": str(target),
+            "branch": branch,
+            "on_main": branch == "main",
+            "error": "" if branch else "detached HEAD or empty branch",
+        })
+
+    return results
+
+
+def find_off_main_mirrors(records: list[dict]) -> list[dict]:
+    """Filter scan_mirror_branches output to only off-main entries.
+
+    Pure function — testable without touching the filesystem.
+    """
+    return [r for r in records if not r.get("on_main")]
+
+
+def mirror_fix_command(name: str, current_target: str) -> str:
+    """Emit a fix hint for an off-main mirror. The actual main target depends
+    on the operator's setup; we surface what we know and let them point it.
+    """
+    return (
+        f"# Mirror {name} is off-main. Point it at a main-tracking working tree:\n"
+        f"#   1. Find or create a worktree on main: git -C <source-repo> worktree add ../<source-repo>-main main\n"
+        f"#   2. Re-link:  ln -sfn <path-to-main-worktree> plugins/{name}\n"
+        f"#   Current target: {current_target}"
+    )
+
+
+def report_mirror_branch_hygiene() -> list[dict]:
+    """Print mirror-on-main report. Returns list of off-main records (empty == clean)."""
+    records = scan_mirror_branches(TOOLKIT_ROOT / "plugins")
+    off_main = find_off_main_mirrors(records)
+
+    print(f"\n--- Mirror branch hygiene ({len(records)} mirrors checked) ---")
+    if not off_main:
+        print("  All mirrors on main.")
+        return []
+    for r in off_main:
+        label = r["branch"] or r["error"] or "<unknown>"
+        print(f"  OFF-MAIN {r['name']:<22} branch={label}")
+        print("  " + mirror_fix_command(r["name"], r["target_path"]).replace("\n", "\n  "))
+    return off_main
 
 
 # ---------------------------------------------------------------------------
@@ -855,6 +998,7 @@ def main(argv: list[str]) -> int:
         versions = catalog_versions_local()
         check_hosts(versions)
         report_package_json_drift()
+        report_mirror_branch_hygiene()
         return 0
     elif args.child_path:
         child = Path(args.child_path).expanduser().resolve() / ".claude-plugin" / "plugin.json"
@@ -880,6 +1024,7 @@ def main(argv: list[str]) -> int:
     if args.check_hosts or args.all:
         check_hosts(versions)
         report_package_json_drift()
+        report_mirror_branch_hygiene()
 
     print()
     if not changes:

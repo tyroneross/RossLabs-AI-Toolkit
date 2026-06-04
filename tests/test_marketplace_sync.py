@@ -362,5 +362,71 @@ class TestPackageJsonDrift(unittest.TestCase):
         self.assertEqual(results, [])
 
 
+# ---------------------------------------------------------------------------
+# Chunk 5: mirror-on-main invariant
+# ---------------------------------------------------------------------------
+
+class TestMirrorBranchHygiene(unittest.TestCase):
+
+    def setUp(self):
+        self.plugins_dir = REPO_ROOT / "plugins"
+
+    def test_scan_returns_list(self):
+        results = ms.scan_mirror_branches(self.plugins_dir)
+        self.assertIsInstance(results, list)
+
+    def test_each_record_has_required_keys(self):
+        results = ms.scan_mirror_branches(self.plugins_dir)
+        for item in results:
+            for key in ("name", "target_path", "branch", "on_main", "error"):
+                self.assertIn(key, item, f"missing key {key} in {item}")
+
+    def test_currently_all_mirrors_on_main(self):
+        """Regression catch: after the mirror-on-main rule lands, every mirror
+        in the live tree must report on_main=True. If a future commit re-points
+        a mirror to a feature branch, this test fails."""
+        results = ms.scan_mirror_branches(self.plugins_dir)
+        off_main = [r for r in results if not r["on_main"]]
+        if off_main:
+            details = "\n".join(
+                f"  - {r['name']}: branch={r['branch']!r} error={r['error']!r}"
+                for r in off_main
+            )
+            self.fail(f"Off-main mirrors detected:\n{details}")
+
+    def test_synthetic_off_main_detected(self):
+        records = [
+            {"name": "a", "target_path": "/x/a", "branch": "main", "on_main": True, "error": ""},
+            {"name": "b", "target_path": "/x/b", "branch": "feature/foo", "on_main": False, "error": ""},
+            {"name": "c", "target_path": "/x/c", "branch": "", "on_main": False, "error": "no git"},
+        ]
+        off_main = ms.find_off_main_mirrors(records)
+        self.assertEqual(len(off_main), 2)
+        names = {r["name"] for r in off_main}
+        self.assertEqual(names, {"b", "c"})
+
+    def test_synthetic_all_on_main_returns_empty(self):
+        records = [
+            {"name": "a", "target_path": "/x/a", "branch": "main", "on_main": True, "error": ""},
+            {"name": "b", "target_path": "/x/b", "branch": "main", "on_main": True, "error": ""},
+        ]
+        self.assertEqual(ms.find_off_main_mirrors(records), [])
+
+    def test_missing_on_main_key_treated_as_off(self):
+        # Defensive: dict missing the on_main key (e.g. corrupted record)
+        records = [{"name": "x", "target_path": "/x", "branch": "main"}]
+        self.assertEqual(ms.find_off_main_mirrors(records)[0]["name"], "x")
+
+    def test_fix_command_includes_name(self):
+        cmd = ms.mirror_fix_command("foo", "/some/path")
+        self.assertIn("plugins/foo", cmd)
+        self.assertIn("/some/path", cmd)
+        self.assertIn("ln -sfn", cmd)
+
+    def test_scan_handles_nonexistent_dir(self):
+        results = ms.scan_mirror_branches(REPO_ROOT / "no_such_dir_for_test_xyz")
+        self.assertEqual(results, [])
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
