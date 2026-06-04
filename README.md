@@ -49,7 +49,6 @@ Browse a clickable version at [rosslabs.ai/toolkit](https://rosslabs.ai/toolkit)
 | [mockup-gallery](https://github.com/tyroneross/mockup-gallery) | `0.5.1` | Visual mockup review with component-level ratings, auto-save to file, and Claude Code integration. |
 | [replit-migrate](https://github.com/tyroneross/replit-migrate) | `0.1.1` | Migrate Replit apps to web (Vercel) or native (iOS/macOS) with encoded lessons from real migrations. |
 | [web-scraper](https://github.com/tyroneross/blog-content-scraper) | `0.5.0` | Intelligent web scraper for extracting blog and news content from any website. |
-| [stratagem](https://github.com/tyroneross/stratagem) | `0.1.0` | Market research agent with document processing, web scraping, SEC filings, and financial analysis. |
 
 Install any of them after adding the marketplace:
 
@@ -113,7 +112,6 @@ claude plugin install spectra@rosslabs-ai-toolkit
 claude plugin install mockup-gallery@rosslabs-ai-toolkit
 claude plugin install replit-migrate@rosslabs-ai-toolkit
 claude plugin install web-scraper@rosslabs-ai-toolkit
-claude plugin install stratagem@rosslabs-ai-toolkit
 ```
 
 > `showcase` is deprecated — install `spectra` instead (showcase folded into `spectra` v0.2.0; migrate with `spectra_library action="migrate-from-showcase"`).

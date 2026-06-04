@@ -269,28 +269,6 @@
       ]
     },
     {
-      "name": "stratagem",
-      "description": "Market research agent — documents, web scraping, SEC filings, financial analysis",
-      "version": "0.1.0",
-      "author": {
-        "name": "Tyrone Ross"
-      },
-      "source": {
-        "source": "github",
-        "repo": "tyroneross/stratagem",
-        "path": "plugin"
-      },
-      "repository": "https://github.com/tyroneross/stratagem",
-      "category": "research",
-      "keywords": [
-        "research",
-        "sec",
-        "financial-analysis",
-        "market-research",
-        "earnings"
-      ]
-    },
-    {
       "name": "mockup-gallery",
       "description": "Visual mockup review with component-level ratings",
       "version": "0.5.1",
