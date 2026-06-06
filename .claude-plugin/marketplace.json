@@ -334,6 +334,31 @@
       ]
     },
     {
+      "name": "agent-rally-point",
+      "description": "Repo-local coordination surface for parallel coding agents (Claude Code, Codex, Gemini). Records claims, checks write boundaries, routes handoffs, and exposes room state via the rally CLI. Three skills — agent-rally-point (per-session loop), rally-workflows (fan-out + dynamic-workflows protocol), mini-loop (per-task quality gate). Advisory-only hooks auto-fire on SessionStart and PreToolUse to surface room awareness and deconflict before edits; never blocks. Backend is the rally Rust CLI; install via `cargo install --path crates/rally-cli` from the repo. Self-gates outside rally repos so it is safe to keep installed everywhere.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Tyrone Ross"
+      },
+      "source": {
+        "source": "github",
+        "repo": "tyroneross/agent-rally-point"
+      },
+      "repository": "https://github.com/tyroneross/agent-rally-point",
+      "category": "developer-tools",
+      "keywords": [
+        "agent-coordination",
+        "rally",
+        "dynamic-workflows",
+        "multi-agent",
+        "parallel-agents",
+        "claude-code",
+        "codex",
+        "gemini",
+        "host-neutral"
+      ]
+    },
+    {
       "name": "api-registry",
       "description": "Local doc-content cache and authoritative API source registry. Caches docs as dated markdown with a 7-day freshness contract and answers from the local cache first, falling back to Context7 only when no source is registered. A staleness detector flags docs past the window. Tracks the publish date of each package's latest version and emits an install-cooldown verdict — third-party releases under 7 days old are flagged, the author's own packages exempt. Curation is done in-session, never by a background daemon.",
       "version": "0.2.0",
