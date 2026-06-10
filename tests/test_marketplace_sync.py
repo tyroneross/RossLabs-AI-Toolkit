@@ -538,10 +538,14 @@ class TestActModeHelpers(unittest.TestCase):
         self.assertTrue(msg.strip())
 
     def test_act_worktree_path_is_dedicated(self):
-        # The act worktree must NOT be the developer checkout or repo root —
-        # it lives under a dedicated cache dir.
-        self.assertIn("act-worktree", str(ms.ACT_WORKTREE))
-        self.assertNotEqual(ms.ACT_WORKTREE, ms.TOOLKIT_ROOT)
+        # The act worktree lives under a dedicated cache dir (~/.cache/
+        # marketplace-sync/act-worktree), never a project source tree. Asserting
+        # the dedicated location is robust even when the suite itself runs from
+        # inside the act worktree (where TOOLKIT_ROOT == ACT_WORKTREE).
+        p = str(ms.ACT_WORKTREE)
+        self.assertIn("act-worktree", p)
+        self.assertIn(".cache", p)
+        self.assertIn("marketplace-sync", p)
 
     def test_plugin_cache_path_targets_marketplace_clone(self):
         self.assertTrue(str(ms.PLUGIN_CACHE_MARKETPLACE).endswith("rosslabs-ai-toolkit"))
