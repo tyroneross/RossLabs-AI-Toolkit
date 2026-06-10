@@ -428,5 +428,166 @@ class TestMirrorBranchHygiene(unittest.TestCase):
         self.assertEqual(results, [])
 
 
+# ---------------------------------------------------------------------------
+# Chunk 6: gh resolution (Item 1 PATH bug)
+# ---------------------------------------------------------------------------
+
+import os
+
+
+class TestGhBin(unittest.TestCase):
+
+    def test_returns_path_when_on_path(self):
+        # In the dev environment gh is reachable; if not present at all, the
+        # function must still return None without raising.
+        result = ms.gh_bin()
+        self.assertTrue(result is None or isinstance(result, str))
+
+    def test_falls_back_under_minimal_path(self):
+        # Simulate launchd's minimal PATH. gh is at /opt/homebrew/bin (not on
+        # /usr/bin:/bin), so which() misses and the fallback must catch it —
+        # but only if the fallback binary actually exists on this machine.
+        old = os.environ.get("PATH")
+        try:
+            os.environ["PATH"] = "/usr/bin:/bin"
+            result = ms.gh_bin()
+            # Match the implementation's predicate exactly: present AND executable.
+            fallback_usable = any(
+                os.path.exists(p) and os.access(p, os.X_OK) for p in ms._GH_FALLBACKS
+            )
+            if fallback_usable:
+                self.assertIsNotNone(result, "executable gh at a fallback path must be resolved")
+                self.assertTrue(os.path.isabs(result))
+            else:
+                self.assertIsNone(result)
+        finally:
+            if old is None:
+                os.environ.pop("PATH", None)
+            else:
+                os.environ["PATH"] = old
+
+    def test_none_when_absent_everywhere(self):
+        # Empty PATH + monkeypatched-empty fallbacks → None, never a crash.
+        old_path = os.environ.get("PATH")
+        old_fb = ms._GH_FALLBACKS
+        try:
+            os.environ["PATH"] = ""
+            ms._GH_FALLBACKS = ("/nonexistent/gh/xyz",)
+            self.assertIsNone(ms.gh_bin())
+        finally:
+            ms._GH_FALLBACKS = old_fb
+            if old_path is None:
+                os.environ.pop("PATH", None)
+            else:
+                os.environ["PATH"] = old_path
+
+
+# ---------------------------------------------------------------------------
+# Chunk 6: local_version honors source.path subdir (Item 2)
+# ---------------------------------------------------------------------------
+
+class TestLocalVersionSubpath(unittest.TestCase):
+
+    def test_subpath_resolves_agent_astronomer(self):
+        # agent-astronomer ships under plugin/ — root has no plugin.json, so a
+        # plain local_version(name) misses; the subpath must find 0.1.0.
+        # Only assert if the mirror is present (dev machine).
+        root_only = ms.local_version("agent-astronomer")
+        with_sub = ms.local_version("agent-astronomer", "plugin")
+        if with_sub is not None:
+            # Subpath resolution must succeed where root-only fails for this layout.
+            self.assertEqual(root_only, None,
+                             "agent-astronomer repo root should have no plugin.json")
+            self.assertRegex(with_sub, r"^\d+\.\d+\.\d+")
+
+    def test_subpath_does_not_break_root_plugins(self):
+        # A standard repo-root mirror (web-scraper) must still resolve with an
+        # empty subpath exactly as before.
+        v = ms.local_version("web-scraper")
+        if v is not None:
+            self.assertRegex(v, r"^\d+\.\d+\.\d+")
+
+    def test_subpath_strips_slashes(self):
+        # "/plugin/" and "plugin" must behave identically.
+        a = ms.local_version("agent-astronomer", "plugin")
+        b = ms.local_version("agent-astronomer", "/plugin/")
+        self.assertEqual(a, b)
+
+    def test_unknown_plugin_returns_none(self):
+        self.assertIsNone(ms.local_version("no-such-plugin-xyz", "plugin"))
+
+
+# ---------------------------------------------------------------------------
+# Chunk 6: act-mode pure helpers (Item 1 act mode)
+# ---------------------------------------------------------------------------
+
+class TestActModeHelpers(unittest.TestCase):
+
+    def test_commit_message_lists_changes(self):
+        msg = ms.commit_message_for([
+            ".claude-plugin/marketplace.json: web-scraper.version '0.5.0' → '0.5.2'",
+        ])
+        self.assertIn("auto-sync catalog", msg)
+        self.assertIn("web-scraper", msg)
+        self.assertIn("0.5.2", msg)
+
+    def test_commit_message_empty_changes(self):
+        msg = ms.commit_message_for([])
+        self.assertIn("surface reconcile", msg)
+        # Must still be a non-empty, well-formed message.
+        self.assertTrue(msg.strip())
+
+    def test_act_worktree_path_is_dedicated(self):
+        # The act worktree must NOT be the developer checkout or repo root —
+        # it lives under a dedicated cache dir.
+        self.assertIn("act-worktree", str(ms.ACT_WORKTREE))
+        self.assertNotEqual(ms.ACT_WORKTREE, ms.TOOLKIT_ROOT)
+
+    def test_plugin_cache_path_targets_marketplace_clone(self):
+        self.assertTrue(str(ms.PLUGIN_CACHE_MARKETPLACE).endswith("rosslabs-ai-toolkit"))
+        self.assertIn("marketplaces", str(ms.PLUGIN_CACHE_MARKETPLACE))
+
+    def test_surface_files_bounded(self):
+        # Commit staging is restricted to exactly the three reconcile surfaces —
+        # never a blanket `git add -A` that could capture untracked residue.
+        self.assertEqual(
+            set(ms.ACT_SURFACE_FILES),
+            {".claude-plugin/marketplace.json", ".agents/plugins/marketplace.json", "README.md"},
+        )
+
+    def test_act_branch_is_dedicated(self):
+        # Dedicated branch name so a reused worktree never lands commits on main
+        # in the developer checkout.
+        self.assertEqual(ms.ACT_BRANCH, "marketplace-sync-act")
+        self.assertNotEqual(ms.ACT_BRANCH, "main")
+
+    def test_lockfile_under_cache_dir(self):
+        self.assertTrue(str(ms.ACT_LOCKFILE).endswith("act.lock"))
+        self.assertIn("marketplace-sync", str(ms.ACT_LOCKFILE))
+
+    def test_worktree_invalid_when_not_a_worktree(self):
+        # A path with no .git is never a valid act worktree (guards against a
+        # stale/symlinked dir pointing at the dev checkout).
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            self.assertFalse(ms._worktree_is_valid(Path(d), ms.TOOLKIT_ROOT))
+
+
+# ---------------------------------------------------------------------------
+# Chunk 6: plist template uses act mode (Item 1 activation)
+# ---------------------------------------------------------------------------
+
+class TestPlistActMode(unittest.TestCase):
+
+    def test_plist_template_uses_act_flag(self):
+        rendered = ms.LAUNCHD_PLIST_TEMPLATE.format(
+            label="test", python="/usr/bin/python3",
+            script="/tmp/marketplace-sync.py", log_dir="/tmp",
+        )
+        self.assertIn("<string>--act</string>", rendered)
+        # The old check-only mode must be gone from the template.
+        self.assertNotIn("<string>--check</string>", rendered)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

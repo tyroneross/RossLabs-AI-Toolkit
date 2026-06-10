@@ -20,12 +20,13 @@ Usage:
   marketplace-sync.py --check-hosts              # report installed host drift + fix cmds
   marketplace-sync.py --all --check-hosts        # catalog sync + host drift in one pass
   marketplace-sync.py --check                    # read-only: exit 3 if ANY surface drifts
-  marketplace-sync.py --install-cron             # install launchd daily drift-check (macOS)
+  marketplace-sync.py --act                      # reconcile+commit+push+refresh (dedicated worktree)
+  marketplace-sync.py --install-cron             # install launchd daily --act run (macOS)
   marketplace-sync.py --uninstall-cron           # remove launchd plist
 
 Exit codes:
-  0  changes proposed (and written with --write)
-  1  shape problem (bad JSON, missing file, plugin not found)
+  0  changes proposed (and written with --write); --act: acted or already clean
+  1  shape problem (bad JSON, missing file, plugin not found); --act: push/refresh failure
   2  no changes (every surface already in sync)
   3  --check mode: at least one surface is drifted (catalog, README, .agents, or hosts)
 """
@@ -33,14 +34,39 @@ from __future__ import annotations
 
 import argparse
 import base64
+import contextlib
 import difflib
+import fcntl
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import xml.sax.saxutils
 from pathlib import Path
+
+# Absolute fallbacks for `gh` when PATH is minimal (e.g. under launchd, where
+# the job inherits /usr/bin:/bin and Homebrew's bin dir is absent). Without
+# this, external_version() raises FileNotFoundError on a bare `gh` invocation
+# and silently falls back to the lagging local mirror for every plugin.
+_GH_FALLBACKS = ("/opt/homebrew/bin/gh", "/usr/local/bin/gh")
+
+
+def gh_bin() -> str | None:
+    """Resolve the `gh` executable robustly. Returns an absolute path or None.
+
+    Order: PATH (shutil.which) → known Homebrew/usr-local locations. Returns
+    None when gh is unavailable so external_version() can fail open (skip the
+    external read, fall back to the local mirror) rather than crash.
+    """
+    found = shutil.which("gh")
+    if found:
+        return found
+    for cand in _GH_FALLBACKS:
+        if os.path.exists(cand) and os.access(cand, os.X_OK):
+            return cand
+    return None
 
 TOOLKIT_ROOT = Path(__file__).resolve().parent.parent
 MARKETPLACE = TOOLKIT_ROOT / ".claude-plugin" / "marketplace.json"
@@ -72,6 +98,12 @@ def external_version(source: dict) -> str | None:
     repo = source.get("repo")
     if not repo:
         return None
+    gh = gh_bin()
+    if gh is None:
+        # gh unavailable (e.g. minimal launchd PATH) — fail open so the caller
+        # falls back to the local mirror instead of crashing.
+        print("  (gh not found — skipping external version read, using local mirror)")
+        return None
     path = source.get("path", "").strip("/")
     candidates: list[str] = []
     if path:
@@ -80,7 +112,7 @@ def external_version(source: dict) -> str | None:
     for c in candidates:
         try:
             out = subprocess.run(
-                ["gh", "api", f"repos/{repo}/contents/{c}"],
+                [gh, "api", f"repos/{repo}/contents/{c}"],
                 capture_output=True, text=True, timeout=20,
             )
         except (FileNotFoundError, subprocess.TimeoutExpired):
@@ -96,9 +128,25 @@ def external_version(source: dict) -> str | None:
     return None
 
 
-def local_version(name: str) -> str | None:
-    """Version from the in-repo mirror plugins/<name>/.claude-plugin/plugin.json."""
-    for rel in (f"plugins/{name}/.claude-plugin/plugin.json", f"plugins/{name}/plugin.json"):
+def local_version(name: str, subpath: str = "") -> str | None:
+    """Version from the in-repo mirror plugins/<name>/.
+
+    When the marketplace entry declares a `source.path` (a monorepo sub-dir,
+    e.g. agent-astronomer / agent-builder ship the plugin under `plugin/`), the
+    mirror symlink points at the repo ROOT but the plugin.json lives in that
+    sub-dir. `subpath` (the entry's source.path) is checked first so those
+    plugins resolve locally; the repo-root locations remain the fallback for
+    standard single-plugin repos.
+    """
+    sub = subpath.strip("/")
+    rels: list[str] = []
+    if sub:
+        rels += [
+            f"plugins/{name}/{sub}/.claude-plugin/plugin.json",
+            f"plugins/{name}/{sub}/plugin.json",
+        ]
+    rels += [f"plugins/{name}/.claude-plugin/plugin.json", f"plugins/{name}/plugin.json"]
+    for rel in rels:
         pj = TOOLKIT_ROOT / rel
         if pj.exists():
             try:
@@ -112,13 +160,14 @@ def resolve_version(entry: dict, prefer: str) -> tuple[str | None, str]:
     """Return (version, where) for a marketplace entry. prefer = 'external'|'local'."""
     name = entry.get("name", "")
     src = entry.get("source", {})
+    subpath = src.get("path", "") if isinstance(src, dict) else ""
     if prefer == "local":
-        v = local_version(name)
+        v = local_version(name, subpath)
         return (v, "local") if v else (external_version(src), "external")
     v = external_version(src)
     if v:
         return v, "external"
-    v = local_version(name)
+    v = local_version(name, subpath)
     return (v, "local-fallback") if v else (None, "unresolved")
 
 
@@ -478,7 +527,9 @@ def catalog_versions_local() -> dict[str, str]:
         name = entry.get("name")
         if not name:
             continue
-        v = entry.get("version") or local_version(name)
+        src = entry.get("source", {})
+        subpath = src.get("path", "") if isinstance(src, dict) else ""
+        v = entry.get("version") or local_version(name, subpath)
         if v:
             versions[name] = v
     return versions
@@ -829,6 +880,300 @@ def report_mirror_branch_hygiene() -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
+# Chunk 6: --act mode (cron-driven self-healing reconcile)
+# ---------------------------------------------------------------------------
+#
+# --check (the prior cron mode) only DETECTS drift (exit 3). It never acts, so
+# the catalog drifted for days unnoticed. --act closes the loop: it reconciles,
+# commits, pushes, and refreshes the local plugin cache — all in a DEDICATED
+# main-pinned worktree, never the developer's checkout (whose branch may be a
+# feature branch a human/agent has checked out). Committing there would land on
+# the wrong branch.
+#
+# Flow:
+#   1. Resolve the canonical repo (script's git toplevel) + its origin URL.
+#   2. Ensure a dedicated worktree exists, pinned to a `main`-tracking branch.
+#   3. git fetch origin; git reset --hard origin/main (worktree only).
+#   4. Run the worktree's OWN copy of this script with --all --write
+#      --source external (its TOOLKIT_ROOT resolves to the worktree, so the
+#      reconcile edits the worktree's surfaces, not the developer checkout).
+#   5. If the worktree is now dirty: commit (message lists bumps) + push origin main.
+#   6. Refresh the local Claude plugin-cache marketplace clone (ff-only).
+#
+# Exit codes (act mode): 0 acted-or-clean, non-zero on push/refresh failure.
+
+ACT_WORKTREE = Path.home() / ".cache" / "marketplace-sync" / "act-worktree"
+ACT_LOCKFILE = Path.home() / ".cache" / "marketplace-sync" / "act.lock"
+PLUGIN_CACHE_MARKETPLACE = (
+    Path.home() / ".claude" / "plugins" / "marketplaces" / "rosslabs-ai-toolkit"
+)
+
+
+@contextlib.contextmanager
+def _act_lock(lockfile: Path = ACT_LOCKFILE):
+    """Hold an exclusive non-blocking flock for the whole act flow so two
+    concurrent runs (e.g. a manual run racing the cron) can't reset/commit over
+    each other in the shared worktree. A second runner exits cleanly (code 0)
+    rather than corrupting state."""
+    lockfile.parent.mkdir(parents=True, exist_ok=True)
+    fh = open(lockfile, "w")
+    try:
+        try:
+            fcntl.flock(fh.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            _log("another act run holds the lock — exiting cleanly (no-op).")
+            fh.close()
+            raise SystemExit(0)
+        yield
+    finally:
+        with contextlib.suppress(Exception):
+            fcntl.flock(fh.fileno(), fcntl.LOCK_UN)
+            fh.close()
+
+
+def _log(msg: str) -> None:
+    """Stdout line (captured to the launchd .log)."""
+    print(f"[act] {msg}", flush=True)
+
+
+def _run_git(args: list[str], cwd: Path | None = None, timeout: int = 120) -> subprocess.CompletedProcess:
+    """Run a git command, capturing output. Never raises — on a missing git
+    binary or timeout it returns a synthetic returncode=127 result so callers
+    can inspect returncode uniformly instead of catching exceptions (fail-clean
+    under launchd's minimal PATH)."""
+    try:
+        return subprocess.run(
+            ["git", *args],
+            cwd=str(cwd) if cwd else None,
+            capture_output=True, text=True, timeout=timeout,
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired) as e:
+        return subprocess.CompletedProcess(args=["git", *args], returncode=127, stdout="", stderr=str(e))
+
+
+def canonical_repo_root() -> Path:
+    """The git toplevel of the checkout this script lives in (the canonical repo)."""
+    r = _run_git(["rev-parse", "--show-toplevel"], cwd=Path(__file__).resolve().parent)
+    if r.returncode != 0:
+        die(f"could not resolve git toplevel for {__file__}: {r.stderr.strip()}")
+    return Path(r.stdout.strip())
+
+
+def origin_url(repo: Path) -> str | None:
+    """Return the origin fetch URL for a repo, or None."""
+    r = _run_git(["remote", "get-url", "origin"], cwd=repo)
+    return r.stdout.strip() if r.returncode == 0 else None
+
+
+ACT_BRANCH = "marketplace-sync-act"
+
+
+def _worktree_is_valid(worktree: Path, repo: Path) -> bool:
+    """A reused act worktree is trusted ONLY if it is genuinely OUR dedicated
+    worktree: git toplevel == worktree path, on the dedicated branch, and
+    sharing the canonical repo's origin URL. Guards against a stale/symlinked
+    worktree pointing at the developer checkout (which would commit on the
+    wrong branch — the exact failure act mode exists to prevent)."""
+    if not (worktree / ".git").exists():
+        return False
+    top = _run_git(["rev-parse", "--show-toplevel"], cwd=worktree)
+    if top.returncode != 0 or Path(top.stdout.strip()).resolve() != worktree.resolve():
+        return False
+    branch = _run_git(["branch", "--show-current"], cwd=worktree)
+    if branch.returncode != 0 or branch.stdout.strip() != ACT_BRANCH:
+        return False
+    wt_origin = origin_url(worktree)
+    repo_origin = origin_url(repo)
+    return bool(wt_origin) and wt_origin == repo_origin
+
+
+def ensure_act_worktree(repo: Path, worktree: Path = ACT_WORKTREE) -> Path:
+    """Ensure a VALID dedicated worktree exists at `worktree`, on the dedicated
+    `marketplace-sync-act` branch tracking origin/main.
+
+    Every run re-validates an existing worktree (toplevel/branch/origin); an
+    invalid or absent one is (re)created. The dedicated branch name never
+    collides with a human's `main` checkout in the canonical repo.
+    """
+    worktree.parent.mkdir(parents=True, exist_ok=True)
+    if _worktree_is_valid(worktree, repo):
+        return worktree
+    # Remove an invalid worktree registration + dir, then recreate cleanly.
+    _run_git(["worktree", "remove", "--force", str(worktree)], cwd=repo)
+    _run_git(["worktree", "prune"], cwd=repo)
+    if worktree.exists():
+        shutil.rmtree(worktree, ignore_errors=True)
+    # Fetch first so origin/main exists for the new worktree.
+    _run_git(["fetch", "origin", "main"], cwd=repo)
+    r = _run_git(
+        ["worktree", "add", "--force", "-B", ACT_BRANCH, str(worktree), "origin/main"],
+        cwd=repo,
+    )
+    if r.returncode != 0:
+        die(f"failed to create act worktree at {worktree}: {r.stderr.strip()}")
+    if not _worktree_is_valid(worktree, repo):
+        die(f"act worktree at {worktree} failed validation after creation — refusing to act")
+    return worktree
+
+
+# The only surfaces the reconcile is allowed to change — staged explicitly so a
+# commit can never capture untracked residue (e.g. a __pycache__ dir or a
+# half-written file from a crashed prior run).
+ACT_SURFACE_FILES = (
+    ".claude-plugin/marketplace.json",
+    ".agents/plugins/marketplace.json",
+    "README.md",
+)
+
+
+def sync_worktree_to_main(worktree: Path) -> None:
+    """fetch origin + hard-reset + clean the worktree to a pristine origin/main
+    (discards any prior act-run residue, tracked OR untracked, so each run
+    starts from a clean canonical main)."""
+    f = _run_git(["fetch", "origin", "main"], cwd=worktree)
+    if f.returncode != 0:
+        die(f"git fetch origin main failed: {f.stderr.strip()}", code=1)
+    rs = _run_git(["reset", "--hard", "origin/main"], cwd=worktree)
+    if rs.returncode != 0:
+        die(f"git reset --hard origin/main failed: {rs.stderr.strip()}", code=1)
+    # reset --hard leaves untracked files; clean removes them so staging residue
+    # cannot leak into the commit.
+    cl = _run_git(["clean", "-ffd"], cwd=worktree)
+    if cl.returncode != 0:
+        die(f"git clean -ffd failed: {cl.stderr.strip()}", code=1)
+    _log(f"worktree reset+clean to origin/main @ {rs.stdout.strip() or 'ok'}")
+
+
+def worktree_is_dirty(worktree: Path) -> bool:
+    """True if the worktree has staged/unstaged changes after reconcile.
+
+    Fails CLOSED: a non-zero `git status` (treated as an error) returns True so
+    the caller does not silently assume 'clean' and skip a needed commit. The
+    explicit-file staging downstream still bounds what actually gets committed.
+    """
+    r = _run_git(["status", "--porcelain"], cwd=worktree)
+    if r.returncode != 0:
+        _log(f"git status failed ({r.returncode}) — treating worktree as dirty (fail-closed)")
+        return True
+    return bool(r.stdout.strip())
+
+
+def commit_message_for(changed: list[str]) -> str:
+    """Build a clear commit message listing the catalog bumps."""
+    body = "\n".join(f"  - {c}" for c in changed) if changed else "  (surface reconcile)"
+    return (
+        "chore(marketplace): auto-sync catalog to external plugin versions\n\n"
+        "Reconciled by the marketplace-sync --act cron. Changes:\n"
+        f"{body}\n"
+    )
+
+
+def reconcile_in_worktree(worktree: Path) -> tuple[int, str]:
+    """Run the worktree's own copy of this script with --all --write
+    --source external. Returns (returncode, combined_output).
+
+    Running the worktree's copy (not this file) makes TOOLKIT_ROOT resolve to
+    the worktree, so the reconcile edits the worktree's surfaces.
+    """
+    script = worktree / "scripts" / "marketplace-sync.py"
+    if not script.exists():
+        die(f"worktree script missing: {script}", code=1)
+    try:
+        r = subprocess.run(
+            [sys.executable, str(script), "--all", "--write", "--source", "external"],
+            cwd=str(worktree), capture_output=True, text=True, timeout=300,
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired) as e:
+        # Fail clean (nonzero) instead of escaping as a traceback under launchd.
+        return 1, f"reconcile subprocess failed: {e}"
+    return r.returncode, (r.stdout or "") + (r.stderr or "")
+
+
+def refresh_plugin_cache(cache: Path = PLUGIN_CACHE_MARKETPLACE) -> bool:
+    """Fast-forward-only update the local plugin-cache marketplace clone so
+    /plugin shows fresh labels. Never force. Returns True on success (or clean
+    skip when the cache is absent — that's not a failure)."""
+    if not (cache / ".git").exists():
+        _log(f"plugin cache not present at {cache} — skipping refresh (ok)")
+        return True
+    f = _run_git(["fetch", "origin", "main"], cwd=cache)
+    if f.returncode != 0:
+        _log(f"plugin-cache fetch failed: {f.stderr.strip()}")
+        return False
+    m = _run_git(["merge", "--ff-only", "origin/main"], cwd=cache)
+    if m.returncode != 0:
+        _log(f"plugin-cache ff-only merge failed (cache diverged?): {m.stderr.strip()}")
+        return False
+    _log(f"plugin cache refreshed: {m.stdout.strip()}")
+    return True
+
+
+def act_mode() -> int:
+    """Reconcile → commit → push → refresh, in a dedicated main-pinned worktree.
+
+    Whole flow is serialized under an flock so concurrent runs can't clobber the
+    shared worktree. Returns 0 on success (acted or already clean), non-zero on
+    push/refresh failure (so launchd surfaces it in the .err and the operator
+    notices).
+    """
+    with _act_lock():
+        repo = canonical_repo_root()
+        url = origin_url(repo)
+        _log(f"canonical repo: {repo} (origin={url})")
+        worktree = ensure_act_worktree(repo)
+        sync_worktree_to_main(worktree)
+
+        rc, out = reconcile_in_worktree(worktree)
+        # Surface the reconcile output (proposed/applied changes) into the log.
+        for line in out.splitlines():
+            _log(line)
+        if rc not in (0, 2):
+            die(f"reconcile failed (exit {rc}) — see log above", code=1)
+
+        if not worktree_is_dirty(worktree):
+            _log("no catalog changes — surfaces already in sync. Done.")
+            # Still refresh the cache so a prior unpushed origin advance lands locally.
+            return 0 if refresh_plugin_cache() else 1
+
+        # Stage ONLY the known reconcile surfaces (never `-A`) so a commit can
+        # never capture untracked residue. Skip surfaces that don't exist.
+        staged_any = False
+        for rel in ACT_SURFACE_FILES:
+            if (worktree / rel).exists():
+                a = _run_git(["add", "--", rel], cwd=worktree)
+                if a.returncode != 0:
+                    die(f"git add {rel} failed: {a.stderr.strip()}", code=1)
+                staged_any = True
+        # Verify something is actually staged before committing.
+        diff_cached = _run_git(["diff", "--cached", "--name-only"], cwd=worktree)
+        if diff_cached.returncode != 0:
+            die(f"git diff --cached failed: {diff_cached.stderr.strip()}", code=1)
+        if not staged_any or not diff_cached.stdout.strip():
+            _log("worktree dirty but no surface file staged — nothing to commit. Done.")
+            return 0 if refresh_plugin_cache() else 1
+
+        # Change list = the staged surface files (derived from git, not stdout-parsing).
+        changed = diff_cached.stdout.strip().splitlines()
+        msg = commit_message_for(changed)
+        cm = _run_git(["commit", "-m", msg], cwd=worktree)
+        if cm.returncode != 0:
+            die(f"git commit failed: {cm.stderr.strip()}", code=1)
+        head = _run_git(["rev-parse", "HEAD"], cwd=worktree).stdout.strip()
+        _log(f"committed {head[:10]}: {len(changed)} surface(s) — {', '.join(changed)}")
+
+        push = _run_git(["push", "origin", "HEAD:main"], cwd=worktree)
+        if push.returncode != 0:
+            die(f"git push origin main FAILED: {push.stderr.strip()}", code=1)
+        _log(f"pushed to origin/main: {push.stderr.strip() or 'ok'}")
+
+        ok = refresh_plugin_cache()
+        if not ok:
+            die("plugin-cache refresh failed after push — origin is updated but local cache is stale", code=1)
+        _log("act run complete.")
+        return 0
+
+
+# ---------------------------------------------------------------------------
 # Chunk 4: launchd cron installation / removal
 # ---------------------------------------------------------------------------
 
@@ -848,8 +1193,7 @@ LAUNCHD_PLIST_TEMPLATE = """\
     <array>
         <string>{python}</string>
         <string>{script}</string>
-        <string>--all</string>
-        <string>--check</string>
+        <string>--act</string>
     </array>
 
     <key>StartCalendarInterval</key>
@@ -867,7 +1211,8 @@ LAUNCHD_PLIST_TEMPLATE = """\
     <string>{log_dir}/marketplace-sync.err</string>
 
     <!-- Only run when the user is logged in (LaunchAgent, not LaunchDaemon) -->
-    <!-- The job exits 2 (clean) or 3 (drift found). Check the log file for details. -->
+    <!-- Act mode: reconciles + commits + pushes + refreshes the plugin cache. -->
+    <!-- Exit 0 = acted-or-clean, non-zero = push/refresh failure (see .err). -->
 </dict>
 </plist>
 """
@@ -922,7 +1267,7 @@ def install_cron() -> int:
         print(f"Load manually: launchctl load {LAUNCHD_PLIST_DEST}")
 
     print(
-        f"\nDaily check runs at 09:00. Logs at:\n"
+        f"\nDaily --act run (reconcile + commit + push + cache refresh) at 09:00. Logs at:\n"
         f"  {log_dir}/marketplace-sync.log\n"
         f"  {log_dir}/marketplace-sync.err\n"
         f"\nTo uninstall: marketplace-sync.py --uninstall-cron"
@@ -968,8 +1313,11 @@ def main(argv: list[str]) -> int:
                     help="Compare installed host plugin versions vs source-of-truth; emit fix cmds")
     ap.add_argument("--check", action="store_true",
                     help="Read-only: exit 3 if ANY surface drifts (catalog/README/.agents/hosts). For CI/cron.")
+    ap.add_argument("--act", action="store_true",
+                    help="Self-healing cron mode: reconcile + commit + push + refresh plugin cache, "
+                         "in a dedicated main-pinned worktree (never the dev checkout).")
     ap.add_argument("--install-cron", action="store_true",
-                    help="Install launchd plist to run --all --check daily at 09:00 (macOS only)")
+                    help="Install launchd plist to run --act daily at 09:00 (macOS only)")
     ap.add_argument("--uninstall-cron", action="store_true",
                     help="Remove the launchd plist installed by --install-cron")
     args = ap.parse_args(argv)
@@ -979,6 +1327,10 @@ def main(argv: list[str]) -> int:
         return install_cron()
     if args.uninstall_cron:
         return uninstall_cron()
+
+    # --act mode: reconcile + commit + push + refresh, in a dedicated worktree
+    if args.act:
+        return act_mode()
 
     # --check mode: read-only, CI-safe, exit 3 on any drift
     if args.check:
