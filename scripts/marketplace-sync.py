@@ -936,19 +936,39 @@ def _log(msg: str) -> None:
     print(f"[act] {msg}", flush=True)
 
 
+# Absolute fallbacks for `git` when PATH is minimal (launchd: /usr/bin:/bin,
+# Homebrew bin absent). Mirrors gh_bin() so _run_git resolves git robustly.
+_GIT_FALLBACKS = ("/usr/bin/git", "/opt/homebrew/bin/git", "/usr/local/bin/git")
+
+
+def git_bin() -> str:
+    """Resolve the `git` executable. Returns an absolute path when one is found,
+    else the bare string 'git' (so the call still fails cleanly via _run_git's
+    127 path rather than this resolver raising)."""
+    found = shutil.which("git")
+    if found:
+        return found
+    for cand in _GIT_FALLBACKS:
+        if os.path.exists(cand) and os.access(cand, os.X_OK):
+            return cand
+    return "git"
+
+
 def _run_git(args: list[str], cwd: Path | None = None, timeout: int = 120) -> subprocess.CompletedProcess:
     """Run a git command, capturing output. Never raises — on a missing git
     binary or timeout it returns a synthetic returncode=127 result so callers
     can inspect returncode uniformly instead of catching exceptions (fail-clean
-    under launchd's minimal PATH)."""
+    under launchd's minimal PATH). The git binary is resolved absolutely via
+    git_bin() so a minimal launchd PATH can't fail a bare `git` lookup."""
+    git = git_bin()
     try:
         return subprocess.run(
-            ["git", *args],
+            [git, *args],
             cwd=str(cwd) if cwd else None,
             capture_output=True, text=True, timeout=timeout,
         )
     except (FileNotFoundError, subprocess.TimeoutExpired) as e:
-        return subprocess.CompletedProcess(args=["git", *args], returncode=127, stdout="", stderr=str(e))
+        return subprocess.CompletedProcess(args=[git, *args], returncode=127, stdout="", stderr=str(e))
 
 
 def canonical_repo_root() -> Path:
@@ -1108,6 +1128,212 @@ def refresh_plugin_cache(cache: Path = PLUGIN_CACHE_MARKETPLACE) -> bool:
     return True
 
 
+# ---------------------------------------------------------------------------
+# Local repo registry generation (private — build-loop-memory only)
+# ---------------------------------------------------------------------------
+# The registry inventories private local projects and absolute machine paths, so
+# it must NEVER land in this PUBLIC toolkit. It is generated into the private
+# build-loop-memory repo and committed there only when its remote is private.
+
+MEMORY_REPO = Path.home() / "dev" / "git-folder" / "build-loop-memory"
+REGISTRY_DIR = MEMORY_REPO / "registry"
+REGISTRY_FILES = ("REGISTRY.md", "registry.json")
+# One pointer line into the memory index (the repo's index convention is INDEX.md,
+# not MEMORY.md — verified from the repo). The registry files are generated
+# artifacts, not memories, so they are referenced, not written via memory_writer.
+MEMORY_INDEX = MEMORY_REPO / "INDEX.md"
+REGISTRY_INDEX_POINTER = (
+    "- [`registry/REGISTRY.md`](registry/REGISTRY.md) — generated local app/repo "
+    "registry (scan of `~/dev/git-folder`, refreshed by the marketplace-sync "
+    "`--act` cron). Generated artifact — do not hand-edit."
+)
+
+
+def _load_repo_registry_module():
+    """Import the colocated repo_registry.py via importlib (hyphenated sibling
+    filenames make a normal import awkward; this script is itself hyphenated)."""
+    import importlib.util
+
+    mod_path = Path(__file__).resolve().parent / "repo_registry.py"
+    if not mod_path.exists():
+        return None
+    spec = importlib.util.spec_from_file_location("repo_registry", str(mod_path))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def remote_is_private(repo: Path) -> bool | None:
+    """True if the repo's GitHub remote is private, False if public, None if it
+    can't be determined (no remote, gh unavailable, gh error). Used as the push
+    gate: never push the registry to a public — or unknown — remote."""
+    if not (repo / ".git").exists():
+        return None
+    if origin_url(repo) is None:
+        return None  # no remote at all → commit locally only
+    gh = gh_bin()
+    if gh is None:
+        return None  # can't verify visibility → treat as unknown, don't push
+    try:
+        r = subprocess.run(
+            [gh, "repo", "view", "--json", "visibility"],
+            cwd=str(repo), capture_output=True, text=True, timeout=20,
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
+        return None
+    if r.returncode != 0:
+        return None
+    try:
+        vis = json.loads(r.stdout).get("visibility", "")
+    except (json.JSONDecodeError, ValueError):
+        return None
+    return vis.upper() == "PRIVATE"
+
+
+def regenerate_registry() -> tuple[bool, str]:
+    """Regenerate the local repo registry into the PRIVATE build-loop-memory repo
+    and, if it changed, commit it there. Pushes only when the memory remote is
+    verified private. Returns (ok, summary_line).
+
+    This is wrapped by the caller in a try/except so a registry failure can log +
+    continue and never fail the catalog sync. It also defends itself internally so
+    a missing memory repo / missing module degrades cleanly.
+    """
+    if not MEMORY_REPO.exists():
+        return True, f"memory repo absent ({MEMORY_REPO}) — registry skipped (ok)"
+    mod = _load_repo_registry_module()
+    if mod is None:
+        return False, "repo_registry.py not found alongside marketplace-sync.py"
+
+    # PRIVACY PRE-WRITE GUARD: the registry inventories private paths. If the
+    # memory repo's remote is verified PUBLIC, refuse to even WRITE it there — a
+    # public clone must never receive the inventory, not even as a local commit.
+    # (None == unknown/no-remote → allowed: the user's contract is "commit
+    # locally always, push only if private"; only a CONFIRMED public remote
+    # blocks the write.)
+    if remote_is_private(MEMORY_REPO) is False:
+        return False, (
+            f"REFUSING to write registry: {MEMORY_REPO} has a PUBLIC remote — "
+            "private inventory must never land in a public repo"
+        )
+
+    # Add the index pointer once (idempotent) — but ONLY if INDEX.md has no
+    # unrelated pending edits (otherwise our path-scoped commit of INDEX.md would
+    # sweep those edits in). When INDEX.md is already dirty, skip the pointer this
+    # run; the registry files still commit cleanly on their own.
+    index_is_committable = _index_pointer_safe_to_add()
+
+    summary = mod.generate(out_dir=REGISTRY_DIR, write=True)
+    _log(f"registry: scanned {summary['count']} repos → {summary['md_path']}")
+
+    # build-loop-memory is a live, frequently-dirty repo. We must commit ONLY our
+    # own files and never sweep in unrelated working-tree changes (the 30+ dirty
+    # JSONL files the memory repo routinely carries). Strategy: figure out which
+    # of OUR files actually changed vs HEAD, then path-scope both `add` and
+    # `commit` to exactly those files. A path-scoped `git commit -- <paths>`
+    # commits only those paths regardless of what else is staged in the index.
+    our_files = [f"registry/{f}" for f in REGISTRY_FILES]
+    if index_is_committable and MEMORY_INDEX.exists():
+        our_files.append("INDEX.md")
+    our_files = [rel for rel in our_files if (MEMORY_REPO / rel).exists()]
+
+    changed: list[str] = []
+    for rel in our_files:
+        # `diff --quiet HEAD -- rel` exits 1 when the file differs from HEAD
+        # (tracked-and-modified OR untracked-but-now-present after add). Use
+        # status to catch the untracked case (a brand-new registry dir).
+        st = _run_git(["status", "--porcelain", "--", rel], cwd=MEMORY_REPO)
+        if (st.stdout or "").strip():
+            changed.append(rel)
+    if not changed:
+        return True, "registry unchanged — nothing to commit in build-loop-memory"
+
+    for rel in changed:
+        _run_git(["add", "--", rel], cwd=MEMORY_REPO)
+
+    msg = (
+        "registry: refresh local repo registry\n\n"
+        f"Generated by marketplace-sync --act ({summary['count']} repos scanned "
+        f"under {summary['root']}). Generated artifact — do not hand-edit."
+    )
+    # Path-scoped commit: ONLY our files land, even if the memory repo has other
+    # staged/dirty changes from a concurrent process or the user.
+    cm = _run_git(["commit", "-m", msg, "--", *changed], cwd=MEMORY_REPO)
+    if cm.returncode != 0:
+        return False, f"registry commit failed: {cm.stderr.strip()}"
+    staged = changed
+    head = _run_git(["rev-parse", "HEAD"], cwd=MEMORY_REPO).stdout.strip()
+    _log(f"registry: committed {head[:10]} in build-loop-memory ({len(staged)} file(s))")
+
+    priv = remote_is_private(MEMORY_REPO)
+    if priv is True:
+        push = _run_git(["push", "origin", "HEAD"], cwd=MEMORY_REPO)
+        if push.returncode != 0:
+            return False, f"registry committed but push failed: {push.stderr.strip()}"
+        return True, f"registry committed {head[:10]} and pushed (remote private)"
+    if priv is False:
+        return True, (
+            f"registry committed {head[:10]} locally; remote is PUBLIC — "
+            "NOT pushing (privacy gate)"
+        )
+    return True, (
+        f"registry committed {head[:10]} locally; remote visibility unknown "
+        "(no remote / gh unavailable) — NOT pushing"
+    )
+
+
+def _index_pointer_safe_to_add() -> bool:
+    """Add the registry pointer to build-loop-memory/INDEX.md exactly once, but
+    ONLY when doing so is safe to path-scope-commit. Returns True if INDEX.md may
+    be included in the registry commit, False if it must be left out.
+
+    The hazard: a path-scoped `git commit -- INDEX.md` commits the WHOLE current
+    INDEX.md. If INDEX.md already carries unrelated pending edits, committing it
+    would sweep those in. So:
+      - INDEX.md missing                       → False (nothing to commit)
+      - pointer already present AND INDEX clean → True  (idempotent, safe)
+      - pointer already present BUT INDEX dirty → False (unrelated edits pending)
+      - pointer absent AND INDEX clean          → write pointer, return True
+      - pointer absent BUT INDEX already dirty   → leave INDEX untouched, False
+    """
+    if not MEMORY_INDEX.exists():
+        return False
+    # Is INDEX.md modified relative to HEAD right now (before we touch it)?
+    st = _run_git(["status", "--porcelain", "--", "INDEX.md"], cwd=MEMORY_REPO)
+    index_already_dirty = bool((st.stdout or "").strip())
+
+    try:
+        text = MEMORY_INDEX.read_text(encoding="utf-8")
+    except OSError:
+        return False
+
+    if "registry/REGISTRY.md" in text:
+        # Pointer present already. Safe to (re)commit only if INDEX is otherwise
+        # clean — if it's dirty, those edits aren't ours, so leave it out.
+        return not index_already_dirty
+
+    if index_already_dirty:
+        # Pointer absent but INDEX has unrelated pending edits — do NOT add the
+        # pointer this run (we'd have to commit the unrelated edits with it).
+        return False
+
+    # Pointer absent and INDEX clean → add it; INDEX is now safe to commit
+    # (its only change vs HEAD is our pointer block).
+    sep = "" if text.endswith("\n") else "\n"
+    block = (
+        f"{sep}\n## Local Repo Registry\n\n"
+        "Generated inventory of local projects under `~/dev/git-folder` "
+        "(branch, last commit, dirty state, version). Private — never committed "
+        "to a public repo.\n\n"
+        f"{REGISTRY_INDEX_POINTER}\n"
+    )
+    try:
+        MEMORY_INDEX.write_text(text + block, encoding="utf-8")
+    except OSError:
+        return False
+    return True
+
+
 def act_mode() -> int:
     """Reconcile → commit → push → refresh, in a dedicated main-pinned worktree.
 
@@ -1131,9 +1357,12 @@ def act_mode() -> int:
             die(f"reconcile failed (exit {rc}) — see log above", code=1)
 
         if not worktree_is_dirty(worktree):
-            _log("no catalog changes — surfaces already in sync. Done.")
+            _log("no catalog changes — surfaces already in sync.")
             # Still refresh the cache so a prior unpushed origin advance lands locally.
-            return 0 if refresh_plugin_cache() else 1
+            cache_ok = refresh_plugin_cache()
+            # Registry still refreshes nightly even when the catalog is clean.
+            reg_ok = _run_registry_step()
+            return _act_exit(cache_ok, reg_ok)
 
         # Stage ONLY the known reconcile surfaces (never `-A`) so a commit can
         # never capture untracked residue. Skip surfaces that don't exist.
@@ -1149,8 +1378,10 @@ def act_mode() -> int:
         if diff_cached.returncode != 0:
             die(f"git diff --cached failed: {diff_cached.stderr.strip()}", code=1)
         if not staged_any or not diff_cached.stdout.strip():
-            _log("worktree dirty but no surface file staged — nothing to commit. Done.")
-            return 0 if refresh_plugin_cache() else 1
+            _log("worktree dirty but no surface file staged — nothing to commit.")
+            cache_ok = refresh_plugin_cache()
+            reg_ok = _run_registry_step()
+            return _act_exit(cache_ok, reg_ok)
 
         # Change list = the staged surface files (derived from git, not stdout-parsing).
         changed = diff_cached.stdout.strip().splitlines()
@@ -1166,11 +1397,44 @@ def act_mode() -> int:
             die(f"git push origin main FAILED: {push.stderr.strip()}", code=1)
         _log(f"pushed to origin/main: {push.stderr.strip() or 'ok'}")
 
-        ok = refresh_plugin_cache()
-        if not ok:
-            die("plugin-cache refresh failed after push — origin is updated but local cache is stale", code=1)
+        cache_ok = refresh_plugin_cache()
+        if not cache_ok:
+            _log("plugin-cache refresh failed after push — origin is updated but local cache is stale")
+        reg_ok = _run_registry_step()
         _log("act run complete.")
-        return 0
+        return _act_exit(cache_ok, reg_ok)
+
+
+def _run_registry_step() -> bool:
+    """Generate + commit the local repo registry, fully isolated from the catalog
+    sync. A registry failure logs and returns False; it NEVER raises out of the
+    act flow (so it can't fail the catalog sync). Returns True on success."""
+    try:
+        ok, summary = regenerate_registry()
+    except Exception as e:  # defensive: registry must not crash the cron
+        _log(f"registry step crashed (ignored — catalog sync unaffected): {e}")
+        return False
+    _log(f"registry: {summary}")
+    return ok
+
+
+def _act_exit(cache_ok: bool, registry_ok: bool) -> int:
+    """Final act exit code.
+
+    Two distinct contracts compose here:
+      - CATALOG (cache refresh): a cache-refresh failure is fatal ON ITS OWN, and
+        always was — before this change it called die(). origin may have been
+        pushed but the local cache is stale, which the operator must see. So
+        `cache_ok == False` → exit 1 regardless of the registry.
+      - REGISTRY: must NEVER fail the catalog sync. A registry failure alone is
+        non-fatal → exit 0 (logged). The registry only affects the exit code when
+        the catalog ALSO failed (both-fail → 1), which is what the user's
+        "nonzero only if both fail" invariant constrains: the registry never
+        UPGRADES a healthy catalog run to a failure.
+    """
+    if not cache_ok:
+        return 1  # catalog/cache failure is fatal on its own (incl. both-fail)
+    return 0  # catalog ok → exit 0 even if the registry failed (logged)
 
 
 # ---------------------------------------------------------------------------

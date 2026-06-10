@@ -593,5 +593,200 @@ class TestPlistActMode(unittest.TestCase):
         self.assertNotIn("<string>--check</string>", rendered)
 
 
+# ---------------------------------------------------------------------------
+# Registry integration (act-mode registry generation + private-only push gate)
+# ---------------------------------------------------------------------------
+
+class TestRegistryActExit(unittest.TestCase):
+    """The act exit code: registry failure alone is non-fatal (exit 0); only a
+    catalog/cache failure (alone or with registry) yields nonzero."""
+
+    def test_both_ok(self):
+        self.assertEqual(ms._act_exit(cache_ok=True, registry_ok=True), 0)
+
+    def test_registry_fail_only_is_nonfatal(self):
+        self.assertEqual(ms._act_exit(cache_ok=True, registry_ok=False), 0)
+
+    def test_cache_fail_is_fatal(self):
+        self.assertEqual(ms._act_exit(cache_ok=False, registry_ok=True), 1)
+
+    def test_both_fail(self):
+        self.assertEqual(ms._act_exit(cache_ok=False, registry_ok=False), 1)
+
+
+class TestRegistryIndexPointer(unittest.TestCase):
+    """_index_pointer_safe_to_add adds the pointer once, is idempotent, and
+    refuses to touch INDEX.md when it has unrelated pending edits."""
+
+    def setUp(self):
+        import tempfile, subprocess as sp
+        self.sp = sp
+        self.git = __import__("shutil").which("git")
+        if not self.git:
+            self.skipTest("git not available")
+        # A real git repo so status --porcelain on INDEX.md works.
+        self.d = Path(tempfile.mkdtemp())
+        self.addCleanup(lambda: __import__("shutil").rmtree(self.d, ignore_errors=True))
+        self._g("init", "-q", "-b", "main")
+        self._g("config", "user.email", "t@e")
+        self._g("config", "user.name", "t")
+        self._orig_repo, self._orig_index = ms.MEMORY_REPO, ms.MEMORY_INDEX
+        ms.MEMORY_REPO = self.d
+        ms.MEMORY_INDEX = self.d / "INDEX.md"
+        self.addCleanup(lambda: setattr(ms, "MEMORY_REPO", self._orig_repo))
+        self.addCleanup(lambda: setattr(ms, "MEMORY_INDEX", self._orig_index))
+
+    def _g(self, *args):
+        self.sp.run([self.git, *args], cwd=str(self.d), check=True, capture_output=True)
+
+    def _commit_index(self, body):
+        ms.MEMORY_INDEX.write_text(body, encoding="utf-8")
+        self._g("add", "INDEX.md")
+        self._g("commit", "-q", "-m", "seed index")
+
+    def test_false_when_index_absent(self):
+        self.assertFalse(ms._index_pointer_safe_to_add())
+
+    def test_adds_pointer_when_clean(self):
+        self._commit_index("# Index\n\nbody\n")
+        self.assertTrue(ms._index_pointer_safe_to_add())
+        text = ms.MEMORY_INDEX.read_text()
+        self.assertIn("registry/REGISTRY.md", text)
+        self.assertEqual(text.count("## Local Repo Registry"), 1)
+
+    def test_idempotent_after_commit(self):
+        self._commit_index("# Index\n\nbody\n")
+        ms._index_pointer_safe_to_add()
+        self._g("add", "INDEX.md"); self._g("commit", "-q", "-m", "add pointer")
+        # Pointer present + INDEX clean → safe (True), no duplicate block.
+        self.assertTrue(ms._index_pointer_safe_to_add())
+        self.assertEqual(ms.MEMORY_INDEX.read_text().count("## Local Repo Registry"), 1)
+
+    def test_refuses_when_index_dirty(self):
+        self._commit_index("# Index\n\nbody\n")
+        # Unrelated pending edit to INDEX.md → must NOT add pointer, return False.
+        ms.MEMORY_INDEX.write_text("# Index\n\nbody\n\nUNRELATED EDIT\n", encoding="utf-8")
+        self.assertFalse(ms._index_pointer_safe_to_add())
+        self.assertNotIn("registry/REGISTRY.md", ms.MEMORY_INDEX.read_text())
+
+
+class TestRemoteIsPrivateGate(unittest.TestCase):
+    """remote_is_private returns None (unknown → don't push) when it can't verify."""
+
+    def setUp(self):
+        import tempfile
+        self.d = Path(tempfile.mkdtemp())
+        self.addCleanup(lambda: __import__("shutil").rmtree(self.d, ignore_errors=True))
+
+    def test_no_git_dir_returns_none(self):
+        # No .git → can't be a repo → unknown → None.
+        self.assertIsNone(ms.remote_is_private(self.d))
+
+    def test_no_origin_returns_none(self):
+        # A real repo with no origin remote → None (commit locally only).
+        import subprocess as sp
+        git = __import__("shutil").which("git")
+        if not git:
+            self.skipTest("git not available")
+        sp.run([git, "init", "-q", str(self.d)], check=True, capture_output=True)
+        self.assertIsNone(ms.remote_is_private(self.d))
+
+
+class TestRegistryCommitIsolation(unittest.TestCase):
+    """regenerate_registry must commit ONLY its own files into a live, dirty memory
+    repo — never sweeping in unrelated staged/dirty changes (the real failure mode,
+    since build-loop-memory routinely carries 30+ dirty JSONL files)."""
+
+    def setUp(self):
+        import tempfile, subprocess as sp
+        self.git = __import__("shutil").which("git")
+        if not self.git:
+            self.skipTest("git not available")
+        self.sp = sp
+        # Fake "memory repo" (a real git repo, no remote → push gate returns None).
+        self.mem = Path(tempfile.mkdtemp())
+        self.addCleanup(lambda: __import__("shutil").rmtree(self.mem, ignore_errors=True))
+        self._g("init", "-q", "-b", "main")
+        self._g("config", "user.email", "t@e")
+        self._g("config", "user.name", "t")
+        (self.mem / "INDEX.md").write_text("# Index\n\nbody\n")
+        (self.mem / "unrelated.jsonl").write_text("original\n")
+        self._g("add", "-A")
+        self._g("commit", "-q", "-m", "seed")
+        # Now make the memory repo DIRTY with an unrelated, pre-STAGED change —
+        # exactly the state that would wrongly get swept into a naive commit.
+        (self.mem / "unrelated.jsonl").write_text("dirty edit\n")
+        self._g("add", "unrelated.jsonl")
+        # Point the module's memory paths at our fake repo + a fake scan root.
+        self.root = Path(__import__("tempfile").mkdtemp())
+        self.addCleanup(lambda: __import__("shutil").rmtree(self.root, ignore_errors=True))
+        # one real tiny repo to scan so the registry has content
+        sub = self.root / "proj"
+        sub.mkdir()
+        self._g2(sub, "init", "-q", "-b", "main")
+        self._g2(sub, "config", "user.email", "t@e")
+        self._g2(sub, "config", "user.name", "t")
+        (sub / "README.md").write_text("x\n")
+        self._g2(sub, "add", "-A")
+        self._g2(sub, "commit", "-q", "-m", "c")
+        self._patch()
+
+    def _g(self, *args):
+        self.sp.run([self.git, *args], cwd=str(self.mem), check=True, capture_output=True)
+
+    def _g2(self, cwd, *args):
+        self.sp.run([self.git, *args], cwd=str(cwd), check=True, capture_output=True)
+
+    def _patch(self):
+        for name, val in [
+            ("MEMORY_REPO", self.mem),
+            ("REGISTRY_DIR", self.mem / "registry"),
+            ("MEMORY_INDEX", self.mem / "INDEX.md"),
+        ]:
+            orig = getattr(ms, name)
+            setattr(ms, name, val)
+            self.addCleanup(lambda n=name, o=orig: setattr(ms, n, o))
+        # Force the scanner to scan our fake root by wrapping generate.
+        mod = ms._load_repo_registry_module()
+        real_generate = mod.generate
+        root = self.root
+        def fake_generate(out_dir, write):
+            return real_generate(root=root, out_dir=out_dir, write=write)
+        orig_loader = ms._load_repo_registry_module
+        class Shim:
+            generate = staticmethod(fake_generate)
+        ms._load_repo_registry_module = lambda: Shim()
+        self.addCleanup(lambda: setattr(ms, "_load_repo_registry_module", orig_loader))
+
+    def test_refuses_to_write_into_public_remote(self):
+        # Pre-write privacy guard: a CONFIRMED public memory remote must block the
+        # write entirely (no local commit, no registry files written there).
+        orig = ms.remote_is_private
+        ms.remote_is_private = lambda repo: False
+        self.addCleanup(lambda: setattr(ms, "remote_is_private", orig))
+        ok, summary = ms.regenerate_registry()
+        self.assertFalse(ok)
+        self.assertIn("PUBLIC", summary)
+        self.assertFalse((self.mem / "registry").exists(),
+                         "registry dir must NOT be created in a public memory repo")
+
+    def test_commits_only_registry_files(self):
+        ok, summary = ms.regenerate_registry()
+        self.assertTrue(ok, summary)
+        # The HEAD commit must contain ONLY our files, never unrelated.jsonl.
+        out = self.sp.run(
+            [self.git, "show", "--name-only", "--format=", "HEAD"],
+            cwd=str(self.mem), capture_output=True, text=True,
+        ).stdout
+        committed = {ln.strip() for ln in out.splitlines() if ln.strip()}
+        self.assertIn("registry/REGISTRY.md", committed)
+        self.assertIn("registry/registry.json", committed)
+        self.assertNotIn("unrelated.jsonl", committed)
+        # And the unrelated pre-staged change is still pending (not consumed).
+        st = self.sp.run([self.git, "status", "--porcelain", "unrelated.jsonl"],
+                         cwd=str(self.mem), capture_output=True, text=True).stdout
+        self.assertTrue(st.strip(), "unrelated.jsonl change must remain uncommitted")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

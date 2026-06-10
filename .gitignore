@@ -4,6 +4,8 @@ node_modules/
 .bookmark/
 *.bak
 *.bak-*
+__pycache__/
+*.pyc
 
 # Local dev symlinks to sibling plugin repos (not part of the marketplace)
 plugins/agent-builder
