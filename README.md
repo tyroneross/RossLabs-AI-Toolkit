@@ -48,7 +48,7 @@ Browse a clickable version at [rosslabs.ai/toolkit](https://rosslabs.ai/toolkit)
 | [spectra](https://github.com/tyroneross/spectra) | `0.3.1` | Content capture + library for marketing — screenshots, videos, usage sequences across web/macOS/iOS/watchOS, with a tagged library (find, gallery, export, migrate-from-showcase). |
 | [mockup-gallery](https://github.com/tyroneross/mockup-gallery) | `0.5.1` | Visual mockup review with component-level ratings, auto-save to file, and Claude Code integration. |
 | [replit-migrate](https://github.com/tyroneross/replit-migrate) | `0.1.1` | Migrate Replit apps to web (Vercel) or native (iOS/macOS) with encoded lessons from real migrations. |
-| [web-scraper](https://github.com/tyroneross/blog-content-scraper) | `0.5.0` | Intelligent web scraper for extracting blog and news content from any website. |
+| [web-scraper](https://github.com/tyroneross/blog-content-scraper) | `0.5.2` | Intelligent web scraper for extracting blog and news content from any website. |
 
 Install any of them after adding the marketplace:
 
