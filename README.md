@@ -21,9 +21,23 @@ Browse a clickable version at [rosslabs.ai/toolkit](https://rosslabs.ai/toolkit)
 
 ### Core workflow
 
+**Featured: build-loop** · [full docs](https://github.com/tyroneross/build-loop/wiki)
+
+Turns big code changes into a checked, repeatable workflow. Five phases (assess, plan, execute, review, iterate), plus an optional learn phase.
+
+- **Right model per task.** A strong model plans and reviews. A faster model writes the code. A small model does pattern checks.
+- **Accountable plans.** Every design decision is listed up front. The implementer states which decisions it made. A lint compares the claim against the actual diff. Work with six or more decisions auto-routes to the strong model in one pass.
+- **Review before trust.** A read-only critic runs before full validation, so cheap checks catch the obvious mistakes first.
+- **Optimize mode.** Runs many tests in one Design-of-Experiments pass. Test six variables at once instead of one: it plans the matrix, runs each combination, and reports which variable actually moved the number.
+- **Bundled tooling.** A debugger memory, and an architecture engine that maps the codebase before each build.
+- **Catches the usual failures.** The diff drifts from the plan. Quiet design calls slip in. Tests pass but pages do not render. Fake data leaks into production.
+- **Deploy and commit gates.** After a push it verifies the Vercel production deploy: it polls to a terminal state and probes changed routes, treating an auth-gated 401/403 as healthy and failing only on a 5xx or build error. An independent commit auditor runs at the git-commit boundary on every commit and renders one of four verdicts: yay, nay, suggest correction, look again.
+
+Use it for features, refactors, migrations, and schema changes: anything that touches more than one file. Skip it for fixes under about 20 lines.
+
 | Plugin | Version | What it does |
 |--------|---------|--------------|
-| [build-loop](https://github.com/tyroneross/build-loop) | `0.36.0` | Turns big code changes into a checked, repeatable workflow. Five phases: plan, execute, review, iterate, learn. Picks the right model for each task. A strong model plans and reviews. A faster model writes code. A small model does pattern checks. Plans must list every design decision up front. The implementer must say which decisions it made. A lint compares the claim to the actual diff. Work with six or more design decisions auto-routes to the strong model in one pass. A read-only critic runs before full validation. Has an optimize mode that runs multiple tests in a single experiment using Design of Experiments. You can test six variables at once instead of one. The mode plans the test matrix, runs each combination, and tells you which variable actually moved the number. Bundles a debugger memory and a code-base architecture map. Catches the common ways big changes go wrong. The diff drifts from the plan. Quiet design calls slip in. Tests pass but pages do not render. Fake data leaks into production. Use it for features, refactors, migrations, schema changes, anything that touches more than one file. Skip for fixes under about 20 lines. Verifies the production deploy after a push (Vercel): polls the deployment to a terminal state and probes changed routes — an auth-gated 401/403 is healthy, only a 5xx or build error fails. |
+| [build-loop](https://github.com/tyroneross/build-loop) | `0.36.0` | The flagship build loop. Plans, reviews, and verifies every multi-file change. See **Featured** above for the full breakdown. |
 | [navgator](https://github.com/tyroneross/NavGator) | `0.9.0` | Architecture tracking — map dependencies, analyze impact, and visualize your stack before you change it. |
 | [ibr](https://github.com/tyroneross/interface-built-right) | `1.4.0` | UI validation — verify implementations match intent with live page scanning and visual regression. |
 | [bookmark](https://github.com/tyroneross/bookmark) | `0.3.2` | Session context continuity — auto-save and restore across compactions and terminal closures. |
