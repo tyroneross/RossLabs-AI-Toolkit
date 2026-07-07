@@ -290,8 +290,8 @@
     },
     {
       "name": "spectra",
-      "description": "Capture screenshots, videos, and demos across platforms with a tagged library",
-      "version": "0.3.2",
+      "description": "Capture screenshots, videos, and polished demo clips — spotlight focus, lower-third captions, and a tagged library — across web, macOS, and iOS",
+      "version": "0.4.0",
       "author": {
         "name": "Tyrone Ross"
       },
