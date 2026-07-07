@@ -353,6 +353,29 @@
         "source-verification",
         "stale-data"
       ]
+    },
+    {
+      "name": "persona-lab",
+      "description": "Task-specific AI persona panels plus a recallable global persona library. CLI + Claude Code/Codex plugin.",
+      "version": "0.2.0",
+      "author": {
+        "name": "Tyrone Ross"
+      },
+      "source": {
+        "source": "github",
+        "repo": "tyroneross/persona-lab"
+      },
+      "repository": "https://github.com/tyroneross/persona-lab",
+      "category": "developer-tools",
+      "keywords": [
+        "personas",
+        "ui-review",
+        "ux",
+        "product",
+        "review",
+        "evaluation",
+        "cli"
+      ]
     }
   ]
 }
