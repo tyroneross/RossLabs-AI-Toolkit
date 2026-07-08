@@ -38,6 +38,7 @@ Use it for features, refactors, migrations, and schema changes: anything that to
 | Plugin | Version | What it does |
 |--------|---------|--------------|
 | [build-loop](https://github.com/tyroneross/build-loop) | `0.36.0` | The flagship build loop. Plans, reviews, and verifies every multi-file change. See **Featured** above for the full breakdown. |
+| [agent-rally-point](https://github.com/tyroneross/agent-rally-point) | `0.1.0` | Repo-local coordination for parallel coding agents — records claims, checks write boundaries, routes handoffs, and exposes room state via the `rally` CLI. Advisory-only hooks surface room awareness and deconflict before edits; self-gates outside rally repos. |
 | [navgator](https://github.com/tyroneross/NavGator) | `0.9.0` | Architecture tracking — map dependencies, analyze impact, and visualize your stack before you change it. |
 | [ibr](https://github.com/tyroneross/interface-built-right) | `1.4.0` | UI validation — verify implementations match intent with live page scanning and visual regression. |
 | [bookmark](https://github.com/tyroneross/bookmark) | `0.3.2` | Session context continuity — auto-save and restore across compactions and terminal closures. |
