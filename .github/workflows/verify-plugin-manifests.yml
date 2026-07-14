@@ -1,0 +1,122 @@
+name: Verify plugin manifests (reusable)
+
+# Reusable manifest verification for RossLabs plugin repos.
+# Encodes the auto-SHA distribution convention in ONE place so repos stop copy-pasting it.
+#
+# Call it from a plugin repo:
+#   jobs:
+#     verify-manifests:
+#       uses: tyroneross/RossLabs-AI-Toolkit/.github/workflows/verify-plugin-manifests.yml@main
+#       with:
+#         plugin-dir: "."        # or "plugin" when the plugin lives in a subdir
+
+on:
+  workflow_call:
+    inputs:
+      plugin-dir:
+        description: 'Directory containing .claude-plugin/ (repo root by default; use "plugin" for subdir layouts)'
+        type: string
+        required: false
+        default: '.'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout caller repo
+        uses: actions/checkout@v4
+
+      - name: Verify plugin manifests (auto-SHA convention)
+        env:
+          PLUGIN_DIR: ${{ inputs.plugin-dir }}
+        run: |
+          python3 - <<'PY'
+          import json, os, re, sys
+
+          D = os.environ.get("PLUGIN_DIR", ".") or "."
+          SEMVER = re.compile(r"^\d+\.\d+\.\d+(-[A-Za-z0-9.-]+)?$")
+          errors, notes = [], []
+
+          def load(path):
+              with open(path) as f:
+                  return json.load(f)
+
+          def p(*parts):
+              return os.path.normpath(os.path.join(D, *parts))
+
+          claude_p = p(".claude-plugin", "plugin.json")
+          if not os.path.isfile(claude_p):
+              print(f"::error::{claude_p} not found (plugin-dir={D!r})")
+              sys.exit(1)
+
+          try:
+              claude = load(claude_p)
+          except Exception as e:
+              print(f"::error::{claude_p} is not valid JSON: {e}")
+              sys.exit(1)
+
+          # 1. Required identity fields.
+          for f in ("name", "description"):
+              if not claude.get(f):
+                  errors.append(f"{claude_p}: missing or empty {f!r}")
+
+          # V is the plugin's declared version. ABSENT is the fleet default (auto-SHA:
+          # Claude Code resolves the version to the git commit SHA, so every push ships).
+          V = claude.get("version")
+          notes.append(f"{claude_p}: version={'<omitted — auto-SHA>' if V is None else V}")
+
+          # 2. Codex manifest must AGREE. A version set in only one surface silently masks
+          #    the other (plugin.json wins), which is exactly how the fleet drifted.
+          codex_p = p(".codex-plugin", "plugin.json")
+          if os.path.isfile(codex_p):
+              try:
+                  codex_v = load(codex_p).get("version")
+              except Exception as e:
+                  errors.append(f"{codex_p}: not valid JSON: {e}")
+                  codex_v = "<unreadable>"
+              if codex_v != V:
+                  errors.append(
+                      f"version masking: {claude_p} version={V!r} but {codex_p} version={codex_v!r} — they must agree"
+                  )
+
+          # 3. Self-marketplace: compare the plugin ENTRY only.
+          #    metadata.version is the CATALOG version and legitimately tracks package.json,
+          #    NOT plugin.json — do not compare it here.
+          mkt_p = p(".claude-plugin", "marketplace.json")
+          if os.path.isfile(mkt_p):
+              try:
+                  mkt = load(mkt_p)
+                  for entry in mkt.get("plugins", []):
+                      if entry.get("name") == claude.get("name"):
+                          ev = entry.get("version")
+                          if ev != V:
+                              errors.append(
+                                  f"version masking: {claude_p} version={V!r} but {mkt_p} entry "
+                                  f"{entry.get('name')!r} version={ev!r} — they must agree"
+                              )
+              except Exception as e:
+                  errors.append(f"{mkt_p}: not valid JSON: {e}")
+
+          # 4. If a version IS declared (build-loop legitimately keeps semver), it must be
+          #    semver AND match package.json.
+          if V is not None:
+              if not SEMVER.match(str(V)):
+                  errors.append(f"{claude_p}: version {V!r} is not semver")
+              pkg_p = p("package.json")
+              if os.path.isfile(pkg_p):
+                  try:
+                      pv = load(pkg_p).get("version")
+                      if pv is not None and pv != V:
+                          errors.append(f"{claude_p} version={V!r} != {pkg_p} version={pv!r}")
+                  except Exception as e:
+                      errors.append(f"{pkg_p}: not valid JSON: {e}")
+
+          for n in notes:
+              print(f"  {n}")
+          if errors:
+              for e in errors:
+                  print(f"::error::{e}")
+              print(f"\n{len(errors)} manifest problem(s).")
+              sys.exit(1)
+          print("\n✅ plugin manifests consistent.")
+          PY
