@@ -9,6 +9,7 @@ All tests use fixture files only — zero live-machine state dependency.
 """
 import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -221,6 +222,35 @@ class TestParseCodexPluginList(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
+# Codex config/cache parsing (current CLI path)
+# ---------------------------------------------------------------------------
+
+class TestParseCodexConfigPlugins(unittest.TestCase):
+
+    def test_parses_configured_marketplace_plugins(self):
+        data = {
+            "plugins": {
+                "build-loop@ross-labs-local": {"enabled": True},
+                "agent-builder@ross-labs-local": {"enabled": False},
+                "browser@openai-bundled": {"enabled": True},
+            }
+        }
+        result = ms.parse_codex_config_plugins(data, "ross-labs-local")
+        self.assertEqual(set(result), {"build-loop", "agent-builder"})
+        self.assertEqual(result["build-loop"]["status"], "enabled")
+        self.assertEqual(result["agent-builder"]["status"], "disabled")
+
+    def test_resolves_newest_cached_version(self):
+        data = {"plugins": {"build-loop@ross-labs-local": {"enabled": True}}}
+        with tempfile.TemporaryDirectory() as d:
+            plugin_dir = Path(d) / "ross-labs-local" / "build-loop"
+            (plugin_dir / "0.35.0").mkdir(parents=True)
+            (plugin_dir / "0.36.0").mkdir()
+            result = ms.parse_codex_config_plugins(data, "ross-labs-local", Path(d))
+        self.assertEqual(result["build-loop"]["version"], "0.36.0")
+
+
+# ---------------------------------------------------------------------------
 # Stale detection helpers (Chunk 1)
 # ---------------------------------------------------------------------------
 
@@ -303,11 +333,37 @@ class TestRemediationCommands(unittest.TestCase):
         self.assertIn("--scope project", cmd)
 
     def test_codex_remediation_command(self):
-        remove_cmd, add_cmd = ms.codex_remediate_cmds("build-loop", "ross-labs-local")
-        self.assertIn("codex plugin remove", remove_cmd)
-        self.assertIn("build-loop@ross-labs-local", remove_cmd)
-        self.assertIn("codex plugin add", add_cmd)
-        self.assertIn("build-loop@ross-labs-local", add_cmd)
+        cmd = ms.codex_remediate_cmd("build-loop", "ross-labs-local")
+        self.assertEqual(cmd, "codex plugin marketplace upgrade ross-labs-local")
+
+
+# ---------------------------------------------------------------------------
+# README surface writers
+# ---------------------------------------------------------------------------
+
+class TestReadmeSurfaceWriters(unittest.TestCase):
+
+    def test_plugin_index_row_updates(self):
+        text = (
+            "| Plugin | Repo | Description | Version |\n"
+            "|--------|------|-------------|---------|\n"
+            "| build-loop | [tyroneross/build-loop](https://github.com/tyroneross/build-loop) | Portable build loop | 0.36.0 |\n"
+        )
+        changes = []
+        out = ms.apply_plugin_index_readme(text, {"build-loop": "0.36.1"}, changes)
+        self.assertIn("| build-loop | [tyroneross/build-loop](https://github.com/tyroneross/build-loop) | Portable build loop | 0.36.1 |", out)
+        self.assertEqual(changes, ["plugins/README.md: build-loop version 0.36.0 → 0.36.1"])
+
+    def test_plugin_index_unknown_row_unchanged(self):
+        text = (
+            "| Plugin | Repo | Description | Version |\n"
+            "|--------|------|-------------|---------|\n"
+            "| other | [example/other](https://github.com/example/other) | Other plugin | 1.0.0 |\n"
+        )
+        changes = []
+        out = ms.apply_plugin_index_readme(text, {"build-loop": "0.36.1"}, changes)
+        self.assertEqual(out, text)
+        self.assertEqual(changes, [])
 
 
 # ---------------------------------------------------------------------------
@@ -552,11 +608,16 @@ class TestActModeHelpers(unittest.TestCase):
         self.assertIn("marketplaces", str(ms.PLUGIN_CACHE_MARKETPLACE))
 
     def test_surface_files_bounded(self):
-        # Commit staging is restricted to exactly the three reconcile surfaces —
+        # Commit staging is restricted to exactly the reconcile surfaces —
         # never a blanket `git add -A` that could capture untracked residue.
         self.assertEqual(
             set(ms.ACT_SURFACE_FILES),
-            {".claude-plugin/marketplace.json", ".agents/plugins/marketplace.json", "README.md"},
+            {
+                ".claude-plugin/marketplace.json",
+                ".agents/plugins/marketplace.json",
+                "README.md",
+                "plugins/README.md",
+            },
         )
 
     def test_act_branch_is_dedicated(self):

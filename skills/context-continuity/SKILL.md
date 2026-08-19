@@ -1,6 +1,6 @@
 ---
 name: context-continuity
-description: This skill activates when the user mentions "what was I working on", "continue from last session", "restore context", "what did we decide", "pick up where I left off", "compaction happened", "lost context", "session context", "resume work", "what's the status", "where did we leave off", "prior session", "context lost", or when resuming work after a break. Provides session continuity by accessing bookmark snapshots via MCP tools.
+description: This skill activates when the user mentions "what was I working on", "continue from last session", "restore context", "what did we decide", "pick up where I left off", "compaction happened", "lost context", "session context", "resume work", "what's the status", "where did we leave off", "prior session", "context lost", or when resuming work after a break. Provides session continuity by accessing bookmark snapshots via MCP tools. Not for a coding agent you are building that needs its own cross-session state model — use `long-running-agent-harness`.
 version: 0.2.0
 user-invocable: false
 canonical: true

@@ -1,6 +1,6 @@
 ---
 name: mcp-safe-design
-description: Apply the Secrets Vault contract to any MCP server you build, edit, or review. The contract is metadata-only — tools return references and IDs, never secret values, bearer tokens, or internal state. Activates when working on `mcp__*` tools, `.mcp.json`, or any MCP server source file (`server.py`, `server.ts`, `*.mcp.*`).
+description: Apply the Secrets Vault contract to any MCP server you build, edit, or review. The contract is metadata-only — tools return references and IDs, never secret values, bearer tokens, or internal state. Activates when working on `mcp__*` tools, `.mcp.json`, or any MCP server source file (`server.py`, `server.ts`, `*.mcp.*`). Not for general tool naming, parameters, or return-format design — use `agent-tool-design`.
 trigger: User mentions building/editing/auditing an MCP server, the file path matches `**/server.{py,ts,js}` inside an MCP context, the user is editing `.mcp.json`, or the user names a tool prefixed `mcp__`.
 ---
 

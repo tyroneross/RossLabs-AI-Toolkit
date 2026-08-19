@@ -7,14 +7,18 @@ host-install drift across Claude Code and Codex.
 
 ### What it does
 
-Four surfaces must agree on the same plugin version:
+Four repo surfaces must agree on the same plugin version:
 
 | Surface | File |
 |---------|------|
 | Claude marketplace | `.claude-plugin/marketplace.json` |
 | Codex marketplace | `.agents/plugins/marketplace.json` |
 | README table | `README.md` |
-| Host installs | `~/.claude/plugins/installed_plugins.json`, `codex plugin list` |
+| Plugin index table | `plugins/README.md` |
+
+Host installs are checked against catalog truth from
+`~/.claude/plugins/installed_plugins.json`, `~/.codex/config.toml`, and
+`~/.codex/plugins/cache/`.
 
 The source of truth is the external GitHub repo's `.claude-plugin/plugin.json`
 (what `claude plugin install` actually clones). The tool fetches this via
@@ -24,10 +28,10 @@ network or `gh` is unavailable.
 ### Usage
 
 ```bash
-# Dry-run: show what would change across catalog + README
+# Dry-run: show what would change across catalog + docs
 python3 scripts/marketplace-sync.py --all
 
-# Apply catalog + README changes
+# Apply catalog + docs changes
 python3 scripts/marketplace-sync.py --all --write
 
 # Check host installs (Claude + Codex) vs catalog truth; print fix commands
@@ -69,12 +73,13 @@ claude plugin update <name>@rosslabs-ai-toolkit --scope <scope>
 
 Restart Claude Code after updating.
 
-**Codex:** runs `codex plugin list` and parses `ross-labs-local` marketplace
-rows. Codex has no `plugin update` command; for each stale install emits:
+**Codex:** reads `~/.codex/config.toml` for configured plugins and
+`~/.codex/plugins/cache/<marketplace>/<plugin>/<version>/` for installed
+versions. Codex CLI 0.130.0 refreshes at marketplace scope; for stale
+`ross-labs-local` installs it emits:
 
 ```
-codex plugin remove <name>@ross-labs-local
-codex plugin add <name>@ross-labs-local
+codex plugin marketplace upgrade ross-labs-local
 ```
 
 Both checks degrade gracefully: if the file/CLI is absent, a note is printed
@@ -86,13 +91,15 @@ For each `plugins/<name>/` mirror that has both `package.json` and
 `.claude-plugin/plugin.json`, reports a version mismatch. Report-only — no
 cross-repo edits.
 
-Currently all 13 mirrors are in sync. A drift here means someone bumped one
+Currently all 14 mirrors are in sync. A drift here means someone bumped one
 file but not the other during a local update.
 
 ### Daily automation (macOS launchd)
 
 The root cause of catalog drift is the tool never running. A launchd plist
-runs `--all --check` daily at 09:00 and logs results. Activation is explicit:
+runs `--act` daily at 09:00, reconciles catalog surfaces in a dedicated
+main-pinned worktree, commits/pushes when needed, and refreshes the plugin
+cache. Activation is explicit:
 
 ```bash
 # Install and activate the daily job
@@ -110,8 +117,8 @@ and loaded via `launchctl load`. Logs go to:
 ~/Library/Logs/marketplace-sync.err
 ```
 
-The job exits 2 (clean) or 3 (drift found — check the log and run
-`--check-hosts` for fix commands). It does NOT apply any changes automatically.
+The job exits 0 when acted-or-clean and non-zero on push or cache-refresh
+failure.
 
 ### Tests
 
@@ -124,6 +131,7 @@ python3 -m pytest tests/test_marketplace_sync.py -v
 ```
 
 Tests cover: semver comparison, Claude installed_plugins.json parsing, Codex
-plugin list parsing, drift detection, remediation command generation, and
-package.json ↔ plugin.json drift detection. All tests use fixture files under
-`tests/fixtures/` — zero dependency on live host state.
+config/cache parsing, legacy Codex plugin-list parsing, drift detection,
+remediation command generation, and package.json ↔ plugin.json drift detection.
+All tests use fixture files or temporary directories — zero dependency on live
+host state.
