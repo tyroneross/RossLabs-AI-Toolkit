@@ -31,6 +31,7 @@ import argparse
 import json
 import os
 import shutil
+import re
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -111,6 +112,131 @@ def probe_version(repo_path: Path) -> tuple[str | None, str | None]:
         if v is not None:
             return v, rel
     return None, None
+
+
+def read_version_at_ref(repo_path: Path, ref: str, rel: str, git: str) -> str | None:
+    """Version from ONE specific file at ONE ref. No candidate fallback.
+
+    Comparing refs requires reading the SAME file at both. Probing candidates
+    independently per ref compares apples to oranges: spectra's main declares
+    0.3.2 in .claude-plugin/plugin.json while origin/main has no such file, so a
+    per-ref probe fell through to package.json and reported a phantom 0.4.0
+    "newer published version" that did not exist.
+    """
+    try:
+        out = subprocess.run(
+            [git, "-C", str(repo_path), "show", f"{ref}:{rel}"],
+            capture_output=True, text=True, timeout=20,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if out.returncode != 0:
+        return None
+    return parse_version_from_json_text(out.stdout)
+
+
+def probe_version_at_ref(repo_path: Path, ref: str, git: str) -> tuple[str | None, str | None]:
+    """Version as declared AT A GIT REF, not in the working tree.
+
+    The working tree is whatever branch happens to be checked out, possibly
+    dirty, possibly a feature branch mid-refactor. A published catalog must not
+    depend on that: it reports what `main` declares. Returns (None, None) when
+    the ref or the file is absent — callers fall back to the working tree.
+    """
+    for rel in _VERSION_CANDIDATES:
+        try:
+            out = subprocess.run(
+                [git, "-C", str(repo_path), "show", f"{ref}:{rel}"],
+                capture_output=True, text=True, timeout=20,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            return None, None
+        if out.returncode != 0:
+            continue
+        v = parse_version_from_json_text(out.stdout)
+        if v is not None:
+            return v, rel
+    return None, None
+
+
+def push_status(repo_path: Path, git: str) -> dict:
+    """What is actually PUBLISHED versus what exists locally.
+
+    A version in the working tree tells you nothing about what anyone else can
+    install. These fields answer the question a catalog actually needs: what
+    does the pushed branch declare, when did it last move, and how far has
+    local run ahead of it.
+    """
+    def g(args: list[str]) -> str | None:
+        return _git(args, repo_path, git)
+
+    main_ref = None
+    for cand in ("main", "master"):
+        if g(["rev-parse", "--verify", "--quiet", cand]):
+            main_ref = cand
+            break
+
+    remote_ref = None
+    if main_ref and g(["rev-parse", "--verify", "--quiet", f"origin/{main_ref}"]):
+        remote_ref = f"origin/{main_ref}"
+
+    out: dict = {
+        "main_ref": main_ref,
+        "main_version": None,
+        "pushed_version": None,
+        "last_pushed_at": None,
+        "last_pushed_subject": None,
+        "unpushed_commits": None,
+        "unpulled_commits": None,
+        "publish_state": "unknown",
+    }
+    if main_ref:
+        v, src = probe_version_at_ref(repo_path, main_ref, git)
+        out["main_version"] = v
+        out["main_version_source"] = src
+    if remote_ref:
+        # Read the SAME file main used, so the two are comparable. Falling back
+        # to a candidate probe here would compare different files across refs.
+        src = out.get("main_version_source")
+        out["pushed_version"] = (
+            read_version_at_ref(repo_path, remote_ref, src, git) if src else None
+        )
+        out["pushed_version_source"] = src
+        last = g(["log", "-1", "--format=%cI%x09%s", remote_ref])
+        if last and "\t" in last:
+            out["last_pushed_at"], out["last_pushed_subject"] = last.split("\t", 1)
+        counts = g(["rev-list", "--left-right", "--count", f"{remote_ref}...{main_ref}"])
+        if counts and len(counts.split()) == 2:
+            behind, ahead = counts.split()
+            out["unpulled_commits"] = int(behind)
+            out["unpushed_commits"] = int(ahead)
+
+    # publish_state answers "is what people can install current?"
+    lv, pv = out["main_version"], out["pushed_version"]
+    if remote_ref is None:
+        out["publish_state"] = "local-only"
+    elif lv is None and pv is None:
+        out["publish_state"] = "unversioned"
+    elif lv == pv and not out.get("unpushed_commits"):
+        out["publish_state"] = "published"
+    elif lv == pv:
+        out["publish_state"] = "commits-unpushed"
+    elif lv is not None and pv is not None and _semver_key(pv) > _semver_key(lv):
+        # main is BEHIND what is published. Either someone released without
+        # merging back, or local main was reset. Never silently pick one.
+        out["publish_state"] = "local-behind-published"
+    else:
+        out["publish_state"] = "version-unpushed"
+    return out
+
+
+def _semver_key(v: str) -> tuple:
+    """Loose semver sort key; non-numeric parts sort as 0 rather than raising."""
+    parts = re.split(r"[.\-+]", str(v))
+    key = []
+    for part in parts[:4]:
+        key.append(int(part) if part.isdigit() else 0)
+    return tuple(key)
 
 
 def is_git_repo(entry: Path) -> bool:
@@ -234,6 +360,16 @@ def scan_one_repo(entry: Path, git: str) -> dict:
 
     version, version_source = probe_version(entry)
 
+    # What main declares and what is actually published. The working-tree
+    # version above is kept as `worktree_version` because it is what a local
+    # dev sees, but `version` now reports main -- a catalog must not publish a
+    # number that only exists on someone's feature branch.
+    pub = push_status(entry, git)
+    worktree_version, worktree_source = version, version_source
+    if pub.get("main_version"):
+        version = pub["main_version"]
+        version_source = pub.get("main_version_source") or version_source
+
     return {
         "name": entry.name,
         "path": str(entry),
@@ -244,7 +380,10 @@ def scan_one_repo(entry: Path, git: str) -> dict:
         "origin": origin,
         "version": version,
         "version_source": version_source,
+        "worktree_version": worktree_version,
+        "worktree_version_source": worktree_source,
         "is_worktree": is_worktree(entry),
+        **pub,
     }
 
 

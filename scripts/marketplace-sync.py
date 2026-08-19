@@ -1229,7 +1229,7 @@ def refresh_plugin_cache(cache: Path = PLUGIN_CACHE_MARKETPLACE) -> bool:
 
 MEMORY_REPO = Path.home() / "dev" / "git-folder" / "build-loop-memory"
 REGISTRY_DIR = MEMORY_REPO / "registry"
-REGISTRY_FILES = ("REGISTRY.md", "registry.json")
+REGISTRY_FILES = ("REGISTRY.md", "registry.json", "PLUGINS.md", "plugins.json")
 # One pointer line into the memory index (the repo's index convention is INDEX.md,
 # not MEMORY.md — verified from the repo). The registry files are generated
 # artifacts, not memories, so they are referenced, not written via memory_writer.
@@ -1239,6 +1239,21 @@ REGISTRY_INDEX_POINTER = (
     "registry (scan of `~/dev/git-folder`, refreshed by the marketplace-sync "
     "`--act` cron). Generated artifact — do not hand-edit."
 )
+
+
+def _load_plugin_registry_module():
+    """Import the colocated plugin_registry.py (same importlib dance)."""
+    import importlib.util
+
+    mod_path = Path(__file__).resolve().parent / "plugin_registry.py"
+    if not mod_path.exists():
+        return None
+    spec = importlib.util.spec_from_file_location("plugin_registry", str(mod_path))
+    if spec is None or spec.loader is None:
+        return None
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
 
 
 def _load_repo_registry_module():
@@ -1317,6 +1332,28 @@ def regenerate_registry() -> tuple[bool, str]:
 
     summary = mod.generate(out_dir=REGISTRY_DIR, write=True)
     _log(f"registry: scanned {summary['count']} repos → {summary['md_path']}")
+
+    # Plugin-level index, same pass, same privacy guard (already cleared above).
+    # Repo-level answers "what is on this machine"; this answers "what do we
+    # publish, to which hosts, and is it current" -- which is the question the
+    # catalog actually depends on. Failure here must not fail the catalog sync.
+    pmod = _load_plugin_registry_module()
+    if pmod is None:
+        _log("plugin index: plugin_registry.py not found — skipped")
+    else:
+        try:
+            pidx = pmod.build_index()
+            (REGISTRY_DIR / pmod.MD_NAME).write_text(
+                pmod.render_md(pidx), encoding="utf-8")
+            (REGISTRY_DIR / pmod.JSON_NAME).write_text(
+                json.dumps(pidx, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            behind = [x["name"] for x in pidx["plugins"]
+                      if x.get("publish_state") == "local-behind-published"]
+            _log(f"plugin index: {pidx['count']} plugins → {REGISTRY_DIR / pmod.MD_NAME}")
+            if behind:
+                _log(f"plugin index: LOCAL MAIN BEHIND PUBLISHED for {behind}")
+        except Exception as exc:  # noqa: BLE001 — advisory, never fails the sync
+            _log(f"plugin index: failed ({exc}) — continuing")
 
     # build-loop-memory is a live, frequently-dirty repo. We must commit ONLY our
     # own files and never sweep in unrelated working-tree changes (the 30+ dirty
