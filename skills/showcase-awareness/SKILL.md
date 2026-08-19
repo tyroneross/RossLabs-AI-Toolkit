@@ -1,6 +1,6 @@
 ---
 name: showcase-awareness
-description: Suggest capturing screenshots or video at opportune moments during development
+description: Suggest capturing a screenshot or short video right after a build succeeds, a deploy completes, a server starts, or the user says the UI looks good or something is working — saves the visual proof while the moment is fresh.
 triggers:
   - "build succeeded"
   - "deploy complete"

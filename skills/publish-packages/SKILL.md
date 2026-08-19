@@ -1,7 +1,7 @@
 ---
 name: publish-packages
 description: |
-  How to publish a public npm package to GitHub Packages for any project under the @tyroneross scope — Claude Code plugins, build-loop subsystems, prompt-builder, etc. Load whenever the user asks to "publish to GitHub Packages", "publish the plugin", "ship as an npm package", "make this installable", "release this to npm", or whenever bumping a package version that needs to ship. Covers single-package repos (build-loop pattern) and monorepo per-plugin publishing (RossLabs-AI-Toolkit pattern). Includes the GitHub Actions workflow template, the release ritual, and the verification checklist that catches the 403 / version-drift / scope-missing failures already seen in this account.
+  How to publish a public npm package to GitHub Packages for any project under the @tyroneross scope — Claude Code plugins, build-loop subsystems, prompt-builder, etc. Load whenever the user asks to "publish to GitHub Packages", "publish the plugin", "ship as an npm package", "make this installable", "release this to npm", or whenever bumping a package version that needs to ship. Covers single-package repos (build-loop pattern) and monorepo per-plugin publishing (RossLabs-AI-Toolkit pattern). Includes the GitHub Actions workflow template, the release ritual, and the verification checklist that catches the 403 / version-drift / scope-missing failures already seen in this account. Not for marketplace.json listing, version drift across repo surfaces, or add-marketplace failures — use `marketplace-maintenance`.
 ---
 
 # Publish Packages — GitHub Packages, @tyroneross scope

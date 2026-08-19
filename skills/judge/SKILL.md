@@ -1,6 +1,6 @@
 ---
 name: judge
-description: Score a single artifact (skill, feedback note, agent definition, research entry, prompt, or any markdown deliverable) against a locked 5-dimension rubric with evidence anchoring. Use when the user asks to "judge X", "score X", "rubric-score X", "evaluate X against criteria", or as a quality gate before promoting a skill/agent. Returns a deterministic table (dimension, score 1-5, evidence quote, one-line rationale) and an aggregate score. No Chain-of-Thought, no freeform critique — the rubric carries the structural work.
+description: Score a single artifact (skill, feedback note, agent definition, research entry, prompt, or any markdown deliverable) against a locked 5-dimension rubric with evidence anchoring. Use when the user asks to "judge X", "score X", "rubric-score X", "evaluate X against criteria", or as a quality gate before promoting a skill/agent. Returns a deterministic table (dimension, score 1-5, evidence quote, one-line rationale) and an aggregate score. No Chain-of-Thought, no freeform critique — the rubric carries the structural work. Not for building a data-driven eval harness that runs an LLM agent or prompt against real tasks — use `agent-eval-harness`.
 version: 0.1.0
 user-invocable: true
 canonical: true

@@ -1,7 +1,7 @@
 ---
 name: marketplace-maintenance
 description: |
-  Operational lessons for maintaining a Claude Code plugin marketplace. Load whenever making changes to `.claude-plugin/marketplace.json`, bumping a plugin version that's listed in a marketplace, adding/removing plugins from a marketplace, or troubleshooting "add marketplace" failures. Prevents schema rejection, stale manifests, CDN-lag false negatives, and install-command drift.
+  Operational lessons for maintaining a Claude Code plugin marketplace. Load whenever making changes to `.claude-plugin/marketplace.json`, bumping a plugin version that's listed in a marketplace, adding/removing plugins from a marketplace, or troubleshooting "add marketplace" failures. Prevents schema rejection, stale manifests, CDN-lag false negatives, and install-command drift. Not for the npm/GitHub Packages publish step itself — use `publish-packages`.
 ---
 
 # Marketplace Maintenance
@@ -12,21 +12,33 @@ Based on real incidents from the RossLabs-AI-Toolkit marketplace (2026-04-20 ses
 
 ## Required sync whenever a plugin change ships
 
-A plugin version lives on **three** surfaces that drift independently. When any plugin bumps its version, changes description, or ships significant features, reconcile all three in lockstep:
+A plugin version lives on **four** repo surfaces that drift independently. When any plugin bumps its version, changes description, or ships significant features, reconcile all four in lockstep:
 
 1. **`.claude-plugin/marketplace.json`** — the entry's `version`, `description`, `keywords`. Drives Claude Code installs.
-2. **`.agents/plugins/marketplace.json`** — the Codex / cross-agent mirror. Carries `version` only on the subset of entries that declare it (today: `build-loop`). Update existing version fields; do **not** inject `version` into entries that omit it by design.
+2. **`.agents/plugins/marketplace.json`** — the Codex / cross-agent mirror. Carries `version` only on the subset of entries that declare it (today: `build-loop`). Update existing version fields; do **not** inject `version` into entries that omit it by design. Every public plugin in `.claude-plugin/marketplace.json` that has a Codex-compatible repo surface should have a matching `.agents` entry.
 3. **`README.md`** — Plugins table row + install-example block. Drives GitHub discovery.
+4. **`plugins/README.md`** — Plugin index table. Drives repo-local plugin discovery and version audits.
 
 Drift between these surfaces is the #1 symptom of a stale marketplace. The classic failure is three different versions for one plugin (README `0.12.10`, `.claude-plugin` `0.12.16`, external repo `0.13.5`). Don't hand-edit — run the reconciler:
 
 ```bash
 # Source of truth = each plugin's EXTERNAL repo plugin.json (what install actually clones)
-python3 scripts/marketplace-sync.py --all            # dry-run: show drift across all three surfaces
+python3 scripts/marketplace-sync.py --all            # dry-run: show drift across repo surfaces
 python3 scripts/marketplace-sync.py --all --write    # apply
 ```
 
-`--all` resolves every plugin's true version from its external github repo via `gh api` (falling back to the local mirror only if gh/network is unavailable), then updates both manifests' `version` fields and the README version cells in one pass. It does **not** touch curated descriptions or the install-command lists — those stay hand-authored, so re-check install-list completeness (all current plugins listed, deprecated ones excluded) manually after a plugin is added or retired.
+`--all` resolves every plugin's true version from its external github repo via `gh api` (falling back to the local mirror only if gh/network is unavailable), then updates both manifests' `version` fields plus the README and plugin-index version cells in one pass. It does **not** touch curated descriptions or the install-command lists — those stay hand-authored, so re-check install-list completeness (all current plugins listed, deprecated ones excluded) manually after a plugin is added or retired.
+
+## Codex marketplace support
+
+Codex installs use the `.agents/plugins/marketplace.json` mirror. With Codex CLI 0.130.0, marketplace operations are marketplace-scoped:
+
+```bash
+codex plugin marketplace add tyroneross/RossLabs-AI-Toolkit --sparse .agents/plugins
+codex plugin marketplace upgrade ross-labs-local
+```
+
+Do not document removed per-plugin commands such as `codex plugin list`, `codex plugin add`, or `codex plugin remove` as the current install path. For host drift checks, `scripts/marketplace-sync.py` reads `~/.codex/config.toml` plus `~/.codex/plugins/cache/`.
 
 ## Schema requirements (per Anthropic docs)
 
@@ -121,7 +133,7 @@ If renaming the marketplace's `name` field (e.g. legacy mixed-case → kebab-cas
 - **Every time** you bump a plugin version that's listed in any marketplace you maintain.
 - **Before** committing any change to `.claude-plugin/marketplace.json`.
 - **When** a user reports "can't add marketplace" or "can't install plugin".
-- **When** a plugin is added to or removed from the marketplace.
+- **When** a plugin is added to or removed from either marketplace manifest.
 - **When** planning a marketplace rename.
 
 ## Related
