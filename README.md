@@ -37,13 +37,13 @@ Use it for features, refactors, migrations, and schema changes: anything that to
 
 | Plugin | Version | What it does |
 |--------|---------|--------------|
-| [build-loop](https://github.com/tyroneross/build-loop) | `0.38.0` | The flagship build loop. Plans, reviews, and verifies every multi-file change. See **Featured** above for the full breakdown. |
+| [build-loop](https://github.com/tyroneross/build-loop) | `0.39.0` | The flagship build loop. Plans, reviews, and verifies every multi-file change. See **Featured** above for the full breakdown. |
 | [agent-rally-point](https://github.com/tyroneross/agent-rally-point) | `0.1.0` | Repo-local coordination for parallel coding agents — records claims, checks write boundaries, routes handoffs, and exposes room state via the `rally` CLI. Advisory-only hooks surface room awareness and deconflict before edits; self-gates outside rally repos. |
-| [navgator](https://github.com/tyroneross/NavGator) | `0.9.1` | Architecture tracking — map dependencies, analyze impact, and visualize your stack before you change it. |
+| [navgator](https://github.com/tyroneross/NavGator) | `0.9.0` | Architecture tracking — map dependencies, analyze impact, and visualize your stack before you change it. |
 | [ibr](https://github.com/tyroneross/interface-built-right) | `1.4.0` | UI validation — verify implementations match intent with live page scanning and visual regression. |
 | [bookmark](https://github.com/tyroneross/bookmark) | `0.3.2` | Session context continuity — auto-save and restore across compactions and terminal closures. |
 | [claude-code-debugger](https://github.com/tyroneross/claude-code-debugger) | `1.9.0` | Debugging memory — verdict-based retrieval and pattern extraction from past incidents. |
-| [research](https://github.com/tyroneross/research-plugin) | `0.5.2` | Token-efficient research KB — SQLite FTS5, source tier scoring, claim + quantitative verification, bulk ingest, project symlinks. |
+| [research](https://github.com/tyroneross/research-plugin) | `0.5.1` | Token-efficient research KB — SQLite FTS5, source tier scoring, claim + quantitative verification, bulk ingest, project symlinks. |
 | [api-registry](https://github.com/tyroneross/api-registry) | `0.2.0` | Local doc-content cache and authoritative API source registry. Caches docs as dated markdown with a 7-day freshness contract, answers from the local cache first (Context7 is fallback only), and flags docs past the window. Tracks each package's latest-release date and emits an install-cooldown verdict — third-party releases under 7 days old are flagged, the author's own packages exempt. |
 
 ### Agents & prompts
@@ -60,7 +60,7 @@ Use it for features, refactors, migrations, and schema changes: anything that to
 | Plugin | Version | What it does |
 |--------|---------|--------------|
 | [showcase](https://github.com/tyroneross/showcase) | `0.1.2` | **Deprecated — use `spectra`.** Folded into `spectra` v0.2.0 via `spectra_library`; migrate with `spectra_library action="migrate-from-showcase"`. |
-| [spectra](https://github.com/tyroneross/spectra) | `0.4.0` | Content capture + polished demo pipeline for marketing — screenshots, videos, and usage sequences across web/macOS/iOS/watchOS, plus `spectra_demo` (spotlight focus, lower-third captions, multi-segment merge) and a tagged library (find, gallery, export, migrate-from-showcase). |
+| [spectra](https://github.com/tyroneross/spectra) | `0.3.2` | Content capture + polished demo pipeline for marketing — screenshots, videos, and usage sequences across web/macOS/iOS/watchOS, plus `spectra_demo` (spotlight focus, lower-third captions, multi-segment merge) and a tagged library (find, gallery, export, migrate-from-showcase). |
 | [mockup-gallery](https://github.com/tyroneross/mockup-gallery) | `0.5.1` | Visual mockup review with component-level ratings, auto-save to file, and Claude Code integration. |
 | [replit-migrate](https://github.com/tyroneross/replit-migrate) | `0.1.1` | Migrate Replit apps to web (Vercel) or native (iOS/macOS) with encoded lessons from real migrations. |
 | [web-scraper](https://github.com/tyroneross/blog-content-scraper) | `0.5.2` | Intelligent web scraper for extracting blog and news content from any website. |
