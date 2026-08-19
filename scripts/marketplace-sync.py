@@ -2,10 +2,11 @@
 """
 marketplace-sync: reconcile every distribution surface to a plugin's true version.
 
-Three surfaces drift independently and must describe the same state:
+Four surfaces drift independently and must describe the same state:
   1. .claude-plugin/marketplace.json   — drives Claude Code installs
   2. .agents/plugins/marketplace.json   — drives Codex / cross-agent installs
   3. README.md                          — drives GitHub discovery
+  4. plugins/README.md                  — drives plugin-index discovery
 
 Source of truth for a github-source plugin is its EXTERNAL repo's
 `.claude-plugin/plugin.json` (that's what `claude plugin install` actually
@@ -28,7 +29,7 @@ Exit codes:
   0  changes proposed (and written with --write); --act: acted or already clean
   1  shape problem (bad JSON, missing file, plugin not found); --act: push/refresh failure
   2  no changes (every surface already in sync)
-  3  --check mode: at least one surface is drifted (catalog, README, .agents, or hosts)
+  3  --check mode: at least one surface is drifted (catalog, docs, hosts, etc.)
 """
 from __future__ import annotations
 
@@ -43,6 +44,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tomllib
 import xml.sax.saxutils
 from pathlib import Path
 
@@ -72,9 +74,12 @@ TOOLKIT_ROOT = Path(__file__).resolve().parent.parent
 MARKETPLACE = TOOLKIT_ROOT / ".claude-plugin" / "marketplace.json"
 AGENTS_MARKETPLACE = TOOLKIT_ROOT / ".agents" / "plugins" / "marketplace.json"
 README = TOOLKIT_ROOT / "README.md"
+PLUGINS_README = TOOLKIT_ROOT / "plugins" / "README.md"
 
 CLAUDE_MARKETPLACE_KEY = "rosslabs-ai-toolkit"
 CODEX_MARKETPLACE_KEY = "ross-labs-local"
+CODEX_CONFIG = Path.home() / ".codex" / "config.toml"
+CODEX_PLUGIN_CACHE = Path.home() / ".codex" / "plugins" / "cache"
 
 
 def die(msg: str, code: int = 1) -> None:
@@ -198,6 +203,12 @@ README_ROW_RE = re.compile(
     re.MULTILINE,
 )
 
+# plugins/README table-row regex: | name | [repo](url) | description | version |
+PLUGIN_INDEX_ROW_RE = re.compile(
+    r"^(\|\s*([A-Za-z0-9_\-]+)\s*\|\s*\[[^\]]+\]\([^)]+\)\s*\|\s*[^|]*\|\s*)([^|\s]+)(\s*\|\s*)$",
+    re.MULTILINE,
+)
+
 
 def apply_readme(text: str, versions: dict[str, str], changes: list[str]) -> str:
     def replacer(m: re.Match) -> str:
@@ -209,6 +220,18 @@ def apply_readme(text: str, versions: dict[str, str], changes: list[str]) -> str
             return f"{m.group(1)}`{new_v}`{m.group(5)}{m.group(6)}{m.group(7)}"
         return m.group(0)
     return README_ROW_RE.sub(replacer, text)
+
+
+def apply_plugin_index_readme(text: str, versions: dict[str, str], changes: list[str]) -> str:
+    def replacer(m: re.Match) -> str:
+        name = m.group(2)
+        new_v = versions.get(name)
+        old_v = m.group(3).strip()
+        if new_v and new_v != old_v:
+            changes.append(f"plugins/README.md: {name} version {old_v} → {new_v}")
+            return f"{m.group(1)}{new_v}{m.group(4)}"
+        return m.group(0)
+    return PLUGIN_INDEX_ROW_RE.sub(replacer, text)
 
 
 def diff_block(label: str, before: str, after: str) -> str:
@@ -340,11 +363,91 @@ def load_claude_installed(marketplace_key: str = CLAUDE_MARKETPLACE_KEY) -> dict
 
 
 # ---------------------------------------------------------------------------
-# Chunk 1: Codex plugin list parsing
+# Chunk 1: Codex install-state parsing
+# ---------------------------------------------------------------------------
+
+def newest_cached_version(plugin_dir: Path) -> str:
+    """Return the newest cached version directory for one Codex plugin.
+
+    Codex 0.130.0 no longer exposes `codex plugin list`; installed/enabled
+    state lives in ~/.codex/config.toml and cached plugin copies live under
+    ~/.codex/plugins/cache/<marketplace>/<plugin>/<version>/.
+    """
+    if not plugin_dir.is_dir():
+        return ""
+    versions = [p.name for p in plugin_dir.iterdir() if p.is_dir()]
+    if not versions:
+        return ""
+    best = versions[0]
+    for candidate in versions[1:]:
+        if semver_lt(best, candidate):
+            best = candidate
+    return best
+
+
+def parse_codex_config_plugins(
+    data: dict,
+    marketplace_key: str,
+    cache_root: Path | None = None,
+) -> dict[str, dict]:
+    """Parse Codex config.toml plugin entries for one marketplace.
+
+    Returns:
+        {plugin_name: {version, status}} for configured entries. `version` is
+        resolved from the cache when cache_root is provided; empty means the
+        plugin is configured but no cached version could be found.
+    """
+    result: dict[str, dict] = {}
+    suffix = f"@{marketplace_key}"
+    plugins = data.get("plugins", {})
+    if not isinstance(plugins, dict):
+        return result
+
+    for key, meta in plugins.items():
+        if not isinstance(key, str) or not key.endswith(suffix):
+            continue
+        name = key[: -len(suffix)]
+        enabled = bool(meta.get("enabled", True)) if isinstance(meta, dict) else True
+        version = ""
+        if cache_root is not None:
+            version = newest_cached_version(cache_root / marketplace_key / name)
+        result[name] = {
+            "version": version,
+            "status": "enabled" if enabled else "disabled",
+        }
+    return result
+
+
+def load_codex_installed(
+    marketplace_key: str = CODEX_MARKETPLACE_KEY,
+    config_path: Path = CODEX_CONFIG,
+    cache_root: Path = CODEX_PLUGIN_CACHE,
+) -> dict[str, dict] | None:
+    """Load Codex plugin state from config.toml + plugin cache.
+
+    Returns None with a printed warning if Codex config is absent or malformed.
+    """
+    if not config_path.exists():
+        print(f"  (skip Codex host check — {config_path} not found)")
+        return None
+    try:
+        data = tomllib.loads(config_path.read_text(encoding="utf-8"))
+    except (tomllib.TOMLDecodeError, OSError) as e:
+        print(f"  (skip Codex host check — could not read {config_path}: {e})")
+        return None
+    return parse_codex_config_plugins(data, marketplace_key, cache_root)
+
+
+# ---------------------------------------------------------------------------
+# Chunk 1: Legacy Codex plugin list parsing
 # ---------------------------------------------------------------------------
 
 def parse_codex_plugin_list(output: str, marketplace_key: str) -> dict[str, dict]:
-    """Parse `codex plugin list` stdout and return installed plugins for marketplace_key.
+    """Parse legacy `codex plugin list` stdout for marketplace_key.
+
+    Current Codex CLI (verified at 0.130.0) removed this command. Keep this
+    parser for backward compatibility with older fixture output; live checks use
+    load_codex_installed().
 
     The output format is:
       Marketplace `<key>`
@@ -417,25 +520,6 @@ def parse_codex_plugin_list(output: str, marketplace_key: str) -> dict[str, dict
     return result
 
 
-def run_codex_plugin_list() -> str | None:
-    """Run `codex plugin list` and return stdout, or None if codex is absent/fails."""
-    try:
-        out = subprocess.run(
-            ["codex", "plugin", "list"],
-            capture_output=True, text=True, timeout=30,
-        )
-        if out.returncode != 0:
-            print(f"  (skip Codex host check — codex plugin list returned {out.returncode})")
-            return None
-        return out.stdout
-    except FileNotFoundError:
-        print("  (skip Codex host check — codex CLI not found)")
-        return None
-    except subprocess.TimeoutExpired:
-        print("  (skip Codex host check — codex plugin list timed out)")
-        return None
-
-
 # ---------------------------------------------------------------------------
 # Chunk 1: Drift finders
 # ---------------------------------------------------------------------------
@@ -505,10 +589,14 @@ def claude_update_cmd(name: str, scope: str) -> str:
     return f"claude plugin update {name}@{CLAUDE_MARKETPLACE_KEY} --scope {scope}"
 
 
-def codex_remediate_cmds(name: str, marketplace_key: str) -> tuple[str, str]:
-    """Emit remove + add commands (Codex has no update command)."""
-    key = f"{name}@{marketplace_key}"
-    return f"codex plugin remove {key}", f"codex plugin add {key}"
+def codex_remediate_cmd(name: str, marketplace_key: str) -> str:
+    """Emit the current Codex marketplace refresh command.
+
+    Codex 0.130.0 exposes marketplace-level add/upgrade/remove commands, not
+    per-plugin add/remove/update commands. One marketplace upgrade refreshes all
+    configured plugins from that marketplace.
+    """
+    return f"codex plugin marketplace upgrade {marketplace_key}"
 
 
 # ---------------------------------------------------------------------------
@@ -573,22 +661,23 @@ def check_hosts(truth: dict[str, str]) -> list[str]:
 
     # --- Codex ---
     print("\n--- Codex host installs ---")
-    codex_output = run_codex_plugin_list()
-    if codex_output is not None:
-        codex_installed = parse_codex_plugin_list(codex_output, CODEX_MARKETPLACE_KEY)
+    codex_installed = load_codex_installed()
+    if codex_installed is not None:
         codex_drift = find_codex_drift(codex_installed, truth)
         if not codex_drift:
             print("  All Codex installs up to date.")
         else:
-            print("  Note: Codex has NO `plugin update` command — must remove then re-add.")
+            print("  Note: Codex refreshes plugins at marketplace scope.")
+            printed_cmds: set[str] = set()
             for item in codex_drift:
                 name = item["name"]
                 inst_v = item["installed_version"]
                 truth_v = item["truth_version"]
-                remove_cmd, add_cmd = codex_remediate_cmds(name, CODEX_MARKETPLACE_KEY)
                 print(f"  STALE Codex {name}: {inst_v} → {truth_v}")
-                print(f"    Fix: {remove_cmd}")
-                print(f"         {add_cmd}")
+                cmd = codex_remediate_cmd(name, CODEX_MARKETPLACE_KEY)
+                if cmd not in printed_cmds:
+                    print(f"    Fix: {cmd}")
+                    printed_cmds.add(cmd)
                 drift_lines.append(f"Codex {name}: {inst_v} → {truth_v}")
 
     return drift_lines
@@ -612,6 +701,7 @@ def check_all_surfaces(prefer: str) -> int:
         mk_before = MARKETPLACE.read_text(encoding="utf-8")
         ag_before = AGENTS_MARKETPLACE.read_text(encoding="utf-8")
         rd_before = README.read_text(encoding="utf-8")
+        plugins_rd_before = PLUGINS_README.read_text(encoding="utf-8")
     except (OSError, json.JSONDecodeError) as e:
         print(f"marketplace-sync: ERROR reading catalog — {e}", file=sys.stderr)
         return 1
@@ -621,14 +711,15 @@ def check_all_surfaces(prefer: str) -> int:
     apply_manifest(MARKETPLACE, ".claude-plugin/marketplace.json", versions, changes)
     apply_manifest(AGENTS_MARKETPLACE, ".agents/plugins/marketplace.json", versions, changes)
     apply_readme(rd_before, versions, changes)
+    apply_plugin_index_readme(plugins_rd_before, versions, changes)
 
     if changes:
-        print("\nCatalog/README surface drifts:")
+        print("\nCatalog/doc surface drifts:")
         for c in changes:
             print(f"  DRIFT {c}")
         all_drifts.extend(changes)
     else:
-        print("\nCatalog surfaces: clean")
+        print("\nCatalog/doc surfaces: clean")
 
     # Host drift
     host_drifts = check_hosts(versions)
@@ -1023,6 +1114,7 @@ ACT_SURFACE_FILES = (
     ".claude-plugin/marketplace.json",
     ".agents/plugins/marketplace.json",
     "README.md",
+    "plugins/README.md",
 )
 
 
@@ -1312,7 +1404,7 @@ def main(argv: list[str]) -> int:
     ap.add_argument("--check-hosts", action="store_true",
                     help="Compare installed host plugin versions vs source-of-truth; emit fix cmds")
     ap.add_argument("--check", action="store_true",
-                    help="Read-only: exit 3 if ANY surface drifts (catalog/README/.agents/hosts). For CI/cron.")
+                    help="Read-only: exit 3 if ANY surface drifts (catalog/docs/hosts). For CI/cron.")
     ap.add_argument("--act", action="store_true",
                     help="Self-healing cron mode: reconcile + commit + push + refresh plugin cache, "
                          "in a dedicated main-pinned worktree (never the dev checkout).")
@@ -1334,12 +1426,12 @@ def main(argv: list[str]) -> int:
 
     # --check mode: read-only, CI-safe, exit 3 on any drift
     if args.check:
-        for p in (MARKETPLACE, AGENTS_MARKETPLACE, README):
+        for p in (MARKETPLACE, AGENTS_MARKETPLACE, README, PLUGINS_README):
             if not p.exists():
                 die(f"expected file not found: {p}")
         return check_all_surfaces(args.source)
 
-    for p in (MARKETPLACE, AGENTS_MARKETPLACE, README):
+    for p in (MARKETPLACE, AGENTS_MARKETPLACE, README, PLUGINS_README):
         if not p.exists():
             die(f"expected file not found: {p}")
 
@@ -1367,10 +1459,12 @@ def main(argv: list[str]) -> int:
     mk_before = MARKETPLACE.read_text(encoding="utf-8")
     ag_before = AGENTS_MARKETPLACE.read_text(encoding="utf-8")
     rd_before = README.read_text(encoding="utf-8")
+    plugins_rd_before = PLUGINS_README.read_text(encoding="utf-8")
 
     mk_after = apply_manifest(MARKETPLACE, ".claude-plugin/marketplace.json", versions, changes)
     ag_after = apply_manifest(AGENTS_MARKETPLACE, ".agents/plugins/marketplace.json", versions, changes)
     rd_after = apply_readme(rd_before, versions, changes)
+    plugins_rd_after = apply_plugin_index_readme(plugins_rd_before, versions, changes)
 
     # --check-hosts: report host install drift (summarized under --all too)
     if args.check_hosts or args.all:
@@ -1389,7 +1483,8 @@ def main(argv: list[str]) -> int:
     print()
     for label, b, a in (("marketplace.json", mk_before, mk_after),
                         (".agents marketplace.json", ag_before, ag_after),
-                        ("README.md", rd_before, rd_after)):
+                        ("README.md", rd_before, rd_after),
+                        ("plugins/README.md", plugins_rd_before, plugins_rd_after)):
         d = diff_block(label, b, a)
         if d:
             print(f"--- {label} diff ---")
@@ -1399,6 +1494,7 @@ def main(argv: list[str]) -> int:
         MARKETPLACE.write_text(mk_after, encoding="utf-8")
         AGENTS_MARKETPLACE.write_text(ag_after, encoding="utf-8")
         README.write_text(rd_after, encoding="utf-8")
+        PLUGINS_README.write_text(plugins_rd_after, encoding="utf-8")
         print("\nApplied (--write).")
     else:
         print("\nDry-run only. Re-run with --write to apply.")
