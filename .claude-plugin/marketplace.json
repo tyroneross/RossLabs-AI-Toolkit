@@ -9,6 +9,149 @@
   },
   "plugins": [
     {
+      "name": "bookmark",
+      "description": "Auto-save and restore session context across compactions and restarts",
+      "version": "0.3.2",
+      "author": {
+        "name": "Tyrone Ross"
+      },
+      "source": {
+        "source": "github",
+        "repo": "tyroneross/bookmark"
+      },
+      "repository": "https://github.com/tyroneross/bookmark",
+      "category": "developer-tools",
+      "keywords": [
+        "context",
+        "snapshots",
+        "session-continuity"
+      ]
+    },
+    {
+      "name": "claude-code-debugger",
+      "description": "Standalone supporting plugin for build-loop's debugger bridges — extended capability (cross-project incident memory, additional assessor coverage, coordination across build-loop instances). Build-loop bundles its own debug-loop / debugging-memory / logging-tracer skills + MCP server; install this only when bundled capability isn't enough.",
+      "version": "1.9.0",
+      "author": {
+        "name": "Tyrone Ross"
+      },
+      "source": {
+        "source": "github",
+        "repo": "tyroneross/claude-code-debugger"
+      },
+      "repository": "https://github.com/tyroneross/claude-code-debugger",
+      "category": "developer-tools",
+      "keywords": [
+        "debugging",
+        "memory",
+        "incident-tracking",
+        "build-loop-supporting"
+      ]
+    },
+    {
+      "name": "research",
+      "description": "Structured research with central knowledge base, source scoring, and claim verification",
+      "version": "0.5.1",
+      "author": {
+        "name": "Tyrone Ross"
+      },
+      "source": {
+        "source": "github",
+        "repo": "tyroneross/research-plugin"
+      },
+      "repository": "https://github.com/tyroneross/research-plugin",
+      "category": "developer-tools",
+      "keywords": [
+        "research",
+        "knowledge-base",
+        "fact-checking",
+        "source-scoring",
+        "fts5"
+      ]
+    },
+    {
+      "name": "ibr",
+      "description": "End-to-end UI design and validation — guided builds, visual checks, mockup matching, native scanning",
+      "version": "1.4.0",
+      "author": {
+        "name": "Tyrone Ross"
+      },
+      "source": {
+        "source": "github",
+        "repo": "tyroneross/interface-built-right"
+      },
+      "repository": "https://github.com/tyroneross/interface-built-right",
+      "category": "developer-tools",
+      "keywords": [
+        "ui",
+        "validation",
+        "visual-regression"
+      ]
+    },
+    {
+      "name": "navgator",
+      "description": "Map dependencies and analyze blast radius before changing code",
+      "version": "0.9.0",
+      "author": {
+        "name": "Tyrone Ross"
+      },
+      "source": {
+        "source": "github",
+        "repo": "tyroneross/NavGator"
+      },
+      "repository": "https://github.com/tyroneross/NavGator",
+      "category": "developer-tools",
+      "keywords": [
+        "architecture",
+        "dependencies",
+        "impact-analysis"
+      ]
+    },
+    {
+      "name": "showcase",
+      "description": "[Deprecated — use spectra] Dev asset capture for blog and website content",
+      "version": "0.1.2",
+      "author": {
+        "name": "Tyrone Ross"
+      },
+      "source": {
+        "source": "github",
+        "repo": "tyroneross/showcase"
+      },
+      "repository": "https://github.com/tyroneross/showcase",
+      "category": "developer-tools",
+      "keywords": [
+        "screenshots",
+        "video",
+        "capture",
+        "blog",
+        "dev-assets"
+      ]
+    },
+    {
+      "name": "build-loop",
+      "description": "Turns big code changes into a checked, repeatable workflow. Five phases (assess, plan, execute, review, iterate), plus an optional learn phase. Splits work into parallel chunks where it can. Picks the right model for each task. A strong model plans and reviews. A faster model writes code. A small model does pattern checks. Catches the common ways big changes go wrong. The diff drifts from the plan. The implementer makes quiet design calls you never see. Tests pass but pages do not render. Fake data leaks into production. Plans must list every design decision up front. The implementer must say which decisions it made. A lint compares the claim to the actual diff. Work with six or more design decisions auto-routes to the strong model in one pass. A read-only critic runs before full validation. Cheap checks catch the obvious mistakes first. Includes an optimize mode that runs multiple tests in a single experiment using Design of Experiments. You can test six variables at once instead of one. The mode plans the test matrix, runs each combination, and tells you which variable actually moved the number. Bundles a debugger memory and an architecture engine that maps the codebase before each build. Use it for features, refactors, migrations, schema changes, anything that touches more than one file. Skip it for fixes under about 20 lines. Verifies the production deploy after a push (Vercel): polls the deployment to a terminal state and probes changed routes — an auth-gated 401/403 is healthy, only a 5xx or build error fails. An independent commit auditor runs at the git-commit boundary on every commit (manual user, Codex, build-loop, IDE) and gathers its own context from intent, goal, PRD, and constitution — the running session renders one of four verdicts in conversation: yay, nay, suggest correction, look again.",
+      "version": "0.38.0",
+      "author": {
+        "name": "Tyrone Ross"
+      },
+      "source": {
+        "source": "github",
+        "repo": "tyroneross/build-loop"
+      },
+      "repository": "https://github.com/tyroneross/build-loop",
+      "category": "developer-tools",
+      "keywords": [
+        "build-loop",
+        "orchestration",
+        "agents",
+        "architecture",
+        "capability-registry",
+        "evaluation",
+        "self-improvement",
+        "prompt-engineering"
+      ]
+    },
+    {
       "name": "agent-builder",
       "description": "Design and evaluate agentic harnesses with playbooks and an architecture catalog",
       "version": "0.3.1",
@@ -36,31 +179,158 @@
       ]
     },
     {
-      "name": "agent-doe-engine",
-      "description": "A design-of-experiments engine for tuning AI agents. It finds which settings actually change your results, tells you whether each change is real or just run-to-run noise, and picks the best combination when speed, cost, and quality compete. One planned batch of trials instead of guessing or testing one thing at a time.",
-      "version": "0.1.0",
+      "name": "pyramid-principle",
+      "description": "Barbara Minto's Pyramid Principle for short-form, long-form, presentations, and audits",
+      "version": "0.1.2",
       "author": {
-        "name": "Tyrone Ross",
-        "url": "https://github.com/tyroneross"
+        "name": "Tyrone Ross"
       },
       "source": {
         "source": "github",
-        "repo": "tyroneross/agent-doe-engine"
+        "repo": "tyroneross/pyramid-principle"
       },
-      "repository": "https://github.com/tyroneross/agent-doe-engine",
+      "repository": "https://github.com/tyroneross/pyramid-principle",
+      "category": "writing",
+      "keywords": [
+        "writing",
+        "pyramid-principle",
+        "minto",
+        "communication",
+        "executive",
+        "audit",
+        "scqa",
+        "mece"
+      ]
+    },
+    {
+      "name": "prompt-builder",
+      "description": "Classify, diagnose, rewrite, and score prompts by model tier and deployment",
+      "version": "0.1.2",
+      "author": {
+        "name": "Tyrone Ross"
+      },
+      "source": {
+        "source": "github",
+        "repo": "tyroneross/prompt-builder"
+      },
+      "repository": "https://github.com/tyroneross/prompt-builder",
       "category": "developer-tools",
       "keywords": [
-        "optimization",
-        "multi-objective",
-        "design-of-experiments",
-        "doe",
-        "pareto",
-        "desirability",
-        "factorial",
-        "plackett-burman",
-        "autoresearch",
-        "benchmarking",
-        "performance"
+        "prompt",
+        "policy",
+        "classification",
+        "diagnosis",
+        "rewriting",
+        "scoring"
+      ]
+    },
+    {
+      "name": "replit-migrate",
+      "description": "Migrate Replit apps to web (Vercel) or native (iOS/macOS)",
+      "version": "0.1.1",
+      "author": {
+        "name": "Tyrone Ross"
+      },
+      "source": {
+        "source": "github",
+        "repo": "tyroneross/replit-migrate"
+      },
+      "repository": "https://github.com/tyroneross/replit-migrate",
+      "category": "developer-tools",
+      "keywords": [
+        "replit",
+        "migration",
+        "ios",
+        "vercel",
+        "native"
+      ]
+    },
+    {
+      "name": "web-scraper",
+      "description": "Extract blog and news content from any website",
+      "version": "0.5.2",
+      "author": {
+        "name": "Tyrone Ross"
+      },
+      "source": {
+        "source": "github",
+        "repo": "tyroneross/blog-content-scraper"
+      },
+      "repository": "https://github.com/tyroneross/blog-content-scraper",
+      "category": "developer-tools",
+      "keywords": [
+        "scraper",
+        "web",
+        "blog",
+        "rss",
+        "content",
+        "llm",
+        "articles"
+      ]
+    },
+    {
+      "name": "mockup-gallery",
+      "description": "Visual mockup review with component-level ratings",
+      "version": "0.5.1",
+      "author": {
+        "name": "Tyrone Ross"
+      },
+      "source": {
+        "source": "github",
+        "repo": "tyroneross/mockup-gallery"
+      },
+      "repository": "https://github.com/tyroneross/mockup-gallery",
+      "category": "design",
+      "keywords": [
+        "design-review",
+        "mockups",
+        "ui",
+        "ratings"
+      ]
+    },
+    {
+      "name": "spectra",
+      "description": "Capture screenshots, videos, and demos across platforms with a tagged library",
+      "version": "0.3.2",
+      "author": {
+        "name": "Tyrone Ross"
+      },
+      "source": {
+        "source": "github",
+        "repo": "tyroneross/spectra"
+      },
+      "repository": "https://github.com/tyroneross/spectra",
+      "category": "developer-tools",
+      "keywords": [
+        "screenshots",
+        "video-capture",
+        "content-creation",
+        "marketing",
+        "demo-recording",
+        "accessibility"
+      ]
+    },
+    {
+      "name": "agent-astronomer",
+      "description": "Query local Claude Code skills, agents, and plugins from any conversation",
+      "version": "0.1.0",
+      "author": {
+        "name": "Tyrone Ross"
+      },
+      "source": {
+        "source": "github",
+        "repo": "tyroneross/agent-astronomer",
+        "path": "plugin"
+      },
+      "repository": "https://github.com/tyroneross/agent-astronomer",
+      "category": "developer-tools",
+      "keywords": [
+        "skills",
+        "plugins",
+        "agents",
+        "search",
+        "library",
+        "catalog"
       ]
     },
     {
@@ -110,127 +380,6 @@
       ]
     },
     {
-      "name": "bookmark",
-      "description": "Auto-save and restore session context across compactions and restarts",
-      "version": "0.3.2",
-      "author": {
-        "name": "Tyrone Ross"
-      },
-      "source": {
-        "source": "github",
-        "repo": "tyroneross/bookmark"
-      },
-      "repository": "https://github.com/tyroneross/bookmark",
-      "category": "developer-tools",
-      "keywords": [
-        "context",
-        "snapshots",
-        "session-continuity"
-      ]
-    },
-    {
-      "name": "build-loop",
-      "description": "Turns big code changes into a checked, repeatable workflow. Five phases (assess, plan, execute, review, iterate), plus an optional learn phase. Splits work into parallel chunks where it can. Picks the right model for each task. A strong model plans and reviews. A faster model writes code. A small model does pattern checks. Catches the common ways big changes go wrong. The diff drifts from the plan. The implementer makes quiet design calls you never see. Tests pass but pages do not render. Fake data leaks into production. Plans must list every design decision up front. The implementer must say which decisions it made. A lint compares the claim to the actual diff. Work with six or more design decisions auto-routes to the strong model in one pass. A read-only critic runs before full validation. Cheap checks catch the obvious mistakes first. Includes an optimize mode that runs multiple tests in a single experiment using Design of Experiments. You can test six variables at once instead of one. The mode plans the test matrix, runs each combination, and tells you which variable actually moved the number. Bundles a debugger memory and an architecture engine that maps the codebase before each build. Use it for features, refactors, migrations, schema changes, anything that touches more than one file. Skip it for fixes under about 20 lines. Verifies the production deploy after a push (Vercel): polls the deployment to a terminal state and probes changed routes — an auth-gated 401/403 is healthy, only a 5xx or build error fails. An independent commit auditor runs at the git-commit boundary on every commit (manual user, Codex, build-loop, IDE) and gathers its own context from intent, goal, PRD, and constitution — the running session renders one of four verdicts in conversation: yay, nay, suggest correction, look again.",
-      "version": "0.38.0",
-      "author": {
-        "name": "Tyrone Ross"
-      },
-      "source": {
-        "source": "github",
-        "repo": "tyroneross/build-loop"
-      },
-      "repository": "https://github.com/tyroneross/build-loop",
-      "category": "developer-tools",
-      "keywords": [
-        "build-loop",
-        "orchestration",
-        "agents",
-        "architecture",
-        "capability-registry",
-        "evaluation",
-        "self-improvement",
-        "prompt-engineering"
-      ]
-    },
-    {
-      "name": "coding-debugger",
-      "description": "Standalone supporting plugin for build-loop's debugger bridges — extended capability (cross-project incident memory, additional assessor coverage, coordination across build-loop instances). Build-loop bundles its own debug-loop / debugging-memory / logging-tracer skills + MCP server; install this only when bundled capability isn't enough.",
-      "version": "1.9.0",
-      "author": {
-        "name": "Tyrone Ross"
-      },
-      "source": {
-        "source": "github",
-        "repo": "tyroneross/claude-code-debugger"
-      },
-      "repository": "https://github.com/tyroneross/claude-code-debugger",
-      "category": "developer-tools",
-      "keywords": [
-        "debugging",
-        "memory",
-        "incident-tracking",
-        "build-loop-supporting"
-      ]
-    },
-    {
-      "name": "ibr",
-      "description": "End-to-end UI design and validation — guided builds, visual checks, mockup matching, native scanning",
-      "version": "1.4.0",
-      "author": {
-        "name": "Tyrone Ross"
-      },
-      "source": {
-        "source": "github",
-        "repo": "tyroneross/interface-built-right"
-      },
-      "repository": "https://github.com/tyroneross/interface-built-right",
-      "category": "developer-tools",
-      "keywords": [
-        "ui",
-        "validation",
-        "visual-regression"
-      ]
-    },
-    {
-      "name": "mockup-gallery",
-      "description": "Visual mockup review with component-level ratings",
-      "version": "0.5.1",
-      "author": {
-        "name": "Tyrone Ross"
-      },
-      "source": {
-        "source": "github",
-        "repo": "tyroneross/mockup-gallery"
-      },
-      "repository": "https://github.com/tyroneross/mockup-gallery",
-      "category": "design",
-      "keywords": [
-        "design-review",
-        "mockups",
-        "ui",
-        "ratings"
-      ]
-    },
-    {
-      "name": "navgator",
-      "description": "Map dependencies and analyze blast radius before changing code",
-      "version": "0.9.0",
-      "author": {
-        "name": "Tyrone Ross"
-      },
-      "source": {
-        "source": "github",
-        "repo": "tyroneross/NavGator"
-      },
-      "repository": "https://github.com/tyroneross/NavGator",
-      "category": "developer-tools",
-      "keywords": [
-        "architecture",
-        "dependencies",
-        "impact-analysis"
-      ]
-    },
-    {
       "name": "persona-lab",
       "description": "Task-specific AI persona panels plus a recallable global persona library. CLI + Claude Code/Codex plugin.",
       "version": "0.2.0",
@@ -251,188 +400,6 @@
         "review",
         "evaluation",
         "cli"
-      ]
-    },
-    {
-      "name": "prompt-builder",
-      "description": "Classify, diagnose, rewrite, and score prompts by model tier and deployment",
-      "version": "0.1.2",
-      "author": {
-        "name": "Tyrone Ross"
-      },
-      "source": {
-        "source": "github",
-        "repo": "tyroneross/prompt-builder"
-      },
-      "repository": "https://github.com/tyroneross/prompt-builder",
-      "category": "developer-tools",
-      "keywords": [
-        "prompt",
-        "policy",
-        "classification",
-        "diagnosis",
-        "rewriting",
-        "scoring"
-      ]
-    },
-    {
-      "name": "pyramid-principle",
-      "description": "Barbara Minto's Pyramid Principle for short-form, long-form, presentations, and audits",
-      "version": "0.1.2",
-      "author": {
-        "name": "Tyrone Ross"
-      },
-      "source": {
-        "source": "github",
-        "repo": "tyroneross/pyramid-principle"
-      },
-      "repository": "https://github.com/tyroneross/pyramid-principle",
-      "category": "writing",
-      "keywords": [
-        "writing",
-        "pyramid-principle",
-        "minto",
-        "communication",
-        "executive",
-        "audit",
-        "scqa",
-        "mece"
-      ]
-    },
-    {
-      "name": "replit-migrate",
-      "description": "Migrate Replit apps to web (Vercel) or native (iOS/macOS)",
-      "version": "0.1.1",
-      "author": {
-        "name": "Tyrone Ross"
-      },
-      "source": {
-        "source": "github",
-        "repo": "tyroneross/replit-migrate"
-      },
-      "repository": "https://github.com/tyroneross/replit-migrate",
-      "category": "developer-tools",
-      "keywords": [
-        "replit",
-        "migration",
-        "ios",
-        "vercel",
-        "native"
-      ]
-    },
-    {
-      "name": "research",
-      "description": "Structured research with central knowledge base, source scoring, and claim verification",
-      "version": "0.5.1",
-      "author": {
-        "name": "Tyrone Ross"
-      },
-      "source": {
-        "source": "github",
-        "repo": "tyroneross/research-plugin"
-      },
-      "repository": "https://github.com/tyroneross/research-plugin",
-      "category": "developer-tools",
-      "keywords": [
-        "research",
-        "knowledge-base",
-        "fact-checking",
-        "source-scoring",
-        "fts5"
-      ]
-    },
-    {
-      "name": "showcase",
-      "description": "[Deprecated — use spectra] Dev asset capture for blog and website content",
-      "version": "0.1.2",
-      "author": {
-        "name": "Tyrone Ross"
-      },
-      "source": {
-        "source": "github",
-        "repo": "tyroneross/showcase"
-      },
-      "repository": "https://github.com/tyroneross/showcase",
-      "category": "developer-tools",
-      "keywords": [
-        "screenshots",
-        "video",
-        "capture",
-        "blog",
-        "dev-assets"
-      ]
-    },
-    {
-      "name": "spectra",
-      "description": "Capture screenshots, videos, and demos across platforms with a tagged library",
-      "version": "0.3.2",
-      "author": {
-        "name": "Tyrone Ross"
-      },
-      "source": {
-        "source": "github",
-        "repo": "tyroneross/spectra"
-      },
-      "repository": "https://github.com/tyroneross/spectra",
-      "category": "developer-tools",
-      "keywords": [
-        "screenshots",
-        "video-capture",
-        "content-creation",
-        "marketing",
-        "demo-recording",
-        "accessibility"
-      ]
-    },
-    {
-      "name": "threat-modeler",
-      "description": "Lightweight workshop assistant that produces a threat-model artifact for an agentic system or risk-surface change",
-      "version": "0.1.0",
-      "author": {
-        "name": "Tyrone Ross",
-        "url": "https://github.com/tyroneross"
-      },
-      "source": {
-        "source": "github",
-        "repo": "tyroneross/threat-modeler"
-      },
-      "repository": "https://github.com/tyroneross/threat-modeler",
-      "category": "security",
-      "keywords": [
-        "threat-model",
-        "security",
-        "stride",
-        "owasp",
-        "asi",
-        "llm",
-        "agentic",
-        "build-loop",
-        "plan-verify",
-        "security-review",
-        "risk-surface"
-      ]
-    },
-    {
-      "name": "web-scraper",
-      "description": "Extract blog and news content from any website",
-      "version": "0.5.2",
-      "author": {
-        "name": "Tyrone Ross"
-      },
-      "source": {
-        "source": "github",
-        "repo": "tyroneross/blog-content-scraper"
-      },
-      "repository": "https://github.com/tyroneross/blog-content-scraper",
-      "category": "developer-tools",
-      "keywords": [
-        "scraper",
-        "web",
-        "blog",
-        "rss",
-        "content",
-        "llm",
-        "articles"
       ]
     }
   ]
