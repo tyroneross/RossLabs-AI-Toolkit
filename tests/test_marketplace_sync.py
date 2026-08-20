@@ -650,6 +650,9 @@ class TestPlistActMode(unittest.TestCase):
             script="/tmp/marketplace-sync.py", log_dir="/tmp",
         )
         self.assertIn("<string>--act</string>", rendered)
+        self.assertIn("<key>Program</key>", rendered)
+        self.assertEqual(rendered.count("<string>/tmp/marketplace-sync.py</string>"), 2)
+        self.assertNotIn("<string>/usr/bin/python3</string>", rendered)
         # The old check-only mode must be gone from the template.
         self.assertNotIn("<string>--check</string>", rendered)
 

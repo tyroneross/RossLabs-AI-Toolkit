@@ -1582,9 +1582,11 @@ LAUNCHD_PLIST_TEMPLATE = """\
     <key>Label</key>
     <string>{label}</string>
 
+    <key>Program</key>
+    <string>{script}</string>
+
     <key>ProgramArguments</key>
     <array>
-        <string>{python}</string>
         <string>{script}</string>
         <string>--act</string>
     </array>
@@ -1619,12 +1621,10 @@ def install_cron() -> int:
     re-running --install-cron succeeds cleanly (unload failure is silently
     ignored — the job may simply not be loaded yet).
     """
-    python = xml.sax.saxutils.escape(sys.executable)
     script = xml.sax.saxutils.escape(str(Path(__file__).resolve()))
     log_dir = xml.sax.saxutils.escape(str(Path.home() / "Library" / "Logs"))
     plist_content = LAUNCHD_PLIST_TEMPLATE.format(
         label=LAUNCHD_LABEL,
-        python=python,
         script=script,
         log_dir=log_dir,
     )
