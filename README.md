@@ -42,7 +42,7 @@ Use it for features, refactors, migrations, and schema changes: anything that to
 | [ibr](https://github.com/tyroneross/interface-built-right) | `1.4.0` | UI validation — verify implementations match intent with live page scanning and visual regression. |
 | [bookmark](https://github.com/tyroneross/bookmark) | `0.3.2` | Session context continuity — auto-save and restore across compactions and terminal closures. |
 | [claude-code-debugger](https://github.com/tyroneross/claude-code-debugger) | `1.9.0` | Debugging memory — verdict-based retrieval and pattern extraction from past incidents. |
-| [research](https://github.com/tyroneross/research-plugin) | `0.5.1` | Token-efficient research KB — SQLite FTS5, source tier scoring, claim + quantitative verification, bulk ingest, project symlinks. |
+| [research](https://github.com/tyroneross/research-plugin) | `0.6.0` | Token-efficient research KB — SQLite FTS5, source tier scoring, claim + quantitative verification, bulk ingest, project symlinks. |
 | [api-registry](https://github.com/tyroneross/api-registry) | `0.2.0` | Local doc-content cache and authoritative API source registry. Caches docs as dated markdown with a 7-day freshness contract, answers from the local cache first (Context7 is fallback only), and flags docs past the window. Tracks each package's latest-release date and emits an install-cooldown verdict — third-party releases under 7 days old are flagged, the author's own packages exempt. |
 | [agent-rally-point](https://github.com/tyroneross/agent-rally-point) | `0.1.3` | Repo-local coordination surface for parallel coding agents. Tracks claims, handoffs, room state, and soft file conflicts across Claude Code, Codex, Gemini, and other hosts. |
 

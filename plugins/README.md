@@ -11,7 +11,7 @@ Self-contained plugin repositories indexed by the RossLabs AI Toolkit marketplac
 | ibr | [tyroneross/interface-built-right](https://github.com/tyroneross/interface-built-right) | UI validation — live page scanning and visual regression | 1.4.0 |
 | bookmark | [tyroneross/bookmark](https://github.com/tyroneross/bookmark) | Session context continuity across compactions and terminal closures | 0.3.2 |
 | claude-code-debugger | [tyroneross/claude-code-debugger](https://github.com/tyroneross/claude-code-debugger) | Debugging memory and incident pattern retrieval | 1.9.0 |
-| research | [tyroneross/research-plugin](https://github.com/tyroneross/research-plugin) | Structured research KB with source scoring and claim verification | 0.5.1 |
+| research | [tyroneross/research-plugin](https://github.com/tyroneross/research-plugin) | Structured research KB with source scoring and claim verification | 0.6.0 |
 | api-registry | [tyroneross/api-registry](https://github.com/tyroneross/api-registry) | Local API documentation registry with freshness checks | 0.2.0 |
 | agent-rally-point | [tyroneross/agent-rally-point](https://github.com/tyroneross/agent-rally-point) | Repo-local coordination surface for parallel coding agents | 0.1.3 |
 | agent-builder | [tyroneross/agent-builder](https://github.com/tyroneross/agent-builder) | Design and evaluate agentic harnesses | 0.3.1 |
