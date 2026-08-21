@@ -383,6 +383,28 @@
         "evaluation",
         "cli"
       ]
+    },
+    {
+      "name": "ty-lsp",
+      "description": "Python language server (ty, by Astral) — Rust, single binary, no runtime dependency",
+      "author": {
+        "name": "Tyrone Ross"
+      },
+      "source": {
+        "source": "github",
+        "repo": "tyroneross/RossLabs-LSP",
+        "path": "plugins/ty-lsp"
+      },
+      "repository": "https://github.com/tyroneross/RossLabs-LSP",
+      "category": "developer-tools",
+      "keywords": [
+        "lsp",
+        "python",
+        "ty",
+        "astral",
+        "type-checking",
+        "code-intelligence"
+      ]
     }
   ]
 }
