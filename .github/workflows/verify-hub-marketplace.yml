@@ -1,0 +1,40 @@
+name: Verify hub marketplace
+
+# The hub marketplace.json is the surface users actually install from. Nothing verified it
+# before (plan-critic, 2026-07-14). Fleet convention: entries omit `version` so Claude Code
+# resolves each plugin to its git commit SHA (auto-SHA). A pinned version here silently
+# masks the plugin's own manifest and freezes /plugin update.
+
+on:
+  push:
+    branches: [main]
+    paths: ['.claude-plugin/marketplace.json', '.agents/plugins/marketplace.json']
+  pull_request:
+    paths: ['.claude-plugin/marketplace.json', '.agents/plugins/marketplace.json']
+  workflow_dispatch:
+
+jobs:
+  verify-hub:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Hub entries must omit version (auto-SHA)
+        run: |
+          python3 - <<'PY'
+          import json, os, sys
+          bad = []
+          for m in ('.claude-plugin/marketplace.json', '.agents/plugins/marketplace.json'):
+              if not os.path.isfile(m):
+                  continue
+              d = json.load(open(m))
+              plugs = d.get('plugins', d) if isinstance(d, dict) else d
+              for p in plugs:
+                  if 'version' in p:
+                      bad.append(f"{m}: entry {p.get('name')!r} pins version={p['version']!r}")
+              print(f"  {m}: {len(plugs)} entries, {sum(1 for p in plugs if 'version' in p)} pinned")
+          if bad:
+              for b in bad:
+                  print(f"::error::{b} — omit it so /plugin update resolves to the commit SHA")
+              sys.exit(1)
+          print("\n✅ hub entries omit version (auto-SHA).")
+          PY
