@@ -30,3 +30,15 @@ plugins/showcase
 .navgator/architecture/SUMMARY.md
 .navgator/architecture/SUMMARY_FULL.md
 # <<< NavGator safety guard
+
+# Agent tool state — never commit. Regenerated locally, and lesson/session
+# captures quote real conversation content that must not reach a public repo.
+.build-loop/
+.rally/
+.navgator/
+.claude-code-debugger/
+**/.build-loop/
+**/.rally/
+**/.navgator/
+**/.claude-code-debugger/
+plugins/persona-lab
