@@ -6,12 +6,12 @@ Self-contained plugin repositories indexed by the RossLabs AI Toolkit marketplac
 
 | Plugin | Repo | Description | Version |
 |--------|------|-------------|---------|
-| build-loop | [tyroneross/build-loop](https://github.com/tyroneross/build-loop) | Portable multi-phase build loop for Claude Code, Codex, and AGENTS.md-aware tools | 0.36.1 |
+| build-loop | [tyroneross/build-loop](https://github.com/tyroneross/build-loop) | Portable multi-phase build loop for Claude Code, Codex, and AGENTS.md-aware tools | 0.39.0 |
 | navgator | [tyroneross/NavGator](https://github.com/tyroneross/NavGator) | Architecture tracking — dependency mapping and impact analysis | 0.9.0 |
 | ibr | [tyroneross/interface-built-right](https://github.com/tyroneross/interface-built-right) | UI validation — live page scanning and visual regression | 1.4.0 |
 | bookmark | [tyroneross/bookmark](https://github.com/tyroneross/bookmark) | Session context continuity across compactions and terminal closures | 0.3.2 |
 | claude-code-debugger | [tyroneross/claude-code-debugger](https://github.com/tyroneross/claude-code-debugger) | Debugging memory and incident pattern retrieval | 1.9.0 |
-| research | [tyroneross/research-plugin](https://github.com/tyroneross/research-plugin) | Structured research KB with source scoring and claim verification | 0.6.0 |
+| research | [tyroneross/research-plugin](https://github.com/tyroneross/research-plugin) | Structured research KB with source scoring and claim verification | 0.5.1 |
 | api-registry | [tyroneross/api-registry](https://github.com/tyroneross/api-registry) | Local API documentation registry with freshness checks | 0.2.0 |
 | agent-rally-point | [tyroneross/agent-rally-point](https://github.com/tyroneross/agent-rally-point) | Repo-local coordination surface for parallel coding agents | 0.1.3 |
 | agent-builder | [tyroneross/agent-builder](https://github.com/tyroneross/agent-builder) | Design and evaluate agentic harnesses | 0.3.1 |
