@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.1.0",
+  "generated_at": 1777648524301,
+  "files": {
+    "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/scan.ts": "COMP_component_archive_orphan_plugi_1292",
+    "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/codex.ts": "COMP_component_archive_orphan_plugi_437n",
+    "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/util.ts": "COMP_component_archive_orphan_plugi_63rq",
+    "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/apply.ts": "COMP_component_archive_orphan_plugi_97pk",
+    "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/hooks.ts": "COMP_component_archive_orphan_plugi_f7pb",
+    "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/plugin-sync.ts": "COMP_component_archive_orphan_plugi_psze",
+    "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/lint.ts": "COMP_component_archive_orphan_plugi_vrnz",
+    "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/config.ts": "COMP_component_archive_orphan_plugi_wl59",
+    "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/drift.ts": "COMP_component_archive_orphan_plugi_zqfl"
+  }
+}

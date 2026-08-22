@@ -1,0 +1,206 @@
+{
+  "schema_version": "1.1.0",
+  "version": "1.0.0",
+  "last_scan": 1777648524298,
+  "project_path": "/Users/tyroneross/dev/git-folder/RossLabs-AI-Toolkit",
+  "components": {
+    "by_name": {
+      "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/scan": "COMP_component_archive_orphan_plugi_1292",
+      "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/codex": "COMP_component_archive_orphan_plugi_437n",
+      "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/util": "COMP_component_archive_orphan_plugi_63rq",
+      "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/apply": "COMP_component_archive_orphan_plugi_97pk",
+      "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/hooks": "COMP_component_archive_orphan_plugi_f7pb",
+      "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/plugin-sync": "COMP_component_archive_orphan_plugi_psze",
+      "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/lint": "COMP_component_archive_orphan_plugi_vrnz",
+      "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/config": "COMP_component_archive_orphan_plugi_wl59",
+      "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/drift": "COMP_component_archive_orphan_plugi_zqfl"
+    },
+    "by_type": {
+      "component": [
+        "COMP_component_archive_orphan_plugi_1292",
+        "COMP_component_archive_orphan_plugi_437n",
+        "COMP_component_archive_orphan_plugi_63rq",
+        "COMP_component_archive_orphan_plugi_97pk",
+        "COMP_component_archive_orphan_plugi_f7pb",
+        "COMP_component_archive_orphan_plugi_psze",
+        "COMP_component_archive_orphan_plugi_vrnz",
+        "COMP_component_archive_orphan_plugi_wl59",
+        "COMP_component_archive_orphan_plugi_zqfl"
+      ]
+    },
+    "by_layer": {
+      "backend": [
+        "COMP_component_archive_orphan_plugi_1292",
+        "COMP_component_archive_orphan_plugi_437n",
+        "COMP_component_archive_orphan_plugi_63rq",
+        "COMP_component_archive_orphan_plugi_97pk",
+        "COMP_component_archive_orphan_plugi_f7pb",
+        "COMP_component_archive_orphan_plugi_psze",
+        "COMP_component_archive_orphan_plugi_vrnz",
+        "COMP_component_archive_orphan_plugi_wl59",
+        "COMP_component_archive_orphan_plugi_zqfl"
+      ]
+    },
+    "by_status": {
+      "active": [
+        "COMP_component_archive_orphan_plugi_1292",
+        "COMP_component_archive_orphan_plugi_437n",
+        "COMP_component_archive_orphan_plugi_63rq",
+        "COMP_component_archive_orphan_plugi_97pk",
+        "COMP_component_archive_orphan_plugi_f7pb",
+        "COMP_component_archive_orphan_plugi_psze",
+        "COMP_component_archive_orphan_plugi_vrnz",
+        "COMP_component_archive_orphan_plugi_wl59",
+        "COMP_component_archive_orphan_plugi_zqfl"
+      ]
+    }
+  },
+  "connections": {
+    "by_type": {
+      "imports": [
+        "CONN_imports_0uz1zu",
+        "CONN_imports_2svixk",
+        "CONN_imports_3joor8",
+        "CONN_imports_3zskt7",
+        "CONN_imports_40zbtt",
+        "CONN_imports_7czbyz",
+        "CONN_imports_cei9k6",
+        "CONN_imports_cgzew8",
+        "CONN_imports_gm21a8",
+        "CONN_imports_inztnp",
+        "CONN_imports_ix61og",
+        "CONN_imports_jp4p24",
+        "CONN_imports_kfz6h5",
+        "CONN_imports_t3pkzt",
+        "CONN_imports_troro0",
+        "CONN_imports_xhanep",
+        "CONN_imports_yg8anl",
+        "CONN_imports_ykt50x",
+        "CONN_imports_z4tly5",
+        "CONN_imports_z6jf42",
+        "CONN_imports_zfhrwv",
+        "CONN_imports_zm3afo"
+      ]
+    },
+    "by_from": {
+      "COMP_component_archive_orphan_plugi_psze": [
+        "CONN_imports_0uz1zu",
+        "CONN_imports_2svixk",
+        "CONN_imports_jp4p24",
+        "CONN_imports_kfz6h5",
+        "CONN_imports_xhanep",
+        "CONN_imports_yg8anl",
+        "CONN_imports_ykt50x",
+        "CONN_imports_z6jf42"
+      ],
+      "COMP_component_archive_orphan_plugi_97pk": [
+        "CONN_imports_3joor8",
+        "CONN_imports_gm21a8",
+        "CONN_imports_t3pkzt",
+        "CONN_imports_zm3afo"
+      ],
+      "COMP_component_archive_orphan_plugi_f7pb": [
+        "CONN_imports_3zskt7",
+        "CONN_imports_ix61og"
+      ],
+      "COMP_component_archive_orphan_plugi_zqfl": [
+        "CONN_imports_40zbtt",
+        "CONN_imports_7czbyz"
+      ],
+      "COMP_component_archive_orphan_plugi_wl59": [
+        "CONN_imports_cei9k6"
+      ],
+      "COMP_component_archive_orphan_plugi_1292": [
+        "CONN_imports_cgzew8"
+      ],
+      "COMP_component_archive_orphan_plugi_vrnz": [
+        "CONN_imports_inztnp",
+        "CONN_imports_z4tly5"
+      ],
+      "COMP_component_archive_orphan_plugi_437n": [
+        "CONN_imports_troro0",
+        "CONN_imports_zfhrwv"
+      ]
+    },
+    "by_to": {
+      "COMP_component_archive_orphan_plugi_vrnz": [
+        "CONN_imports_0uz1zu"
+      ],
+      "COMP_component_archive_orphan_plugi_f7pb": [
+        "CONN_imports_2svixk"
+      ],
+      "COMP_component_archive_orphan_plugi_1292": [
+        "CONN_imports_3joor8",
+        "CONN_imports_40zbtt",
+        "CONN_imports_ix61og",
+        "CONN_imports_troro0",
+        "CONN_imports_ykt50x",
+        "CONN_imports_z4tly5"
+      ],
+      "COMP_component_archive_orphan_plugi_63rq": [
+        "CONN_imports_3zskt7",
+        "CONN_imports_7czbyz",
+        "CONN_imports_cei9k6",
+        "CONN_imports_cgzew8",
+        "CONN_imports_inztnp",
+        "CONN_imports_t3pkzt",
+        "CONN_imports_yg8anl",
+        "CONN_imports_zfhrwv"
+      ],
+      "COMP_component_archive_orphan_plugi_zqfl": [
+        "CONN_imports_gm21a8",
+        "CONN_imports_z6jf42"
+      ],
+      "COMP_component_archive_orphan_plugi_97pk": [
+        "CONN_imports_jp4p24"
+      ],
+      "COMP_component_archive_orphan_plugi_437n": [
+        "CONN_imports_kfz6h5"
+      ],
+      "COMP_component_archive_orphan_plugi_wl59": [
+        "CONN_imports_xhanep",
+        "CONN_imports_zm3afo"
+      ]
+    }
+  },
+  "stats": {
+    "total_components": 9,
+    "total_connections": 22,
+    "components_by_type": {
+      "component": 9
+    },
+    "connections_by_type": {
+      "imports": 22
+    },
+    "outdated_count": 0,
+    "vulnerable_count": 0
+  },
+  "last_full_scan": 1777648524303,
+  "incrementals_since_full": 0,
+  "ewma": {
+    "__other": {
+      "lambda": 0.2,
+      "L": 2.7,
+      "mean": 0,
+      "variance": 0,
+      "n": 1,
+      "points": [
+        0
+      ],
+      "breach_pending": false
+    },
+    "connection-imports": {
+      "lambda": 0.2,
+      "L": 2.7,
+      "mean": 0,
+      "variance": 0,
+      "n": 1,
+      "points": [
+        0
+      ],
+      "breach_pending": false
+    }
+  },
+  "audit_history_count": 1,
+  "pending_drift_breach": false
+}

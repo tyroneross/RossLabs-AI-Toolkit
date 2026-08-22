@@ -211,18 +211,6 @@
         "authentication": "ON_INSTALL"
       },
       "category": "Design"
-    },
-    {
-      "name": "ty-lsp",
-      "source": {
-        "source": "url",
-        "url": "https://github.com/tyroneross/RossLabs-LSP.git"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "NONE"
-      },
-      "category": "Coding"
     }
   ]
 }

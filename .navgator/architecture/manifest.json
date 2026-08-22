@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0.0",
+  "generated_at": 1777648524301,
+  "files": {
+    "index.json": {
+      "generated_at": 1777648524298.8357
+    },
+    "graph.json": {
+      "generated_at": 1777648524300.0366
+    },
+    "file_map.json": {
+      "generated_at": 1777648524301.1592
+    },
+    "reverse-deps.json": {
+      "generated_at": 1777648524301.6946,
+      "source_count": 22
+    }
+  }
+}

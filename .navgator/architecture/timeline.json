@@ -1,0 +1,264 @@
+{
+  "version": "1.0",
+  "project_path": "/Users/tyroneross/dev/git-folder/RossLabs-AI-Toolkit",
+  "entries": [
+    {
+      "id": "TL_20260501151524",
+      "timestamp": 1777648524297,
+      "significance": "major",
+      "triggers": [
+        "high-churn",
+        "connection-change"
+      ],
+      "diff": {
+        "components": {
+          "added": [
+            {
+              "name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/scan",
+              "type": "component",
+              "layer": "backend"
+            },
+            {
+              "name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/codex",
+              "type": "component",
+              "layer": "backend"
+            },
+            {
+              "name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/util",
+              "type": "component",
+              "layer": "backend"
+            },
+            {
+              "name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/apply",
+              "type": "component",
+              "layer": "backend"
+            },
+            {
+              "name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/hooks",
+              "type": "component",
+              "layer": "backend"
+            },
+            {
+              "name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/plugin-sync",
+              "type": "component",
+              "layer": "backend"
+            },
+            {
+              "name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/lint",
+              "type": "component",
+              "layer": "backend"
+            },
+            {
+              "name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/config",
+              "type": "component",
+              "layer": "backend"
+            },
+            {
+              "name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/drift",
+              "type": "component",
+              "layer": "backend"
+            }
+          ],
+          "removed": [],
+          "modified": []
+        },
+        "connections": {
+          "added": [
+            {
+              "from_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/plugin-sync",
+              "to_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/lint",
+              "type": "imports",
+              "file": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/plugin-sync.ts"
+            },
+            {
+              "from_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/plugin-sync",
+              "to_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/hooks",
+              "type": "imports",
+              "file": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/plugin-sync.ts"
+            },
+            {
+              "from_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/apply",
+              "to_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/scan",
+              "type": "imports",
+              "file": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/apply.ts"
+            },
+            {
+              "from_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/hooks",
+              "to_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/util",
+              "type": "imports",
+              "file": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/hooks.ts"
+            },
+            {
+              "from_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/drift",
+              "to_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/scan",
+              "type": "imports",
+              "file": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/drift.ts"
+            },
+            {
+              "from_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/drift",
+              "to_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/util",
+              "type": "imports",
+              "file": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/drift.ts"
+            },
+            {
+              "from_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/config",
+              "to_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/util",
+              "type": "imports",
+              "file": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/config.ts"
+            },
+            {
+              "from_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/scan",
+              "to_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/util",
+              "type": "imports",
+              "file": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/scan.ts"
+            },
+            {
+              "from_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/apply",
+              "to_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/drift",
+              "type": "imports",
+              "file": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/apply.ts"
+            },
+            {
+              "from_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/lint",
+              "to_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/util",
+              "type": "imports",
+              "file": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/lint.ts"
+            },
+            {
+              "from_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/hooks",
+              "to_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/scan",
+              "type": "imports",
+              "file": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/hooks.ts"
+            },
+            {
+              "from_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/plugin-sync",
+              "to_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/apply",
+              "type": "imports",
+              "file": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/plugin-sync.ts"
+            },
+            {
+              "from_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/plugin-sync",
+              "to_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/codex",
+              "type": "imports",
+              "file": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/plugin-sync.ts"
+            },
+            {
+              "from_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/apply",
+              "to_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/util",
+              "type": "imports",
+              "file": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/apply.ts"
+            },
+            {
+              "from_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/codex",
+              "to_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/scan",
+              "type": "imports",
+              "file": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/codex.ts"
+            },
+            {
+              "from_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/plugin-sync",
+              "to_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/config",
+              "type": "imports",
+              "file": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/plugin-sync.ts"
+            },
+            {
+              "from_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/plugin-sync",
+              "to_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/util",
+              "type": "imports",
+              "file": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/plugin-sync.ts"
+            },
+            {
+              "from_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/plugin-sync",
+              "to_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/scan",
+              "type": "imports",
+              "file": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/plugin-sync.ts"
+            },
+            {
+              "from_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/lint",
+              "to_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/scan",
+              "type": "imports",
+              "file": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/lint.ts"
+            },
+            {
+              "from_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/plugin-sync",
+              "to_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/drift",
+              "type": "imports",
+              "file": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/plugin-sync.ts"
+            },
+            {
+              "from_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/codex",
+              "to_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/util",
+              "type": "imports",
+              "file": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/codex.ts"
+            },
+            {
+              "from_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/apply",
+              "to_name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/config",
+              "type": "imports",
+              "file": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/apply.ts"
+            }
+          ],
+          "removed": []
+        },
+        "stats": {
+          "total_changes": 31,
+          "components_before": 0,
+          "components_after": 9,
+          "connections_before": 0,
+          "connections_after": 22
+        }
+      },
+      "snapshot_id": "SNAP_20260501151524",
+      "scan_type": "full",
+      "files_scanned": 24,
+      "audit": {
+        "plan": "AQL",
+        "n": 8,
+        "c": 0,
+        "sampled": 12,
+        "defects": 0,
+        "defect_rate": 0,
+        "by_class": {
+          "HALLUCINATED_COMPONENT": {
+            "sampled": 4,
+            "defects": 0
+          },
+          "HALLUCINATED_EDGE": {
+            "sampled": 4,
+            "defects": 0
+          },
+          "WRONG_ENDPOINT": {
+            "sampled": 4,
+            "defects": 0
+          },
+          "STALE_REFERENCE": {
+            "sampled": 0,
+            "defects": 0
+          },
+          "DEDUP_COLLISION": {
+            "sampled": 9,
+            "defects": 0
+          },
+          "MISSED_EDGE": {
+            "sampled": 0,
+            "defects": 0
+          }
+        },
+        "by_stratum": {
+          "__other": {
+            "sampled": 4,
+            "defects": 0,
+            "defect_rate": 0
+          },
+          "connection-imports": {
+            "sampled": 4,
+            "defects": 0,
+            "defect_rate": 0
+          }
+        },
+        "llm_skipped": true,
+        "verdict": "accept",
+        "timestamp": 1777648524291
+      }
+    }
+  ]
+}

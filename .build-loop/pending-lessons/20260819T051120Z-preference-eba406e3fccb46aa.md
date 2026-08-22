@@ -1,0 +1,37 @@
+---
+id: eba406e3fccb46aa
+kind: preference
+signal_type: must
+confidence: confirmed
+scope: global
+turn_index: 8
+captured_chars: 19
+tier: 1-deterministic
+source: stop-hook
+title: 'must not break them'
+captured_at: 2026-08-19T05:11:20.807128+00:00
+---
+
+## Quote
+
+> must not break them
+
+## Context (±200 chars)
+
+```
+r_machine_paths_in_source[transcript_pattern_miner/__main__.py]
+```
+
+The 4 that pass in both directions are the override-preservation guards — correct, since those paths were never broken and the fix must not break them.
+
+Regression sweep:
+
+```
+$ uv run pytest scripts/test_portable_paths.py scripts/test_append_milestone.py \
+    scripts/test_transcript_pattern_miner.py scripts/test_prior_art.py \
+    scripts/test_pr
+```
+
+## Next action for the host agent
+
+Refine this candidate into a durable record. Decide kind (decision|lesson|feedback) and scope (project|global). If aligned with build-loop-memory contract, promote via `scripts/memory_writer.py` or `scripts/write_decision/__main__.py`. If not actionable, delete this file.

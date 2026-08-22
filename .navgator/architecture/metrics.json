@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0",
+  "generated_at": 1777648524309,
+  "node_count": 9,
+  "edge_count": 22,
+  "community_count": 0,
+  "modularity": null,
+  "suppressed": true,
+  "reason": "graph too small (9 < 20 nodes)",
+  "metrics": []
+}

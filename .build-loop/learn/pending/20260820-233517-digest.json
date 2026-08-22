@@ -1,0 +1,33 @@
+{
+  "generated_at": "2026-08-20T23:35:15.189534+00:00",
+  "window": "last 1 day(s)",
+  "skills": [
+    {
+      "kind": "skill_or_workflow_candidate",
+      "shape": "repeated_tool_sequence",
+      "session_count": 8,
+      "sequence": [
+        "Bash:command",
+        "Bash:command",
+        "ToolSearch:query"
+      ],
+      "rationale": "Tool sequence recurring across 3+ sessions \u2014 candidate workflow/skill."
+    },
+    {
+      "kind": "skill_or_workflow_candidate",
+      "shape": "repeated_tool_sequence",
+      "session_count": 7,
+      "sequence": [
+        "Bash:command",
+        "Bash:command",
+        "Bash:command",
+        "Bash:command",
+        "Bash:command",
+        "ToolSearch:query"
+      ],
+      "rationale": "Tool sequence recurring across 3+ sessions \u2014 candidate workflow/skill."
+    }
+  ],
+  "lessons": [],
+  "transcript": "/Users/tyroneross/.claude/projects/-Users-tyroneross-dev-git-folder-RossLabs-AI-Toolkit/30f2f7d7-fd66-43c9-a073-b0b92f142e1e.jsonl"
+}

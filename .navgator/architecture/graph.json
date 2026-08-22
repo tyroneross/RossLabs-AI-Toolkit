@@ -1,0 +1,207 @@
+{
+  "schema_version": "1.1.0",
+  "nodes": [
+    {
+      "id": "COMP_component_archive_orphan_plugi_1292",
+      "stable_id": "STABLE_component_archive-orphan-plugins-2026-04-21-plugin-sync-sc-1pi4eev__archive-orphan-plugins-2026-04-21-plugin-sync-sc-0h9aeck",
+      "name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/scan",
+      "type": "component",
+      "layer": "backend"
+    },
+    {
+      "id": "COMP_component_archive_orphan_plugi_437n",
+      "stable_id": "STABLE_component_archive-orphan-plugins-2026-04-21-plugin-sync-sc-0wvys2b__archive-orphan-plugins-2026-04-21-plugin-sync-sc-083lanc",
+      "name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/codex",
+      "type": "component",
+      "layer": "backend"
+    },
+    {
+      "id": "COMP_component_archive_orphan_plugi_63rq",
+      "stable_id": "STABLE_component_archive-orphan-plugins-2026-04-21-plugin-sync-sc-04xxres__archive-orphan-plugins-2026-04-21-plugin-sync-sc-0m4wgsl",
+      "name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/util",
+      "type": "component",
+      "layer": "backend"
+    },
+    {
+      "id": "COMP_component_archive_orphan_plugi_97pk",
+      "stable_id": "STABLE_component_archive-orphan-plugins-2026-04-21-plugin-sync-sc-0pq9ocy__archive-orphan-plugins-2026-04-21-plugin-sync-sc-0yprxvj",
+      "name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/apply",
+      "type": "component",
+      "layer": "backend"
+    },
+    {
+      "id": "COMP_component_archive_orphan_plugi_f7pb",
+      "stable_id": "STABLE_component_archive-orphan-plugins-2026-04-21-plugin-sync-sc-03np1ey__archive-orphan-plugins-2026-04-21-plugin-sync-sc-0yvsqs7",
+      "name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/hooks",
+      "type": "component",
+      "layer": "backend"
+    },
+    {
+      "id": "COMP_component_archive_orphan_plugi_psze",
+      "stable_id": "STABLE_component_archive-orphan-plugins-2026-04-21-plugin-sync-sc-0pq04np__archive-orphan-plugins-2026-04-21-plugin-sync-sc-085cdpi",
+      "name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/plugin-sync",
+      "type": "component",
+      "layer": "backend"
+    },
+    {
+      "id": "COMP_component_archive_orphan_plugi_vrnz",
+      "stable_id": "STABLE_component_archive-orphan-plugins-2026-04-21-plugin-sync-sc-1wrud0b__archive-orphan-plugins-2026-04-21-plugin-sync-sc-1mjmzps",
+      "name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/lint",
+      "type": "component",
+      "layer": "backend"
+    },
+    {
+      "id": "COMP_component_archive_orphan_plugi_wl59",
+      "stable_id": "STABLE_component_archive-orphan-plugins-2026-04-21-plugin-sync-sc-1ssl59y__archive-orphan-plugins-2026-04-21-plugin-sync-sc-12yruaj",
+      "name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/config",
+      "type": "component",
+      "layer": "backend"
+    },
+    {
+      "id": "COMP_component_archive_orphan_plugi_zqfl",
+      "stable_id": "STABLE_component_archive-orphan-plugins-2026-04-21-plugin-sync-sc-0bl81f7__archive-orphan-plugins-2026-04-21-plugin-sync-sc-1r7a4zs",
+      "name": "archive/orphan-plugins-2026-04-21/plugin-sync/scripts/drift",
+      "type": "component",
+      "layer": "backend"
+    }
+  ],
+  "edges": [
+    {
+      "id": "CONN_imports_0uz1zu",
+      "source": "COMP_component_archive_orphan_plugi_psze",
+      "target": "COMP_component_archive_orphan_plugi_vrnz",
+      "type": "imports"
+    },
+    {
+      "id": "CONN_imports_2svixk",
+      "source": "COMP_component_archive_orphan_plugi_psze",
+      "target": "COMP_component_archive_orphan_plugi_f7pb",
+      "type": "imports"
+    },
+    {
+      "id": "CONN_imports_3joor8",
+      "source": "COMP_component_archive_orphan_plugi_97pk",
+      "target": "COMP_component_archive_orphan_plugi_1292",
+      "type": "imports"
+    },
+    {
+      "id": "CONN_imports_3zskt7",
+      "source": "COMP_component_archive_orphan_plugi_f7pb",
+      "target": "COMP_component_archive_orphan_plugi_63rq",
+      "type": "imports"
+    },
+    {
+      "id": "CONN_imports_40zbtt",
+      "source": "COMP_component_archive_orphan_plugi_zqfl",
+      "target": "COMP_component_archive_orphan_plugi_1292",
+      "type": "imports"
+    },
+    {
+      "id": "CONN_imports_7czbyz",
+      "source": "COMP_component_archive_orphan_plugi_zqfl",
+      "target": "COMP_component_archive_orphan_plugi_63rq",
+      "type": "imports"
+    },
+    {
+      "id": "CONN_imports_cei9k6",
+      "source": "COMP_component_archive_orphan_plugi_wl59",
+      "target": "COMP_component_archive_orphan_plugi_63rq",
+      "type": "imports"
+    },
+    {
+      "id": "CONN_imports_cgzew8",
+      "source": "COMP_component_archive_orphan_plugi_1292",
+      "target": "COMP_component_archive_orphan_plugi_63rq",
+      "type": "imports"
+    },
+    {
+      "id": "CONN_imports_gm21a8",
+      "source": "COMP_component_archive_orphan_plugi_97pk",
+      "target": "COMP_component_archive_orphan_plugi_zqfl",
+      "type": "imports"
+    },
+    {
+      "id": "CONN_imports_inztnp",
+      "source": "COMP_component_archive_orphan_plugi_vrnz",
+      "target": "COMP_component_archive_orphan_plugi_63rq",
+      "type": "imports"
+    },
+    {
+      "id": "CONN_imports_ix61og",
+      "source": "COMP_component_archive_orphan_plugi_f7pb",
+      "target": "COMP_component_archive_orphan_plugi_1292",
+      "type": "imports"
+    },
+    {
+      "id": "CONN_imports_jp4p24",
+      "source": "COMP_component_archive_orphan_plugi_psze",
+      "target": "COMP_component_archive_orphan_plugi_97pk",
+      "type": "imports"
+    },
+    {
+      "id": "CONN_imports_kfz6h5",
+      "source": "COMP_component_archive_orphan_plugi_psze",
+      "target": "COMP_component_archive_orphan_plugi_437n",
+      "type": "imports"
+    },
+    {
+      "id": "CONN_imports_t3pkzt",
+      "source": "COMP_component_archive_orphan_plugi_97pk",
+      "target": "COMP_component_archive_orphan_plugi_63rq",
+      "type": "imports"
+    },
+    {
+      "id": "CONN_imports_troro0",
+      "source": "COMP_component_archive_orphan_plugi_437n",
+      "target": "COMP_component_archive_orphan_plugi_1292",
+      "type": "imports"
+    },
+    {
+      "id": "CONN_imports_xhanep",
+      "source": "COMP_component_archive_orphan_plugi_psze",
+      "target": "COMP_component_archive_orphan_plugi_wl59",
+      "type": "imports"
+    },
+    {
+      "id": "CONN_imports_yg8anl",
+      "source": "COMP_component_archive_orphan_plugi_psze",
+      "target": "COMP_component_archive_orphan_plugi_63rq",
+      "type": "imports"
+    },
+    {
+      "id": "CONN_imports_ykt50x",
+      "source": "COMP_component_archive_orphan_plugi_psze",
+      "target": "COMP_component_archive_orphan_plugi_1292",
+      "type": "imports"
+    },
+    {
+      "id": "CONN_imports_z4tly5",
+      "source": "COMP_component_archive_orphan_plugi_vrnz",
+      "target": "COMP_component_archive_orphan_plugi_1292",
+      "type": "imports"
+    },
+    {
+      "id": "CONN_imports_z6jf42",
+      "source": "COMP_component_archive_orphan_plugi_psze",
+      "target": "COMP_component_archive_orphan_plugi_zqfl",
+      "type": "imports"
+    },
+    {
+      "id": "CONN_imports_zfhrwv",
+      "source": "COMP_component_archive_orphan_plugi_437n",
+      "target": "COMP_component_archive_orphan_plugi_63rq",
+      "type": "imports"
+    },
+    {
+      "id": "CONN_imports_zm3afo",
+      "source": "COMP_component_archive_orphan_plugi_97pk",
+      "target": "COMP_component_archive_orphan_plugi_wl59",
+      "type": "imports"
+    }
+  ],
+  "metadata": {
+    "generated_at": 1777648524299,
+    "component_count": 9,
+    "connection_count": 22
+  }
+}

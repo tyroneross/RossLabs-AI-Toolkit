@@ -39,7 +39,6 @@ Use it for features, refactors, migrations, and schema changes: anything that to
 |--------|---------|--------------|
 | [build-loop](https://github.com/tyroneross/build-loop) | `0.39.0` | The flagship build loop. Plans, reviews, and verifies every multi-file change. See **Featured** above for the full breakdown. |
 | [agent-rally-point](https://github.com/tyroneross/agent-rally-point) | `0.1.0` | Repo-local coordination for parallel coding agents — records claims, checks write boundaries, routes handoffs, and exposes room state via the `rally` CLI. Advisory-only hooks surface room awareness and deconflict before edits; self-gates outside rally repos. |
-| [ty-lsp](https://github.com/tyroneross/RossLabs-LSP) | `0.1.0` | Python language server (Astral's `ty`) for Claude Code — Rust, single binary, no runtime dependency. Ships alongside `code-intel`, a vendor-neutral CLI/MCP bridge for agents without native LSP. |
 | [navgator](https://github.com/tyroneross/NavGator) | `0.9.0` | Architecture tracking — map dependencies, analyze impact, and visualize your stack before you change it. |
 | [ibr](https://github.com/tyroneross/interface-built-right) | `1.4.0` | UI validation — verify implementations match intent with live page scanning and visual regression. |
 | [bookmark](https://github.com/tyroneross/bookmark) | `0.3.2` | Session context continuity — auto-save and restore across compactions and terminal closures. |
@@ -71,6 +70,19 @@ Install any of them after adding the marketplace:
 ```bash
 claude plugin install <name>@rosslabs-ai-toolkit
 ```
+
+### Related marketplaces
+
+LSP tooling lives in its own repo and its own marketplace, so it versions independently
+of this hub:
+
+```
+/plugin marketplace add tyroneross/RossLabs-LSP
+```
+
+[RossLabs-LSP](https://github.com/tyroneross/RossLabs-LSP) ships `ty-lsp` (Python code
+intelligence for Claude Code) alongside `code-intel`, a vendor-neutral CLI/MCP bridge
+that gives the same language servers to agents without native LSP support.
 
 ## Skills
 
