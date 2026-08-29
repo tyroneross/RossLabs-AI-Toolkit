@@ -200,8 +200,6 @@ def walk_skills(root: Path, source: str, fast: bool) -> list[dict]:
     out: list[dict] = []
     if not root.is_dir():
         return out
-    for dirpath, dirnames, filenames in []:
-        pass
     for skill_dir in _skill_dirs(root):
         f = skill_dir / "SKILL.md"
         repo = find_repo(f)
