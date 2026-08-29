@@ -123,3 +123,18 @@ plugin-sync lint exits 0 with no output when all path fields are valid and resol
 
 plugin-sync 0.2.0 added this lint subcommand in response to the 2026-04-05 audit. The underlying pattern (invalid paths in plugin.json) is captured in the separate hooks-path entry above.
 
+
+## 2026-08-29 — mockup-gallery needs a surface-ownership boundary check
+
+On 2026-08-28 a session dispatched mockup-gallery for the RossLabs Ambient Agent's
+mockup selection when Groundwork owned that repo's design flow (Groundwork's own
+`references/mockups.md` states "Groundwork owns this surface; the separate
+mockup-gallery plugin stays independent and is not required"). Cost: one full
+gallery build on the wrong surface, then a relaunch through Groundwork's gallery.
+
+Recommendation: mockup-gallery's skill description (and/or a preflight in its
+launch path) should check for Groundwork ownership signals in the target repo —
+`.designdoc/decisions/` with a Groundwork reconciliation record, or a Groundwork
+Spec at `.designdoc/spec.json` — and route to Groundwork instead of proceeding.
+The two plugins deliberately stay independent; the boundary just needs to be
+checkable at dispatch time instead of living only in Groundwork's docs.
