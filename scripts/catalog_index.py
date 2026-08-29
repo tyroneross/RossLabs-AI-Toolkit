@@ -25,9 +25,10 @@ visible rather than collapsing into one row.
 UNMANAGED IS THE POINT
 ----------------------
 A skill whose nearest ancestor has no .git has no repo, no remote, and no
-version — nothing can tell you whether it is current. `~/.codex/skills/`
-holds 24 of these today. They are invisible to every other index on this
-machine; surfacing them is the main reason this script exists.
+version — nothing can tell you whether it is current. Most of them live in
+`~/.codex/skills/`, invisible to every other index on this machine; surfacing
+them is the main reason this script exists. Current counts belong in the
+generated output, never in this docstring, where they rot into false facts.
 
 Output lands in an untracked directory (`~/dev/git-folder/_catalog/`) by
 convention: `~/dev/git-folder` is not a git repo, and underscore-prefixed
@@ -73,6 +74,12 @@ SKILL_ROOTS = [
 ]
 
 #: Never walked. node_modules alone is ~10^5 files and holds no authored skill.
+#: Dot-directories that DO hold authored skills. The blanket "skip anything
+#: starting with a dot" rule was hiding project-scoped skills in exactly the
+#: places the conventions put them — mockup-gallery/.claude/skills/,
+#: interface-built-right/.codex-plugin/skills/, and every .agents/skills/ copy.
+ALLOW_DOTDIRS = {".claude", ".agents", ".codex-plugin"}
+
 PRUNE = {
     "node_modules", ".git", ".next", "dist", "build", "__pycache__",
     ".venv", "venv", ".turbo", "coverage", ".pytest_cache", "_worktrees",
@@ -146,6 +153,12 @@ def status_for(facts: dict | None, committed: str | None, fast: bool) -> str:
         return "unpushed"
     if facts["dirty"]:
         return "dirty"
+    if fast:
+        # A gitignored-but-present skill is absent from `status --porcelain`
+        # AND has no commit, so with the per-file log skipped there is no
+        # evidence left to distinguish it from a genuinely clean file.
+        # "clean" would be a claim this mode cannot support.
+        return "unverified"
     return "clean"
 
 
@@ -185,7 +198,10 @@ def _skill_dirs(root: Path):
                 seen.add(real)
                 yield real
     for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
-        dirnames[:] = [d for d in dirnames if d not in PRUNE and not d.startswith(".")]
+        dirnames[:] = [
+            d for d in dirnames
+            if d not in PRUNE and (not d.startswith(".") or d in ALLOW_DOTDIRS)
+        ]
         if OUT_DIR.name in Path(dirpath).parts:
             dirnames[:] = []
             continue
@@ -205,8 +221,11 @@ def walk_skills(root: Path, source: str, fast: bool) -> list[dict]:
         repo = find_repo(f)
         facts = repo_facts(repo) if repo else None
         cls = classify(source, facts)
+        # A downloaded cache copy is never asked about its git state: it is an
+        # artifact, not authored work. Skipping the per-file log here also
+        # removes ~450 pointless subprocess calls from every run.
         committed = None
-        if repo and not fast:
+        if repo and not fast and cls != "plugin-cache":
             committed = last_commit_iso(repo, f)
         try:
             mtime = datetime.fromtimestamp(f.stat().st_mtime, timezone.utc).isoformat()
@@ -218,16 +237,19 @@ def walk_skills(root: Path, source: str, fast: bool) -> list[dict]:
             "class": cls,
             "source": source,
             "path": str(f),
-            "repo": facts["repo_name"] if facts else None,
-            "github": facts["github"] if facts else None,
-            "branch": facts["branch"] if facts else None,
+            # Cache rows carry no repo identity: ~/.claude owns the directory,
+            # not the plugin's contents, and printing its GitHub link next to a
+            # downloaded skill asserts a provenance that does not exist.
+            "repo": facts["repo_name"] if (facts and cls != "plugin-cache") else None,
+            "github": facts["github"] if (facts and cls != "plugin-cache") else None,
+            "branch": facts["branch"] if (facts and cls != "plugin-cache") else None,
             "last_commit": committed,
             "local_mtime": mtime,
-            # A cache copy with no .git is not "unmanaged" in the sense the
-            # status column means — it is a downloaded artifact behaving
-            # normally. Reusing one word for both made the two summary tables
-            # disagree by 474 rows.
-            "status": "cached" if (cls == "plugin-cache" and facts is None)
+            # Every cache row, on either host. Gating this on `facts is None`
+            # covered only Codex (whose cache has no .git) and left 452
+            # Claude-side rows reporting `uncommitted` — the same defect the
+            # rule was written to kill, surviving in the other half.
+            "status": "cached" if cls == "plugin-cache"
                       else status_for(facts, committed, fast),
         })
     return out
@@ -405,10 +427,33 @@ def render_md(cat: dict) -> str:
     return "\n".join(L) + "\n"
 
 
+LOG_LIST_CAP = 50
+
+
+def _keys(cat: dict | None, classes: set[str] | None = None) -> set[tuple[str, str]]:
+    """Identity for one skill row.
+
+    Keyed on (source, path), not path alone. Top-level symlinks are resolved,
+    so the same real path legitimately appears under two sources — a
+    path-keyed set silently merges those rows, which is why a run could report
+    delta=+8 alongside a single added entry. (source, path) is unique by
+    construction.
+    """
+    if not cat:
+        return set()
+    return {
+        (r["source"], r["path"]) for r in (cat.get("skills") or [])
+        if classes is None or r["class"] in classes
+    }
+
+
+#: Cache entries cycle whenever any plugin updates, so they dominate a total
+#: delta and drown the population that actually matters.
+STABLE = {"authored", "unmanaged"}
+
+
 def append_log(cat: dict, prev: dict | None) -> dict:
     """One line per run. Deltas are the point — a flat count proves nothing."""
-    def names(d, kind):
-        return {r["path"] or r["name"] for r in (d.get(kind) or [])} if d else set()
     entry = {
         "at": cat["generated_at"],
         "plugins": cat["counts"]["plugins"],
@@ -417,9 +462,31 @@ def append_log(cat: dict, prev: dict | None) -> dict:
         "skills_by_status": cat["counts"]["skills_by_status"],
     }
     if prev:
-        entry["added_skills"] = sorted(names(cat, "skills") - names(prev, "skills"))[:50]
-        entry["removed_skills"] = sorted(names(prev, "skills") - names(cat, "skills"))[:50]
-        entry["delta_skills"] = cat["counts"]["skills"] - (prev.get("counts", {}).get("skills") or 0)
+        prev_skills = prev.get("counts", {}).get("skills") or 0
+        entry["delta_skills"] = cat["counts"]["skills"] - prev_skills
+
+        # The stable population is the alert channel. Cache churn is reported
+        # as a magnitude only — it is a plugin update, not a finding.
+        added = sorted(_keys(cat, STABLE) - _keys(prev, STABLE))
+        removed = sorted(_keys(prev, STABLE) - _keys(cat, STABLE))
+        # Counts are logged unconditionally and in full. Truncating the lists
+        # without them destroyed the only number the weekly reader can trust.
+        entry["added_count"] = len(added)
+        entry["removed_count"] = len(removed)
+        entry["truncated"] = len(added) > LOG_LIST_CAP or len(removed) > LOG_LIST_CAP
+        entry["added_skills"] = [f"{s}:{p}" for s, p in added[:LOG_LIST_CAP]]
+        entry["removed_skills"] = [f"{s}:{p}" for s, p in removed[:LOG_LIST_CAP]]
+
+        prev_class = prev.get("counts", {}).get("skills_by_class", {})
+        entry["delta_by_class"] = {
+            k: cat["counts"]["skills_by_class"].get(k, 0) - prev_class.get(k, 0)
+            for k in set(cat["counts"]["skills_by_class"]) | set(prev_class)
+            if cat["counts"]["skills_by_class"].get(k, 0) != prev_class.get(k, 0)
+        }
+        entry["cache_cycled"] = len(
+            (_keys(cat, {"plugin-cache"}) - _keys(prev, {"plugin-cache"}))
+            | (_keys(prev, {"plugin-cache"}) - _keys(cat, {"plugin-cache"}))
+        )
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     with (OUT_DIR / LOG_NAME).open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(entry) + "\n")
@@ -451,10 +518,29 @@ def main() -> int:
         if prev is None:
             print("catalog missing — run without --check", file=sys.stderr)
             return 1
-        same = (prev.get("plugins") == cat["plugins"]
-                and prev.get("skills") == cat["skills"])
-        if not same:
-            print("catalog is stale — rerun catalog_index.py", file=sys.stderr)
+        # Compare identity, not volatile git state. Deep-comparing whole rows
+        # meant one commit in any of ~80 repos, or a touched file, flipped this
+        # to "stale" — a check that is stale every afternoon teaches you to
+        # ignore it.
+        def identity(d):
+            return (
+                sorted((r["name"], r.get("version")) for r in (d.get("plugins") or [])),
+                sorted((r["source"], r["path"], r["class"])
+                       for r in (d.get("skills") or [])),
+            )
+        problems = []
+        if identity(prev) != identity(cat):
+            problems.append("catalog contents changed")
+        # The Markdown is a published surface too; the old check passed happily
+        # with CATALOG.md deleted.
+        md_path = OUT_DIR / MD_NAME
+        if not md_path.is_file():
+            problems.append(f"{MD_NAME} is missing")
+        elif md_path.read_text(encoding="utf-8") != render_md(prev):
+            problems.append(f"{MD_NAME} does not match {JSON_NAME}")
+        if problems:
+            for p_ in problems:
+                print(f"catalog stale — {p_}", file=sys.stderr)
             return 1
         print("catalog is current.")
         return 0
@@ -466,7 +552,13 @@ def main() -> int:
     print(f"catalog: {cat['counts']['plugins']} plugins · "
           f"{cat['counts']['skills']} skills → {OUT_DIR}")
     if "delta_skills" in entry:
-        print(f"  delta since last run: {entry['delta_skills']:+d} skills")
+        print(f"  total delta: {entry['delta_skills']:+d} skills "
+              f"({entry['cache_cycled']} cache entries cycled)")
+        print(f"  authored/unmanaged: +{entry['added_count']} "
+              f"-{entry['removed_count']}"
+              + ("  [lists truncated]" if entry["truncated"] else ""))
+        if entry["delta_by_class"]:
+            print(f"  by class: {entry['delta_by_class']}")
     return 0
 
 
