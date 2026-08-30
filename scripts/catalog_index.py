@@ -84,6 +84,10 @@ PRUNE = {
     "node_modules", ".git", ".next", "dist", "build", "__pycache__",
     ".venv", "venv", ".turbo", "coverage", ".pytest_cache", "_worktrees",
     ".astronomer", ".build-loop",
+    # Copies of skills that already exist elsewhere in the same repo. Counting
+    # them inflates `authored`, which is the one channel the weekly job is
+    # supposed to be able to trust.
+    "archive", "plugin-artifacts",
 }
 
 _repo_cache: dict[Path, dict | None] = {}
@@ -198,9 +202,19 @@ def _skill_dirs(root: Path):
                 seen.add(real)
                 yield real
     for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
+        here = Path(dirpath)
         dirnames[:] = [
             d for d in dirnames
-            if d not in PRUNE and (not d.startswith(".") or d in ALLOW_DOTDIRS)
+            if d not in PRUNE
+            and (not d.startswith(".") or d in ALLOW_DOTDIRS)
+            # A linked git worktree carries .git as a FILE holding "gitdir:",
+            # where a real repo has a directory. Detecting the shape beats
+            # matching a name: today's worktrees sit in `build-loop.worktrees/`
+            # and `agent-rally-point.worktrees/`, neither of which the older
+            # `_worktrees` entry catches. A worktree is a second checkout of a
+            # repo already catalogued, so every skill in it is a duplicate —
+            # one appearing this morning added +106 phantom authored skills.
+            and not (here / d / ".git").is_file()
         ]
         if OUT_DIR.name in Path(dirpath).parts:
             dirnames[:] = []
