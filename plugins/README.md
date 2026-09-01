@@ -6,7 +6,7 @@ Self-contained plugin repositories indexed by the RossLabs AI Toolkit marketplac
 
 | Plugin | Repo | Description | Version |
 |--------|------|-------------|---------|
-| build-loop | [tyroneross/build-loop](https://github.com/tyroneross/build-loop) | Portable multi-phase build loop for Claude Code, Codex, and AGENTS.md-aware tools | 0.39.3 |
+| build-loop | [tyroneross/build-loop](https://github.com/tyroneross/build-loop) | Portable multi-phase build loop for Claude Code, Codex, and AGENTS.md-aware tools | 0.42.0 |
 | navgator | [tyroneross/NavGator](https://github.com/tyroneross/NavGator) | Architecture tracking — dependency mapping and impact analysis | 0.9.2 |
 | ibr | [tyroneross/interface-built-right](https://github.com/tyroneross/interface-built-right) | UI validation — live page scanning and visual regression | 1.5.1 |
 | bookmark | [tyroneross/bookmark](https://github.com/tyroneross/bookmark) | Session context continuity across compactions and terminal closures | 0.3.2 |
