@@ -11,6 +11,22 @@ agents/      Agent configurations
 archive/     Retired/deprecated items
 ```
 
+## The operating stack
+
+[`docs/operating-stack.html`](docs/operating-stack.html) maps how these pieces fit
+together: five layers left to right following data flow — Application/Interface,
+Tools, Orchestration, Agent Memory, Infrastructure. Toolkit plugins are marked with
+an accent rule; select any component to see what it is and everything it connects to.
+
+Open the file directly (no server needed). Regenerate after editing the dataset:
+
+```
+python3 scripts/build_operating_stack.py --data docs/operating-stack-data.json -o docs/operating-stack.html
+```
+
+The page renders from its own embedded JSON payload, so the data an agent parses and
+the page a human reads cannot drift. Do not hand-edit the HTML.
+
 **Plugins** are complete packages — MCP server, hooks, commands, skills bundled together. Install one and it works.
 
 **Skills** are the canonical versions of reusable capabilities. Plugins may bundle their own copies that sync over time.

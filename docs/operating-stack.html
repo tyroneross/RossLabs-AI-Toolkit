@@ -1,0 +1,1809 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>RossLabs Operating Stack</title>
+<meta name="description" content="How the RossLabs toolkit plugins fit together: five layers, left to right, following data flow.">
+<!--
+  MACHINE-READABLE VIEW. Self-contained: no build step to VIEW, no server, no
+  external data. Open with any browser (file:// works) or read as plain text.
+
+  AGENTS: the dataset behind every section is embedded as JSON between the
+  markers STACK-DATA-BEGIN and STACK-DATA-END near the end of the body. Split
+  rather than regex, so this example contains no comment-closing sequence:
+
+      import json
+      s = open("operating-stack.html").read()
+      raw = s.split("STACK-DATA-BEGIN")[-1].split("STACK-DATA-END")[0]
+      d = json.loads(raw[raw.index("{"):raw.rindex("}") + 1])
+      print([l["name"] for l in d["layers"]], len(d["inventory"]))
+
+  Take the LAST match, never the first: these marker names also appear in this
+  comment, so a first-match extractor reads the documentation instead of the data.
+
+  The page RENDERS FROM that payload at load. Counts shown on screen are computed
+  from it, so page and data cannot drift. Regenerate with
+  scripts/build_operating_stack.py; do not hand-edit this file.
+-->
+<style>
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0}
+img,svg{max-width:100%}
+[hidden]{display:none!important}
+
+/* RossLabs tokens. Geist Sans needs ss03/ss05/ss09; Geist Mono needs NONE —
+   ss09 runs backwards there and would un-slash the zero. */
+:root{
+  --paper:#ffffff; --sunk:#f4f5f7; --ink:#14161a; --ink-2:#3d434d; --muted:#5b6270;
+  --line:#e2e5ea; --line-2:#ccd1da; --accent:#1f4fd8; --accent-soft:#e8edfd;
+  --ok:#186a3b; --warn:#8a5a12; --stop:#a3243c;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#0e1013; --sunk:#161a1f; --ink:#e9ecf1; --ink-2:#bcc3ce; --muted:#8b93a1;
+  --line:#242931; --line-2:#333a45; --accent:#7d9cff; --accent-soft:#18213a;
+  --ok:#5fbf92; --warn:#d9a441; --stop:#f0788f;
+}}
+:root[data-theme="dark"]{
+  --paper:#0e1013; --sunk:#161a1f; --ink:#e9ecf1; --ink-2:#bcc3ce; --muted:#8b93a1;
+  --line:#242931; --line-2:#333a45; --accent:#7d9cff; --accent-soft:#18213a;
+  --ok:#5fbf92; --warn:#d9a441; --stop:#f0788f;
+}
+@font-face{font-family:"GeistLocal";src:local("Geist"),local("Geist Regular");font-weight:400;font-display:swap}
+@font-face{font-family:"GeistLocal";src:local("Geist Medium");font-weight:500;font-display:swap}
+@font-face{font-family:"GeistLocal";src:local("Geist SemiBold");font-weight:600;font-display:swap}
+@font-face{font-family:"GeistMonoLocal";src:local("Geist Mono"),local("GeistMono-Regular");font-weight:400;font-display:swap}
+
+body{background:var(--paper);color:var(--ink);
+  font-family:"GeistLocal",-apple-system,"Helvetica Neue",Arial,sans-serif;
+  font-feature-settings:"ss03","ss05","ss09";
+  font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.mono{font-family:"GeistMonoLocal",ui-monospace,SFMono-Regular,Menlo,monospace;font-feature-settings:normal}
+.wrap{max-width:1180px;margin:0 auto;padding:36px 22px 80px}
+h1{font-size:clamp(25px,3.4vw,36px);line-height:1.1;letter-spacing:-.02em;margin:0;font-weight:600;text-wrap:balance}
+h2{font-size:19px;margin:0;font-weight:600;letter-spacing:-.01em}
+p{margin:0}
+a{color:var(--accent)}
+
+.mast{border-bottom:1px solid var(--line-2);padding-bottom:18px;margin-bottom:8px}
+.eyebrow{font-family:"GeistMonoLocal",ui-monospace,Menlo,monospace;font-feature-settings:normal;
+  font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:9px}
+.lede{color:var(--ink-2);max-width:66ch;margin-top:11px}
+.asof{font-size:11.5px;color:var(--muted);margin-top:9px;letter-spacing:.04em}
+.facts{display:flex;gap:22px;flex-wrap:wrap;margin-top:14px;
+  font-family:"GeistMonoLocal",ui-monospace,Menlo,monospace;font-feature-settings:normal;font-size:11.5px;color:var(--muted)}
+.facts b{display:block;color:var(--ink);font-size:15px;font-weight:500}
+
+.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:14px 0 18px}
+.btn{font-family:"GeistMonoLocal",ui-monospace,Menlo,monospace;font-feature-settings:normal;font-size:11.5px;
+  min-height:44px;padding:6px 13px;border-radius:7px;border:1px solid var(--line-2);
+  background:transparent;color:var(--ink-2);cursor:pointer;letter-spacing:.03em}
+.btn:hover{border-color:var(--accent);color:var(--ink)}
+.btn[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.hint{font-size:12px;color:var(--muted)}
+
+/* the flow: five layers, left to right */
+.flowline{display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+  font-family:"GeistMonoLocal",ui-monospace,Menlo,monospace;font-feature-settings:normal;
+  font-size:11px;color:var(--muted);margin-bottom:10px}
+.flowline i{font-style:normal;color:var(--accent)}
+#board{position:relative}
+.layers{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;position:relative;z-index:1}
+.layer{background:var(--sunk);border:1px solid var(--line);border-radius:11px;padding:13px;
+  display:flex;flex-direction:column;gap:9px;min-width:0}
+.lhead .n{font-family:"GeistMonoLocal",ui-monospace,Menlo,monospace;font-feature-settings:normal;
+  font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.lhead b{display:block;font-size:14px;font-weight:600;margin-top:2px}
+.lhead .axis{display:block;font-size:11.5px;color:var(--accent);margin-top:2px}
+.lhead .def{display:block;font-size:11.5px;color:var(--muted);line-height:1.45;margin-top:5px}
+.seg{border-top:1px dashed var(--line-2);padding-top:8px}
+.seg .sname{font-family:"GeistMonoLocal",ui-monospace,Menlo,monospace;font-feature-settings:normal;
+  font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);margin-bottom:5px}
+.nodes{display:flex;flex-direction:column;gap:5px}
+.node{text-align:left;width:100%;background:var(--paper);border:1px solid var(--line);border-radius:7px;
+  padding:7px 9px;cursor:pointer;font:inherit;color:inherit;min-height:44px}
+.node:hover{border-color:var(--accent)}
+.node:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.node[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.node .nm{display:block;font-size:12.5px;font-weight:500;line-height:1.3}
+.node .meta{display:block;font-family:"GeistMonoLocal",ui-monospace,Menlo,monospace;font-feature-settings:normal;
+  font-size:9.5px;letter-spacing:.05em;color:var(--muted);margin-top:2px}
+.node.tk{border-left:3px solid var(--accent)}
+.node.dim{opacity:.32}
+.deg{float:right;font-family:"GeistMonoLocal",ui-monospace,Menlo,monospace;font-feature-settings:normal;
+  font-size:9.5px;color:var(--accent)}
+#wires{position:absolute;inset:0;z-index:0;pointer-events:none}
+
+/* pop-out detail */
+.detail{border:1px solid var(--line-2);border-radius:11px;background:var(--sunk);padding:16px 18px;margin-top:14px}
+.detail .dh{display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap}
+.detail h3{margin:0;font-size:17px;font-weight:600}
+.detail .tags{font-family:"GeistMonoLocal",ui-monospace,Menlo,monospace;font-feature-settings:normal;
+  font-size:10.5px;color:var(--muted);letter-spacing:.05em}
+.detail .use{margin-top:8px;color:var(--ink-2);max-width:70ch}
+.detail ul{margin:12px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:7px}
+.detail li{border-top:1px solid var(--line);padding-top:7px;font-size:13px}
+.detail .rel{color:var(--accent);font-family:"GeistMonoLocal",ui-monospace,Menlo,monospace;font-feature-settings:normal;font-size:11.5px}
+.detail .ev{display:block;color:var(--muted);font-size:11.5px;line-height:1.45;margin-top:2px}
+.detail .empty{color:var(--muted);font-size:13px;margin-top:10px}
+
+section{margin-top:40px}
+.tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:11px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+@media (min-width:680px){table{min-width:640px}}
+th{text-align:left;background:var(--sunk);border-bottom:1px solid var(--line-2);padding:9px 12px;
+  font-family:"GeistMonoLocal",ui-monospace,Menlo,monospace;font-feature-settings:normal;
+  font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:500}
+td{padding:9px 12px;border-top:1px solid var(--line);vertical-align:top}
+footer{margin-top:52px;padding-top:16px;border-top:1px solid var(--line);
+  font-family:"GeistMonoLocal",ui-monospace,Menlo,monospace;font-feature-settings:normal;
+  font-size:11px;color:var(--muted);display:flex;gap:18px;flex-wrap:wrap;justify-content:space-between}
+@media (max-width:900px){.layers{grid-template-columns:repeat(2,minmax(0,1fr))}#wires{display:none}}
+@media (max-width:560px){.layers{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="mast">
+  <div class="eyebrow">RossLabs AI Toolkit</div>
+  <h1>The operating stack</h1>
+  <p class="asof mono">Snapshot as of <time datetime="2026-09-07">2026-09-07</time></p>
+  <p class="lede" id="lede"></p>
+  <div class="facts" id="facts"></div>
+</header>
+
+<div class="flowline" id="flowline"></div>
+
+<div class="controls">
+  <button class="btn" id="wireToggle" aria-pressed="false">connections: off</button>
+  <button class="btn" id="tkToggle" aria-pressed="false">toolkit plugins only</button>
+  <button class="btn" id="clearBtn">clear selection</button>
+  <span class="hint">Connections are off by default because 30 wires at once are unreadable. Select any component to pop out its detail and see only its links.</span>
+</div>
+
+<div id="board"><svg id="wires" aria-hidden="true"></svg><div class="layers" id="layers"></div></div>
+<div class="detail" id="detail"></div>
+
+<section>
+  <h2>Every recorded connection</h2>
+  <p class="lede" style="margin-bottom:12px">Each row carries the evidence string it was read from. A component with no row has no recorded connection, which is a gap in the record rather than a claim of independence.</p>
+  <div class="tblwrap"><table>
+    <thead><tr><th>From</th><th>Relation</th><th>To</th><th>When</th><th>Read from</th></tr></thead>
+    <tbody id="edgeRows"></tbody>
+  </table></div>
+</section>
+
+<footer>
+  <span>Generated by scripts/build_operating_stack.py &middot; do not hand-edit</span>
+  <span id="asof"></span>
+</footer>
+</div>
+
+<!--STACK-DATA-BEGIN-->
+<script type="application/json" id="stack-data">
+{
+ "@context": "https://schema.org",
+ "@type": "Dataset",
+ "name": "Tyrone Ross AI operating stack",
+ "description": "Layered inventory of the coding, model-routing and infrastructure stack, verified against live config files on 2026-09-07.",
+ "dateCreated": "2026-09-07",
+ "creator": {
+  "@type": "Person",
+  "name": "Tyrone Ross"
+ },
+ "verifiedAgainst": [
+  "/Users/tyroneross/dev/git-folder/rosslabs-agent-harness/.harness/models.json",
+  "/Users/tyroneross/dev/git-folder/atomize-ai/lib/config/llm-config.ts",
+  "/Users/tyroneross/dev/git-folder/build-loop/references/model-taxonomy.json",
+  "/Users/tyroneross/dev/git-folder/build-loop-memory/indexes/project-catalog.md",
+  "/Users/tyroneross/.claude/plugins/installed_plugins.json"
+ ],
+ "layers": [
+  {
+   "n": 1,
+   "name": "Application / Interface",
+   "axis": "where the user types",
+   "definition": "Where a request is typed. The human sits here; every layer to the right is reached through it.",
+   "members": [
+    "claude-code",
+    "codex",
+    "antigravity",
+    "ghostty",
+    "easy-terminal",
+    "cursor",
+    "windsurf",
+    "replit",
+    "lovable"
+   ]
+  },
+  {
+   "n": 2,
+   "name": "Tools",
+   "axis": "what enhances the application",
+   "definition": "Capabilities the application calls on to do a job better: check a change, map a dependency, sharpen a prompt, review a design. Invoked, never in charge.",
+   "members": [
+    "ibr",
+    "navgator",
+    "prompt-builder",
+    "codeguard",
+    "threat-modeler",
+    "persona-lab",
+    "mockup-gallery",
+    "pre-push-ci-gate",
+    "visual-test-suite",
+    "rosslabs-lsp",
+    "groundwork",
+    "omniparse",
+    "api-registry"
+   ]
+  },
+  {
+   "n": 3,
+   "name": "Orchestration",
+   "axis": "what decides and routes",
+   "definition": "Decides what work happens, in what order, and who owns it. Plans and routes; does not itself write code.",
+   "members": [
+    "build-loop",
+    "agent-rally-point",
+    "operations-center",
+    "ai-assistant-router",
+    "rosslabs-agent-harness",
+    "agent-rally-watcher",
+    "agent-doe-engine",
+    "local-smartz",
+    "stratagem"
+   ]
+  },
+  {
+   "n": 4,
+   "name": "Agent Memory",
+   "axis": "what persists across sessions",
+   "definition": "What every layer to the left reads at session start and writes at session end. Durable operating context, not storage.",
+   "members": [
+    "personal-llm-wiki",
+    "obsidian",
+    "build-loop-memory",
+    "build-loop-global-memory",
+    "bookmark",
+    "claude-auto-memory",
+    "research-plugin"
+   ]
+  },
+  {
+   "n": 5,
+   "name": "Infrastructure",
+   "axis": "what serves and hosts everything",
+   "definition": "What serves the models and hosts what gets built. Segmented into inference, database, middleware and app hosting.",
+   "segments": [
+    {
+     "name": "LLM / Inference",
+     "definition": "Serves the actual model. A tier or a named route resolves to exactly one of these.",
+     "members": [
+      "anthropic",
+      "openai-codex",
+      "openrouter",
+      "groq",
+      "ollama",
+      "mlx"
+     ]
+    },
+    {
+     "name": "Database",
+     "definition": "Where application data and vectors live.",
+     "members": [
+      "neon",
+      "supabase",
+      "cloudflare-r2"
+     ]
+    },
+    {
+     "name": "Middleware",
+     "definition": "Queues, caches and the connective tissue between services.",
+     "members": [
+      "bullmq",
+      "redis",
+      "pipedream-connect"
+     ]
+    },
+    {
+     "name": "App hosting",
+     "definition": "Where what gets built is built, shipped and served.",
+     "members": [
+      "vercel",
+      "railway",
+      "github-actions",
+      "xcode-testflight-transporter",
+      "orbstack",
+      "secrets-vault",
+      "tailscale"
+     ]
+    }
+   ],
+   "members": [
+    "anthropic",
+    "openai-codex",
+    "openrouter",
+    "groq",
+    "ollama",
+    "mlx",
+    "neon",
+    "supabase",
+    "cloudflare-r2",
+    "bullmq",
+    "redis",
+    "pipedream-connect",
+    "vercel",
+    "railway",
+    "github-actions",
+    "xcode-testflight-transporter",
+    "orbstack",
+    "secrets-vault",
+    "tailscale"
+   ]
+  }
+ ],
+ "tierLadder": {
+  "source": "build-loop/references/model-taxonomy.json schema 2.2.0",
+  "rungs": [
+   {
+    "tier": "T0",
+    "label": "experimental/restricted frontier",
+    "models": [
+     "mythos"
+    ],
+    "role": "experimental, restricted"
+   },
+   {
+    "tier": "T1",
+    "label": "ultra-frontier",
+    "models": [
+     "opus",
+     "fable",
+     "gpt-5.6-sol"
+    ],
+    "role": "judge, super-complex"
+   },
+   {
+    "tier": "T2",
+    "label": "frontier",
+    "models": [
+     "opus",
+     "gpt-5.5"
+    ],
+    "role": "orchestration default"
+   },
+   {
+    "tier": "T3",
+    "label": "balanced workhorse",
+    "models": [
+     "sonnet",
+     "gpt-5.6-terra",
+     "qwen3-coder-30b"
+    ],
+    "role": "execution"
+   },
+   {
+    "tier": "T4",
+    "label": "efficient near-frontier",
+    "models": [
+     "haiku",
+     "gpt-5.6-luna",
+     "gpt-5.4-mini"
+    ],
+    "role": "recognition, bounded"
+   },
+   {
+    "tier": "T5",
+    "label": "utility/nano/edge",
+    "models": [
+     "gpt-5.4-nano"
+    ],
+    "role": "utility"
+   },
+   {
+    "tier": "T-S",
+    "label": "specialist infrastructure",
+    "models": [
+     "text-embedding-3-large",
+     "text-embedding-3-small",
+     "omni-moderation",
+     "gpt-realtime",
+     "gpt-image-1"
+    ],
+    "role": "off-ladder specialist"
+   }
+  ]
+ },
+ "localModelsGB": {
+  "gpt-oss:120b": 65.29,
+  "qwen2.5-coder:32b-instruct-q5_K_M": 23.26,
+  "qwen3-coder:30b": 18.56,
+  "gemma4:26b": 17.99,
+  "devstral-small-2:24b": 15.18,
+  "gpt-oss:20b": 13.79,
+  "phi4:14b": 9.1,
+  "qwen3:8b-q4_K_M": 5.23,
+  "qwen2.5-coder:7b": 4.68,
+  "llama3.2:3b": 2.02,
+  "mlx-community/Llama-3.2-3B-Instruct-4bit": 2.0,
+  "tinyllama": 0.64
+ },
+ "harnessRoutes": {
+  "default": {
+   "model": "qwen3:8b-q4_K_M",
+   "provider": "Ollama",
+   "purpose": "Portable smoke baseline, kept small so first run never waits on a large pull"
+  },
+  "coding/read": {
+   "model": "qwen3-coder:30b",
+   "provider": "Ollama",
+   "purpose": "Top-evidenced local coder among pulled models"
+  },
+  "coding/write": {
+   "model": "qwen3-coder:30b",
+   "provider": "Ollama",
+   "purpose": "Top-evidenced local coder among pulled models"
+  },
+  "deepthink": {
+   "model": "claude-opus-4-8",
+   "provider": "Anthropic",
+   "purpose": "Deep reasoning"
+  },
+  "think": {
+   "model": "claude-sonnet-5",
+   "provider": "Anthropic",
+   "purpose": "General reasoning"
+  },
+  "value-think": {
+   "model": "deepseek/deepseek-v4-pro",
+   "provider": "OpenRouter",
+   "purpose": "Reasoning at a lower price point"
+  },
+  "code-cloud": {
+   "model": "moonshotai/kimi-k2.7-code",
+   "provider": "OpenRouter",
+   "purpose": "Cloud coding when local weights are not enough"
+  },
+  "code-repo": {
+   "model": "mistralai/devstral-2512",
+   "provider": "OpenRouter",
+   "purpose": "Repository-scale code work"
+  },
+  "code-read": {
+   "model": "qwen/qwen3-coder",
+   "provider": "OpenRouter",
+   "purpose": "Cloud code comprehension"
+  },
+  "long-context": {
+   "model": "google/gemini-3.1-pro-preview",
+   "provider": "OpenRouter",
+   "purpose": "Long-window reads"
+  },
+  "vision": {
+   "model": "qwen/qwen3-vl-235b-a22b-instruct",
+   "provider": "OpenRouter",
+   "purpose": "Image input"
+  },
+  "cheap": {
+   "model": "google/gemini-2.5-flash-lite",
+   "provider": "OpenRouter",
+   "purpose": "Low-cost lane, speed"
+  },
+  "cheap-flash": {
+   "model": "deepseek/deepseek-v4-flash",
+   "provider": "OpenRouter",
+   "purpose": "Low-cost lane, speed"
+  },
+  "cheap-think": {
+   "model": "z-ai/glm-4.7-flash",
+   "provider": "OpenRouter",
+   "purpose": "Low-cost lane, reasoning"
+  },
+  "cheap-reason": {
+   "model": "openai/gpt-oss-120b",
+   "provider": "OpenRouter",
+   "purpose": "Low-cost lane, reasoning"
+  },
+  "extract": {
+   "model": "google/gemma-4-26b-a4b-it",
+   "provider": "OpenRouter",
+   "purpose": "Structured extraction"
+  },
+  "experiment": {
+   "model": "nvidia/nemotron-3-super-120b-a12b",
+   "provider": "OpenRouter",
+   "purpose": "Unpinned lane for trying a new model without touching the others"
+  },
+  "gemma": {
+   "model": "google/gemma-4-31b-it",
+   "provider": "OpenRouter",
+   "purpose": "Named lane for head-to-head comparison"
+  },
+  "glm": {
+   "model": "z-ai/glm-5.2",
+   "provider": "OpenRouter",
+   "purpose": "Named lane for head-to-head comparison"
+  },
+  "minimax": {
+   "model": "minimax/minimax-m3",
+   "provider": "OpenRouter",
+   "purpose": "Named lane for head-to-head comparison"
+  },
+  "or-think": {
+   "model": "qwen/qwen3.7-plus",
+   "provider": "OpenRouter",
+   "purpose": "Named lane for head-to-head comparison"
+  }
+ },
+ "atomizeModelCost": [
+  {
+   "tier": "FAST/GENERAL",
+   "model": "openai/gpt-oss-20b",
+   "shareOfOps": "60%",
+   "usdPer1MIn": 0.075,
+   "usdPer1MOut": 0.3,
+   "latencyMs": "80-200 ms",
+   "work": "Intent classification, query expansion, simple summaries, extraction fallback"
+  },
+  {
+   "tier": "MEDIUM",
+   "model": "openai/gpt-oss-120b",
+   "shareOfOps": "30%",
+   "usdPer1MIn": 0.15,
+   "usdPer1MOut": 0.6,
+   "latencyMs": "200-500 ms",
+   "work": "Ranking and comparison synthesis, structured extraction"
+  },
+  {
+   "tier": "POWERFUL",
+   "model": "openai/gpt-oss-120b",
+   "shareOfOps": "10%",
+   "usdPer1MIn": 0.15,
+   "usdPer1MOut": 0.6,
+   "note": "same model as MEDIUM; the tier is a routing signal, not a bigger model",
+   "latencyMs": "400-800 ms",
+   "work": "Trend analysis, multi-step reasoning, reranking"
+  },
+  {
+   "tier": "OpenAI GENERAL",
+   "model": "gpt-5.6-luna",
+   "usdPer1MIn": 0.2,
+   "usdPer1MOut": 1.2,
+   "latencyMs": "200-500 ms",
+   "work": "Pyramid summaries, entity and relationship extraction, default suggestions"
+  },
+  {
+   "tier": "EMBEDDINGS",
+   "model": "text-embedding-3-small",
+   "dimensions": 1536,
+   "usdPer1MIn": 0.02,
+   "version": "v1",
+   "latencyMs": "100-200 ms",
+   "work": "1536 dims into pgvector, stamped EMBEDDING_VERSION v1"
+  }
+ ],
+ "inventory": [
+  {
+   "category": "Coding agent",
+   "name": "Claude Code",
+   "status": "current",
+   "use": "Primary coding-agent environment and plugin host.",
+   "id": "claude-code",
+   "kind": "vendor",
+   "default": true
+  },
+  {
+   "category": "Coding agent",
+   "name": "Codex",
+   "status": "current",
+   "use": "Second agent environment: independent review and implementation.",
+   "id": "codex",
+   "kind": "vendor",
+   "default": true
+  },
+  {
+   "category": "Coding agent",
+   "name": "Cursor",
+   "status": "historical",
+   "use": "Prior coding-assistant environment.",
+   "id": "cursor",
+   "kind": "vendor"
+  },
+  {
+   "category": "Coding agent",
+   "name": "Windsurf",
+   "status": "historical",
+   "use": "Prior coding-assistant environment.",
+   "id": "windsurf",
+   "kind": "vendor"
+  },
+  {
+   "category": "Coding agent",
+   "name": "Antigravity",
+   "status": "current",
+   "use": "Coding-agent environment Tyrone uses alongside Claude Code and Codex.",
+   "id": "antigravity",
+   "kind": "vendor"
+  },
+  {
+   "category": "Coding agent",
+   "name": "Replit",
+   "status": "historical",
+   "use": "Earlier full-stack prototypes; migration path retained.",
+   "id": "replit",
+   "kind": "vendor"
+  },
+  {
+   "category": "Coding agent",
+   "name": "Lovable",
+   "status": "historical",
+   "use": "Earlier UX and web prototypes.",
+   "id": "lovable",
+   "kind": "vendor"
+  },
+  {
+   "category": "Terminal",
+   "name": "Ghostty",
+   "status": "added-by-audit",
+   "use": "Current terminal emulator.",
+   "id": "ghostty",
+   "kind": "vendor"
+  },
+  {
+   "category": "Terminal",
+   "name": "Easy Terminal",
+   "status": "added-by-audit",
+   "use": "Own Mac app in build: Codex and Claude in one window.",
+   "id": "easy-terminal",
+   "kind": "own-product"
+  },
+  {
+   "category": "Terminal",
+   "name": "ptyd",
+   "status": "added-by-audit",
+   "use": "Apache-2.0 PTY and agent daemon behind Easy Terminal.",
+   "id": "ptyd",
+   "kind": "own-product"
+  },
+  {
+   "category": "Terminal",
+   "name": "screen-extractor",
+   "status": "added-by-audit",
+   "use": "VT grid emulator used by Easy Terminal.",
+   "id": "screen-extractor",
+   "kind": "own-product"
+  },
+  {
+   "category": "Orchestration",
+   "name": "Build Loop",
+   "status": "current",
+   "use": "Assess to Learn build loop; v0.44.0 installed.",
+   "id": "build-loop",
+   "kind": "own-tool",
+   "scope": "build",
+   "default": true
+  },
+  {
+   "category": "Orchestration",
+   "name": "Agent Rally Point",
+   "status": "current",
+   "use": "Cross-agent claims, handoffs and evidence in a shared checkout.",
+   "id": "agent-rally-point",
+   "kind": "own-tool",
+   "scope": "session-peer",
+   "default": true
+  },
+  {
+   "category": "Orchestration",
+   "name": "Operations Center",
+   "status": "added-by-audit",
+   "use": "Fleet task queue; 49 open tasks at audit time.",
+   "id": "operations-center",
+   "kind": "own-tool",
+   "scope": "fleet"
+  },
+  {
+   "category": "Orchestration",
+   "name": "AI Assistant router",
+   "status": "current",
+   "use": "Classifies each prompt by operation and artifact, then dispatches.",
+   "id": "ai-assistant-router",
+   "kind": "own-tool",
+   "scope": "prompt"
+  },
+  {
+   "category": "Orchestration",
+   "name": "RossLabs Agent Harness",
+   "status": "current",
+   "use": "Rust harness routing local and cloud models through deterministic gates.",
+   "id": "rosslabs-agent-harness",
+   "kind": "own-tool",
+   "scope": "model-call"
+  },
+  {
+   "category": "Orchestration",
+   "name": "Agent Rally Watcher",
+   "status": "added-by-audit",
+   "use": "Push-based daemon companion to Rally Point.",
+   "id": "agent-rally-watcher",
+   "kind": "own-tool",
+   "scope": "session-peer"
+  },
+  {
+   "category": "Orchestration",
+   "name": "agent-doe-engine",
+   "status": "added-by-audit",
+   "use": "Design-of-experiments optimizer: many variables in one pass.",
+   "id": "agent-doe-engine",
+   "kind": "own-tool",
+   "scope": "build"
+  },
+  {
+   "category": "Orchestration",
+   "name": "Local Smartz",
+   "status": "current",
+   "use": "Local-first strategy-research agent. Also a shipped product.",
+   "id": "local-smartz",
+   "kind": "own-product",
+   "scope": "own-product"
+  },
+  {
+   "category": "Orchestration",
+   "name": "Stratagem",
+   "status": "current",
+   "use": "Multi-agent strategy team. Also a shipped product.",
+   "id": "stratagem",
+   "kind": "own-product",
+   "scope": "own-product"
+  },
+  {
+   "category": "Verification",
+   "name": "IBR",
+   "status": "current",
+   "use": "UI behavior, visual implementation and interaction quality.",
+   "id": "ibr",
+   "kind": "own-tool",
+   "default": true
+  },
+  {
+   "category": "Verification",
+   "name": "NavGator",
+   "status": "current",
+   "use": "Component and connection map; blast radius before a change.",
+   "id": "navgator",
+   "kind": "own-tool",
+   "default": true
+  },
+  {
+   "category": "Verification",
+   "name": "CodeGuard",
+   "status": "added-by-audit",
+   "use": "Security review plugin, v1.4.0.",
+   "id": "codeguard",
+   "kind": "own-tool"
+  },
+  {
+   "category": "Verification",
+   "name": "threat-modeler",
+   "status": "added-by-audit",
+   "use": "STRIDE x OWASP x MITRE ATLAS for agentic systems.",
+   "id": "threat-modeler",
+   "kind": "own-tool"
+  },
+  {
+   "category": "Verification",
+   "name": "Persona Lab",
+   "status": "current",
+   "use": "Persona generation and agent/product UX evaluation.",
+   "id": "persona-lab",
+   "kind": "own-tool"
+  },
+  {
+   "category": "Verification",
+   "name": "Mockup Gallery",
+   "status": "current",
+   "use": "Browse, rate and select HTML mockups.",
+   "id": "mockup-gallery",
+   "kind": "own-tool"
+  },
+  {
+   "category": "Verification",
+   "name": "pre-push CI gate",
+   "status": "added-by-audit",
+   "use": "Preflights workflows and test validity before a push reaches GitHub.",
+   "id": "pre-push-ci-gate",
+   "kind": "own-tool"
+  },
+  {
+   "category": "Verification",
+   "name": "visual-test-suite",
+   "status": "added-by-audit",
+   "use": "URL-based visual regression via Playwright.",
+   "id": "visual-test-suite",
+   "kind": "own-tool"
+  },
+  {
+   "category": "Verification",
+   "name": "rosslabs-lsp",
+   "status": "added-by-audit",
+   "use": "ty, Swift, Rust and TypeScript language servers as MCP.",
+   "id": "rosslabs-lsp",
+   "kind": "own-tool"
+  },
+  {
+   "category": "Model provider",
+   "name": "Anthropic",
+   "status": "current",
+   "use": "Fable, Opus, Sonnet, Haiku across judge, orchestration, execution, recognition.",
+   "id": "anthropic",
+   "kind": "vendor",
+   "default": true
+  },
+  {
+   "category": "Model provider",
+   "name": "OpenAI / Codex",
+   "status": "current",
+   "use": "Sol, Terra, Luna as the Codex-side lanes; gpt-5.6-luna and embeddings in Atomize.",
+   "id": "openai-codex",
+   "kind": "vendor",
+   "default": true
+  },
+  {
+   "category": "Model provider",
+   "name": "OpenRouter",
+   "status": "added-by-audit",
+   "use": "Thirteen models across 13 of the harness's 21 named routes.",
+   "id": "openrouter",
+   "kind": "vendor"
+  },
+  {
+   "category": "Model provider",
+   "name": "Groq",
+   "status": "current",
+   "use": "gpt-oss-20b and gpt-oss-120b for the Atomize search pipeline.",
+   "id": "groq",
+   "kind": "vendor"
+  },
+  {
+   "category": "Model provider",
+   "name": "Ollama",
+   "status": "current",
+   "use": "Twelve local models, 0.6 GB to 65 GB.",
+   "id": "ollama",
+   "kind": "vendor"
+  },
+  {
+   "category": "Model provider",
+   "name": "MLX",
+   "status": "current",
+   "use": "Apple-Silicon local inference; Llama-3.2-3B-4bit registered.",
+   "id": "mlx",
+   "kind": "vendor"
+  },
+  {
+   "category": "Data",
+   "name": "Neon",
+   "status": "current",
+   "use": "Recorded default Postgres for new Next.js work.",
+   "id": "neon",
+   "kind": "vendor",
+   "default": true
+  },
+  {
+   "category": "Data",
+   "name": "Supabase",
+   "status": "current",
+   "use": "Postgres and pgvector for existing apps; Atomize runs here.",
+   "id": "supabase",
+   "kind": "vendor"
+  },
+  {
+   "category": "Data",
+   "name": "Redis",
+   "status": "current",
+   "use": "Backs BullMQ queues and caches shared work state in Atomize.",
+   "id": "redis",
+   "kind": "vendor"
+  },
+  {
+   "category": "Data",
+   "name": "BullMQ",
+   "status": "current",
+   "use": "Extraction, embedding, summaries, knowledge graph and clustering jobs.",
+   "id": "bullmq",
+   "kind": "vendor"
+  },
+  {
+   "category": "Data",
+   "name": "Cloudflare R2",
+   "status": "current",
+   "use": "Default object storage where a separate service boundary is wanted.",
+   "id": "cloudflare-r2",
+   "kind": "vendor"
+  },
+  {
+   "category": "Delivery",
+   "name": "Vercel",
+   "status": "current",
+   "use": "UI, previews, edge endpoints and cron for Atomize and rosslabs.ai.",
+   "id": "vercel",
+   "kind": "vendor",
+   "default": true
+  },
+  {
+   "category": "Delivery",
+   "name": "Railway",
+   "status": "current",
+   "use": "Long-lived Atomize workers outside the Vercel execution window.",
+   "id": "railway",
+   "kind": "vendor"
+  },
+  {
+   "category": "Delivery",
+   "name": "GitHub + Actions",
+   "status": "added-by-audit",
+   "use": "Origin for every repo; tag-triggered release and TestFlight workflows.",
+   "id": "github-actions",
+   "kind": "vendor",
+   "default": true
+  },
+  {
+   "category": "Delivery",
+   "name": "Xcode / TestFlight / Transporter",
+   "status": "added-by-audit",
+   "use": "Builds and ships three iOS apps and six Mac apps.",
+   "id": "xcode-testflight-transporter",
+   "kind": "vendor"
+  },
+  {
+   "category": "Delivery",
+   "name": "OrbStack",
+   "status": "added-by-audit",
+   "use": "Container runtime.",
+   "id": "orbstack",
+   "kind": "vendor"
+  },
+  {
+   "category": "Delivery",
+   "name": "Resend",
+   "status": "current",
+   "use": "Recommendation and contact email from its verified sender domain.",
+   "id": "resend",
+   "kind": "vendor"
+  },
+  {
+   "category": "Delivery",
+   "name": "Brevo",
+   "status": "current",
+   "use": "Authentication and magic-link email.",
+   "id": "brevo",
+   "kind": "vendor"
+  },
+  {
+   "category": "Observability",
+   "name": "LangSmith",
+   "status": "current",
+   "use": "LLM call tracing and cost/quality diagnosis in Atomize.",
+   "id": "langsmith",
+   "kind": "vendor"
+  },
+  {
+   "category": "Observability",
+   "name": "OpenTelemetry",
+   "status": "current",
+   "use": "OTLP export from Atomize and the harness.",
+   "id": "opentelemetry",
+   "kind": "vendor"
+  },
+  {
+   "category": "Observability",
+   "name": "Sentry",
+   "status": "current",
+   "use": "Runtime error capture in Atomize.",
+   "id": "sentry",
+   "kind": "vendor"
+  },
+  {
+   "category": "Frameworks",
+   "name": "LangChain",
+   "status": "current",
+   "use": "Composes LLM calls, structured output, prompts and retrieval.",
+   "id": "langchain",
+   "kind": "vendor"
+  },
+  {
+   "category": "Frameworks",
+   "name": "LangGraph / DeepAgents",
+   "status": "current",
+   "use": "Multi-step local research and agent workflows in Local Smartz.",
+   "id": "langgraph-deepagents",
+   "kind": "vendor"
+  },
+  {
+   "category": "Frameworks",
+   "name": "Next.js 16",
+   "status": "added-by-audit",
+   "use": "Stated default web framework for new work.",
+   "id": "next-js-16",
+   "kind": "vendor"
+  },
+  {
+   "category": "Integration",
+   "name": "Pipedream Connect",
+   "status": "current",
+   "use": "Governed remote reads across Gmail, Calendar, Calendly and chat.",
+   "id": "pipedream-connect",
+   "kind": "vendor"
+  },
+  {
+   "category": "Integration",
+   "name": "Composio",
+   "status": "tested",
+   "use": "Connector coverage and OAuth comparison; not the default.",
+   "id": "composio",
+   "kind": "vendor"
+  },
+  {
+   "category": "Integration",
+   "name": "MCP servers",
+   "status": "added-by-audit",
+   "use": "Calendly, Slack, Granola, Superhuman, Wispr Flow, Cloudflare, Context7, Codex, Operations Center, Spectra, rosslabs-lsp.",
+   "id": "mcp-servers",
+   "kind": "vendor"
+  },
+  {
+   "category": "Knowledge",
+   "name": "Personal LLM Wiki",
+   "status": "current",
+   "use": "Evidence-backed personal knowledge and durable operating context.",
+   "id": "personal-llm-wiki",
+   "kind": "own-product",
+   "default": true
+  },
+  {
+   "category": "Knowledge",
+   "name": "Obsidian",
+   "status": "current",
+   "use": "Human editing and navigation of the knowledge base.",
+   "id": "obsidian",
+   "kind": "vendor"
+  },
+  {
+   "category": "Knowledge",
+   "name": "build-loop-memory",
+   "status": "added-by-audit",
+   "use": "Per-project episodic decisions and lessons.",
+   "id": "build-loop-memory",
+   "kind": "own-tool"
+  },
+  {
+   "category": "Knowledge",
+   "name": "build-loop-global-memory",
+   "status": "added-by-audit",
+   "use": "Cross-project lessons and the constitution.",
+   "id": "build-loop-global-memory",
+   "kind": "own-tool"
+  },
+  {
+   "category": "Knowledge",
+   "name": "Claude auto-memory",
+   "status": "added-by-audit",
+   "use": "Per-cwd memory index loaded at session start.",
+   "id": "claude-auto-memory",
+   "kind": "vendor"
+  },
+  {
+   "category": "Knowledge",
+   "name": "Bookmark",
+   "status": "current",
+   "use": "Task state, decisions and file context across sessions.",
+   "id": "bookmark",
+   "kind": "own-tool"
+  },
+  {
+   "category": "Knowledge",
+   "name": "api-registry",
+   "status": "added-by-audit",
+   "use": "Local cache of authoritative API docs with a 7-day freshness contract.",
+   "id": "api-registry",
+   "kind": "own-tool"
+  },
+  {
+   "category": "Knowledge",
+   "name": "Research plugin",
+   "status": "current",
+   "use": "Source-backed investigation with FTS5 and source scoring.",
+   "id": "research-plugin",
+   "kind": "own-tool"
+  },
+  {
+   "category": "Knowledge",
+   "name": "Omniparse",
+   "status": "current",
+   "use": "Excel, PowerPoint, PDF and code into LLM-readable structure.",
+   "id": "omniparse",
+   "kind": "own-tool"
+  },
+  {
+   "category": "Knowledge",
+   "name": "obsidian-vault-search",
+   "status": "added-by-audit",
+   "use": "Own Obsidian plugin for vault retrieval.",
+   "id": "obsidian-vault-search",
+   "kind": "own-tool"
+  },
+  {
+   "category": "Knowledge",
+   "name": "Notion",
+   "status": "added-by-audit",
+   "use": "Installed. Role relative to Obsidian not recorded.",
+   "id": "notion",
+   "kind": "vendor"
+  },
+  {
+   "category": "Design & product",
+   "name": "Groundwork",
+   "status": "current",
+   "use": "Idea to structured product and design plan.",
+   "id": "groundwork",
+   "kind": "own-tool"
+  },
+  {
+   "category": "Design & product",
+   "name": "Prompt Builder",
+   "status": "current",
+   "use": "Classify, diagnose, rewrite and score prompts by model tier.",
+   "id": "prompt-builder",
+   "kind": "own-tool"
+  },
+  {
+   "category": "Design & product",
+   "name": "Pyramid Principle",
+   "status": "added-by-audit",
+   "use": "Minto structure as composable skills.",
+   "id": "pyramid-principle",
+   "kind": "own-tool"
+  },
+  {
+   "category": "Design & product",
+   "name": "tyrone-writing-system",
+   "status": "added-by-audit",
+   "use": "Own voice and style plugin.",
+   "id": "tyrone-writing-system",
+   "kind": "own-tool"
+  },
+  {
+   "category": "Design & product",
+   "name": "style-calibrator",
+   "status": "added-by-audit",
+   "use": "Turns a voice calibration pack into a clickable app.",
+   "id": "style-calibrator",
+   "kind": "own-tool"
+  },
+  {
+   "category": "Design & product",
+   "name": "ui-guidance",
+   "status": "added-by-audit",
+   "use": "Cross-medium UI/UX guidance library.",
+   "id": "ui-guidance",
+   "kind": "own-tool"
+  },
+  {
+   "category": "Design & product",
+   "name": "Figma-free stack: Canva, Framer",
+   "status": "added-by-audit",
+   "use": "Installed design surfaces.",
+   "id": "figma-free-stack-canva-framer",
+   "kind": "vendor"
+  },
+  {
+   "category": "Capture & media",
+   "name": "Granola",
+   "status": "current",
+   "use": "Meeting transcripts and notes.",
+   "id": "granola",
+   "kind": "vendor"
+  },
+  {
+   "category": "Capture & media",
+   "name": "Wispr Flow",
+   "status": "current",
+   "use": "Voice-to-text capture.",
+   "id": "wispr-flow",
+   "kind": "vendor"
+  },
+  {
+   "category": "Capture & media",
+   "name": "Spectra",
+   "status": "added-by-audit",
+   "use": "Own Mac app: clean screenshots and guided marketing sequences.",
+   "id": "spectra",
+   "kind": "own-product"
+  },
+  {
+   "category": "Capture & media",
+   "name": "Showcase",
+   "status": "historical",
+   "use": "Deprecated 2026-04-21, superseded by Spectra.",
+   "id": "showcase",
+   "kind": "own-tool"
+  },
+  {
+   "category": "Capture & media",
+   "name": "Descript / Loom / Snagit",
+   "status": "added-by-audit",
+   "use": "Installed recording and capture tools.",
+   "id": "descript-loom-snagit",
+   "kind": "vendor"
+  },
+  {
+   "category": "Security",
+   "name": "Secrets Vault",
+   "status": "added-by-audit",
+   "use": "Own Mac app: encrypted local .env vault with a loopback API.",
+   "id": "secrets-vault",
+   "kind": "own-product"
+  },
+  {
+   "category": "Security",
+   "name": "Tailscale",
+   "status": "added-by-audit",
+   "use": "Private network.",
+   "id": "tailscale",
+   "kind": "vendor"
+  },
+  {
+   "category": "Security",
+   "name": "Little Snitch",
+   "status": "added-by-audit",
+   "use": "Outbound connection control.",
+   "id": "little-snitch",
+   "kind": "vendor"
+  },
+  {
+   "category": "General AI",
+   "name": "ChatGPT",
+   "status": "current",
+   "use": "General assistance and research synthesis.",
+   "id": "chatgpt",
+   "kind": "vendor"
+  },
+  {
+   "category": "General AI",
+   "name": "Perplexity",
+   "status": "current",
+   "use": "Web research, technical comparison and source discovery.",
+   "id": "perplexity",
+   "kind": "vendor"
+  },
+  {
+   "category": "General AI",
+   "name": "Comet",
+   "status": "added-by-audit",
+   "use": "Perplexity's agentic browser, installed.",
+   "id": "comet",
+   "kind": "vendor"
+  },
+  {
+   "category": "General AI",
+   "name": "Manus",
+   "status": "tested",
+   "use": "Tried for AI research. No captured activity or outcome evidence.",
+   "id": "manus",
+   "kind": "vendor"
+  },
+  {
+   "category": "General AI",
+   "name": "Claude desktop",
+   "status": "added-by-audit",
+   "use": "Installed alongside Claude Code.",
+   "id": "claude-desktop",
+   "kind": "vendor"
+  },
+  {
+   "category": "Own products",
+   "name": "Atomize AI",
+   "status": "current",
+   "use": "AI news aggregator; the one app with real traffic and a cost surface.",
+   "id": "atomize-ai",
+   "kind": "own-product"
+  },
+  {
+   "category": "Own products",
+   "name": "Prompt Test Lab",
+   "status": "current",
+   "use": "Shipped web app for A/B testing prompts. Not internal tooling.",
+   "id": "prompt-test-lab",
+   "kind": "own-product"
+  },
+  {
+   "category": "Own products",
+   "name": "prompt-model-benchmark-lab",
+   "status": "current",
+   "use": "Shipped web app comparing prompts and models head to head.",
+   "id": "prompt-model-benchmark-lab",
+   "kind": "own-product"
+  },
+  {
+   "category": "Own products",
+   "name": "Agent Astronomer",
+   "status": "current",
+   "use": "Menu-bar app and MCP tools to introspect installed skills and plugins.",
+   "id": "agent-astronomer",
+   "kind": "own-product"
+  },
+  {
+   "category": "Own products",
+   "name": "rosslabs.ai",
+   "status": "current",
+   "use": "Astro portfolio and blog with Keystatic CMS.",
+   "id": "rosslabs-ai",
+   "kind": "own-product"
+  },
+  {
+   "category": "Own products",
+   "name": "replit-migrate",
+   "status": "added-by-audit",
+   "use": "Migrates Replit apps to Vercel or native; used on own repos.",
+   "id": "replit-migrate",
+   "kind": "own-tool"
+  },
+  {
+   "category": "Own products",
+   "name": "docx-builder / pptx-builder",
+   "status": "added-by-audit",
+   "use": "Production Word and PowerPoint generators.",
+   "id": "docx-builder-pptx-builder",
+   "kind": "own-tool"
+  },
+  {
+   "category": "Own products",
+   "name": "claude-code-debugger",
+   "status": "added-by-audit",
+   "use": "Debugging assistant with a pattern memory system.",
+   "id": "claude-code-debugger",
+   "kind": "own-tool"
+  }
+ ],
+ "edges": [
+  {
+   "from": "claude-code",
+   "to": "build-loop",
+   "rel": "hosts",
+   "evidence": "Claude Code row: 'Primary coding-agent environment and plugin host.'; build-loop v0.44.0 installed as a plugin",
+   "status": "current"
+  },
+  {
+   "from": "claude-code",
+   "to": "agent-rally-point",
+   "rel": "hosts",
+   "evidence": "Rally Point ships as a Claude Code plugin and CLI",
+   "status": "current"
+  },
+  {
+   "from": "operations-center",
+   "to": "build-loop",
+   "rel": "dispatches",
+   "evidence": "Audit finding: 'the fleet-direction layer that sits above Build Loop and Rally Point'",
+   "status": "current"
+  },
+  {
+   "from": "operations-center",
+   "to": "agent-rally-point",
+   "rel": "dispatches",
+   "evidence": "Same audit finding",
+   "status": "current"
+  },
+  {
+   "from": "agent-rally-watcher",
+   "to": "agent-rally-point",
+   "rel": "companion-of",
+   "evidence": "'Push-based daemon companion to Rally Point.'",
+   "status": "current"
+  },
+  {
+   "from": "ai-assistant-router",
+   "to": "build-loop",
+   "rel": "dispatches",
+   "evidence": "using-assistant/SKILL.md routes build work to build-loop; verified in the router skill this session",
+   "status": "current"
+  },
+  {
+   "from": "build-loop",
+   "to": "prompt-builder",
+   "rel": "dispatches",
+   "evidence": "build-loop capability-routing table names prompt-builder as a routed accelerator",
+   "status": "current"
+  },
+  {
+   "from": "build-loop",
+   "to": "navgator",
+   "rel": "verifies-with",
+   "evidence": "build-loop's architecture skills are provenance-tracked as sourced from NavGator",
+   "status": "current"
+  },
+  {
+   "from": "build-loop",
+   "to": "ibr",
+   "rel": "verifies-with",
+   "evidence": "capability-routing binds runtime-parity-verification to IBR scan_macos / native-ax-driver on macOS",
+   "when": "Phase 4 Review-B on any UI target",
+   "status": "current"
+  },
+  {
+   "from": "build-loop",
+   "to": "build-loop-memory",
+   "rel": "writes",
+   "evidence": "'Per-project episodic decisions and lessons.' written at Review-G",
+   "status": "current"
+  },
+  {
+   "from": "build-loop",
+   "to": "build-loop-global-memory",
+   "rel": "writes",
+   "evidence": "'Cross-project lessons and the constitution.'",
+   "status": "current"
+  },
+  {
+   "from": "rosslabs-agent-harness",
+   "to": "ollama",
+   "rel": "routes-model-via",
+   "evidence": "harnessRoutes: default, coding/read, coding/write all resolve to Ollama models",
+   "status": "current"
+  },
+  {
+   "from": "rosslabs-agent-harness",
+   "to": "openrouter",
+   "rel": "routes-model-via",
+   "evidence": "13 of 21 named routes resolve through OpenRouter",
+   "status": "current"
+  },
+  {
+   "from": "rosslabs-agent-harness",
+   "to": "anthropic",
+   "rel": "routes-model-via",
+   "evidence": "routes deepthink -> claude-opus-4-8, think -> claude-sonnet-5",
+   "status": "current"
+  },
+  {
+   "from": "pre-push-ci-gate",
+   "to": "github-actions",
+   "rel": "verifies-with",
+   "evidence": "'Preflights workflows and test validity before a push reaches GitHub.'",
+   "when": "before any push to a repo with Actions",
+   "status": "current"
+  },
+  {
+   "from": "easy-terminal",
+   "to": "claude-code",
+   "rel": "hosts",
+   "evidence": "'Codex and Claude in one window.'",
+   "status": "building"
+  },
+  {
+   "from": "easy-terminal",
+   "to": "codex",
+   "rel": "hosts",
+   "evidence": "'Codex and Claude in one window.'",
+   "status": "building"
+  },
+  {
+   "from": "ptyd",
+   "to": "easy-terminal",
+   "rel": "backed-by",
+   "evidence": "'Apache-2.0 PTY and agent daemon behind Easy Terminal.'",
+   "status": "building"
+  },
+  {
+   "from": "atomize-ai",
+   "to": "groq",
+   "rel": "routes-model-via",
+   "evidence": "gpt-oss-20b and gpt-oss-120b serve the Atomize search pipeline",
+   "status": "current"
+  },
+  {
+   "from": "atomize-ai",
+   "to": "supabase",
+   "rel": "backed-by",
+   "evidence": "'Postgres and pgvector for existing apps; Atomize runs here.'",
+   "status": "current"
+  },
+  {
+   "from": "atomize-ai",
+   "to": "vercel",
+   "rel": "ships-to",
+   "evidence": "'UI, previews, edge endpoints and cron for Atomize and rosslabs.ai.'",
+   "status": "current"
+  },
+  {
+   "from": "atomize-ai",
+   "to": "railway",
+   "rel": "ships-to",
+   "evidence": "'Long-lived Atomize workers outside the Vercel execution window.'",
+   "status": "current"
+  },
+  {
+   "from": "bullmq",
+   "to": "redis",
+   "rel": "backed-by",
+   "evidence": "'Backs BullMQ queues and caches shared work state in Atomize.'",
+   "status": "current"
+  },
+  {
+   "from": "spectra",
+   "to": "showcase",
+   "rel": "supersedes",
+   "evidence": "'Deprecated 2026-04-21, superseded by Spectra.'",
+   "status": "historical"
+  },
+  {
+   "from": "claude-code",
+   "to": "claude-auto-memory",
+   "rel": "reads",
+   "evidence": "'Per-cwd memory index loaded at session start.'",
+   "when": "session start",
+   "status": "current"
+  },
+  {
+   "from": "claude-code",
+   "to": "bookmark",
+   "rel": "reads",
+   "evidence": "'Task state, decisions and file context across sessions.'",
+   "when": "session start",
+   "status": "current"
+  },
+  {
+   "from": "claude-code",
+   "to": "personal-llm-wiki",
+   "rel": "reads",
+   "evidence": "'Evidence-backed personal knowledge and durable operating context.'",
+   "status": "current"
+  },
+  {
+   "from": "codex",
+   "to": "claude-code",
+   "rel": "verifies-with",
+   "evidence": "'Second agent environment: independent review and implementation.'",
+   "status": "current"
+  },
+  {
+   "from": "obsidian",
+   "to": "personal-llm-wiki",
+   "rel": "reads",
+   "evidence": "'Human editing and navigation of the knowledge base.'",
+   "status": "current"
+  },
+  {
+   "from": "api-registry",
+   "to": "claude-code",
+   "rel": "reads",
+   "evidence": "'Local cache of authoritative API docs with a 7-day freshness contract.'",
+   "status": "current"
+  }
+ ],
+ "useCases": [
+  {
+   "trigger": "About to change code and need to know what else breaks",
+   "tool": "navgator",
+   "evidence": "'Map system components, connections, and change impact before implementation.'",
+   "insteadOf": [
+    {
+     "tool": "ibr",
+     "because": "IBR checks the rendered UI, not the dependency graph"
+    }
+   ]
+  },
+  {
+   "trigger": "Changed a UI and need to confirm it behaves in a browser",
+   "tool": "ibr",
+   "evidence": "'UI behavior, visual implementation and interaction quality.'",
+   "insteadOf": [
+    {
+     "tool": "visual-test-suite",
+     "because": "that is regression across URLs, not one build's behaviour"
+    }
+   ]
+  },
+  {
+   "trigger": "Have several HTML mockups and need to pick one",
+   "tool": "mockup-gallery",
+   "evidence": "'Browse, rate and select HTML mockups.'"
+  },
+  {
+   "trigger": "About to push to a repo with GitHub Actions",
+   "tool": "pre-push-ci-gate",
+   "evidence": "'Preflights workflows and test validity before a push reaches GitHub.'"
+  },
+  {
+   "trigger": "Multi-step code change in one repo",
+   "tool": "build-loop",
+   "evidence": "'Assess to Learn build loop; v0.44.0 installed.'",
+   "insteadOf": [
+    {
+     "tool": "ai-assistant-router",
+     "because": "the router classifies and dispatches one prompt; it does not run a build"
+    }
+   ]
+  },
+  {
+   "trigger": "Another agent is active in the same checkout",
+   "tool": "agent-rally-point",
+   "evidence": "'Cross-agent claims, handoffs and evidence in a shared checkout.'",
+   "insteadOf": [
+    {
+     "tool": "operations-center",
+     "because": "Operations Center is the cross-repo queue; Rally is the per-checkout claim surface"
+    }
+   ]
+  },
+  {
+   "trigger": "Need a model call with no API cost, or data staying on the machine",
+   "tool": "rosslabs-agent-harness",
+   "evidence": "harnessRoutes default and coding/write both resolve to local Ollama models"
+  },
+  {
+   "trigger": "Need to audit or judge super-complex work",
+   "tool": "anthropic",
+   "evidence": "Tier ladder T1 role: judge, super-complex"
+  },
+  {
+   "trigger": "Need a diff reviewed for security, or a threat model for an agentic system",
+   "tool": "codeguard",
+   "evidence": "'Security review plugin, v1.4.0.' / threat-modeler: STRIDE x OWASP x MITRE ATLAS"
+  },
+  {
+   "trigger": "Need an API signature verified before writing code",
+   "tool": "api-registry",
+   "evidence": "'Local cache of authoritative API docs with a 7-day freshness contract.'"
+  },
+  {
+   "trigger": "Need a screenshot or guided marketing sequence of a Mac app",
+   "tool": "spectra",
+   "evidence": "'Own Mac app: clean screenshots and guided marketing sequences.'",
+   "insteadOf": [
+    {
+     "tool": "showcase",
+     "because": "deprecated 2026-04-21 and superseded by Spectra"
+    }
+   ]
+  },
+  {
+   "trigger": "Need to optimise one metric across several variables at once",
+   "tool": "agent-doe-engine",
+   "evidence": "'Design-of-experiments optimizer: many variables in one pass.'"
+  }
+ ],
+ "flow": "left to right: the user types at Application, Tools assist, Orchestration decides and routes, Agent Memory persists across sessions, Infrastructure serves the models and hosts what is built",
+ "toolkitPlugins": [
+  "agent-astronomer",
+  "agent-builder",
+  "agent-rally-point",
+  "api-registry",
+  "bookmark",
+  "build-loop",
+  "claude-code-debugger",
+  "ibr",
+  "mockup-gallery",
+  "navgator",
+  "persona-lab",
+  "prompt-builder",
+  "pyramid-principle",
+  "replit-migrate",
+  "research",
+  "showcase",
+  "spectra",
+  "web-scraper"
+ ]
+}
+</script>
+<!--STACK-DATA-END-->
+
+<script>
+const DATA = JSON.parse(document.getElementById("stack-data").textContent);
+const TK = new Set(DATA.toolkitPlugins || []);
+const BY = Object.fromEntries(DATA.inventory.map(r => [r.id, r]));
+const REL = {hosts:"runs inside","dispatches":"hands work to","routes-model-via":"picks its model via",
+  "verifies-with":"is checked by",reads:"reads",writes:"writes to","ships-to":"deploys to",
+  "backed-by":"is backed by","companion-of":"is the daemon for",supersedes:"replaces"};
+const esc = t => String(t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const nm = id => BY[id] ? BY[id].name : id;
+const degree = id => DATA.edges.filter(e => e.from === id || e.to === id).length;
+
+document.getElementById("lede").textContent = DATA.flow;
+document.getElementById("asof").textContent = "as of " + DATA.dateCreated;
+const placed = DATA.layers.reduce((n,l)=>n+l.members.length,0);
+document.getElementById("facts").innerHTML =
+  [["Layers",DATA.layers.length],["Components placed",placed],["Connections",DATA.edges.length],
+   ["Toolkit plugins here",DATA.layers.flatMap(l=>l.members).filter(i=>TK.has(i)).length]]
+  .map(([k,v])=>`<div>${k}<b>${v}</b></div>`).join("");
+document.getElementById("flowline").innerHTML =
+  DATA.layers.map(l=>`<span>${esc(l.name)}</span>`).join('<i>&rarr;</i>');
+
+function nodeHTML(id){
+  const r = BY[id]; if(!r) return "";
+  const bits = [r.kind==="own-product"?"own product":r.kind==="own-tool"?"own tool":"third-party"];
+  if(r.scope) bits.push(r.scope);
+  if(r.status && r.status!=="current") bits.push(r.status);
+  const d = degree(id);
+  return `<button class="node${TK.has(id)?" tk":""}" data-id="${id}" aria-pressed="false">
+    <span class="nm">${esc(r.name)}${d?`<span class="deg">${d}</span>`:""}</span>
+    <span class="meta">${esc(bits.join(" · "))}</span></button>`;
+}
+document.getElementById("layers").innerHTML = DATA.layers.map(L => {
+  const head = `<div class="lhead"><span class="n">Layer ${L.n}</span><b>${esc(L.name)}</b>
+    <span class="axis">${esc(L.axis||"")}</span><span class="def">${esc(L.definition)}</span></div>`;
+  const body = L.segments
+    ? L.segments.map(s=>`<div class="seg"><div class="sname">${esc(s.name)}</div>
+        <div class="nodes">${s.members.map(nodeHTML).join("")}</div></div>`).join("")
+    : `<div class="nodes">${L.members.map(nodeHTML).join("")}</div>`;
+  return `<div class="layer">${head}${body}</div>`;
+}).join("");
+
+document.getElementById("edgeRows").innerHTML = DATA.edges.map(e =>
+  `<tr><td>${esc(nm(e.from))}</td><td class="rel">${esc(REL[e.rel]||e.rel)}</td>
+   <td>${esc(nm(e.to))}</td><td>${esc(e.when||"")}</td><td>${esc(e.evidence)}</td></tr>`).join("");
+
+const detail = document.getElementById("detail");
+function showDetail(id){
+  if(!id){ detail.innerHTML = `<p class="empty">Select a component to see what it is, what it does, and everything it connects to.</p>`; return; }
+  const r = BY[id], mine = DATA.edges.filter(e=>e.from===id||e.to===id);
+  const tags = [r.kind==="own-product"?"own product":r.kind==="own-tool"?"own tool":"third-party",
+    r.category, r.scope, r.status, TK.has(id)?"in the toolkit":null].filter(Boolean).join(" · ");
+  detail.innerHTML = `<div class="dh"><h3>${esc(r.name)}</h3><span class="tags">${esc(tags)}</span></div>
+    <p class="use">${esc(r.use)}</p>` + (mine.length
+      ? `<ul>${mine.map(e=>{const out=e.from===id;
+          return `<li><span class="rel">${out?"&rarr;":"&larr;"} ${esc(REL[e.rel]||e.rel)}</span>
+            ${esc(nm(out?e.to:e.from))}${e.when?` <span class="tags">when: ${esc(e.when)}</span>`:""}
+            <span class="ev">${esc(e.evidence)}</span></li>`}).join("")}</ul>`
+      : `<p class="empty">No recorded connection. That is a gap in the record, not a claim of independence.</p>`);
+}
+showDetail(null);
+
+let sel = null, wires = false, tkOnly = false;
+const svg = document.getElementById("wires");
+function linked(id){ const s=new Set([id]);
+  DATA.edges.forEach(e=>{ if(e.from===id) s.add(e.to); if(e.to===id) s.add(e.from); }); return s; }
+function paint(){
+  const keep = sel ? linked(sel) : null;
+  document.querySelectorAll(".node").forEach(n=>{
+    const id=n.dataset.id;
+    n.setAttribute("aria-pressed", String(id===sel));
+    n.classList.toggle("dim", (keep && !keep.has(id)) || (tkOnly && !TK.has(id)));
+  });
+  drawWires();
+}
+function drawWires(){
+  svg.innerHTML="";
+  if(!wires && !sel) return;
+  const board=document.getElementById("board").getBoundingClientRect();
+  svg.setAttribute("viewBox",`0 0 ${board.width} ${board.height}`);
+  svg.setAttribute("width",board.width); svg.setAttribute("height",board.height);
+  const pos={};
+  document.querySelectorAll(".node").forEach(n=>{const b=n.getBoundingClientRect();
+    pos[n.dataset.id]={x:b.left-board.left+b.width/2,y:b.top-board.top+b.height/2};});
+  const show = DATA.edges.filter(e => sel ? (e.from===sel||e.to===sel) : true);
+  svg.innerHTML = show.map(e=>{const a=pos[e.from],b=pos[e.to]; if(!a||!b) return "";
+    const mx=(a.x+b.x)/2;
+    return `<path d="M${a.x} ${a.y} C ${mx} ${a.y} ${mx} ${b.y} ${b.x} ${b.y}"
+      fill="none" stroke="var(--accent)" stroke-width="1.2" opacity="${sel?0.85:0.28}">
+      <title>${esc(nm(e.from))} ${esc(REL[e.rel]||e.rel)} ${esc(nm(e.to))}</title></path>`;}).join("");
+}
+document.getElementById("layers").addEventListener("click", ev=>{
+  const n=ev.target.closest(".node"); if(!n) return;
+  sel = (sel===n.dataset.id) ? null : n.dataset.id;
+  showDetail(sel); paint();
+});
+const wt=document.getElementById("wireToggle");
+wt.addEventListener("click",()=>{wires=!wires;wt.setAttribute("aria-pressed",String(wires));
+  wt.textContent="connections: "+(wires?"on":"off");paint();});
+const tt=document.getElementById("tkToggle");
+tt.addEventListener("click",()=>{tkOnly=!tkOnly;tt.setAttribute("aria-pressed",String(tkOnly));paint();});
+document.getElementById("clearBtn").addEventListener("click",()=>{sel=null;showDetail(null);paint();});
+addEventListener("resize",drawWires);
+</script>
+</body>
+</html>
