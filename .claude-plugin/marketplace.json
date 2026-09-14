@@ -363,16 +363,16 @@
       ]
     },
     {
-      "name": "persona-lab",
-      "description": "Task-specific AI persona panels plus a recallable global persona library. CLI + Claude Code/Codex plugin.",
+      "name": "ai-persona-lab",
+      "description": "Launch synthetic personas to review your app UI/UX, architecture, and code base before you deploy",
       "author": {
         "name": "Tyrone Ross"
       },
       "source": {
         "source": "github",
-        "repo": "tyroneross/persona-lab"
+        "repo": "tyroneross/ai-persona-lab"
       },
-      "repository": "https://github.com/tyroneross/persona-lab",
+      "repository": "https://github.com/tyroneross/ai-persona-lab",
       "category": "developer-tools",
       "keywords": [
         "personas",
