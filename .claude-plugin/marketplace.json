@@ -383,6 +383,27 @@
         "evaluation",
         "cli"
       ]
+    },
+    {
+      "name": "groundwork",
+      "description": "Whole-app UI/UX planning for AI builders — codifies product schema, requirements, flows, screens, states, design patterns, architecture, and acceptance criteria into one traceable builder packet",
+      "author": {
+        "name": "Tyrone Ross"
+      },
+      "source": {
+        "source": "github",
+        "repo": "tyroneross/groundwork"
+      },
+      "repository": "https://github.com/tyroneross/groundwork",
+      "category": "design",
+      "keywords": [
+        "product-design",
+        "product-planning",
+        "requirements",
+        "ui-design",
+        "mockups",
+        "design-system"
+      ]
     }
   ]
 }
